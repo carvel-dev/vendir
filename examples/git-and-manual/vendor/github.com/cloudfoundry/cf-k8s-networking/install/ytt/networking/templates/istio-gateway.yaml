@@ -1,0 +1,17 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-ingress
+  namespace: #@ data.values.workloadsNamespace
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - '*'
+      port:
+        name: http
+        number: #@ data.values.service.externalPort
+        protocol: HTTP

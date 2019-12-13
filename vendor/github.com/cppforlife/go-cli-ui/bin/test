@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+go fmt github.com/cppforlife/go-cli-ui/...
+
+ginkgo -r ui/
+
+go build ./ui/
+go build -o /dev/null github.com/cppforlife/go-cli-ui/examples/...

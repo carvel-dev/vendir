@@ -1,0 +1,21 @@
+#@data/values
+---
+#! Default values for cf-k8s-networking.
+#! This is a YTT-formatted file.
+
+systemNamespace: cf-system
+workloadsNamespace: cf-workloads
+
+cfroutesync:
+  image: gcr.io/cf-networking-images/cf-k8s-networking/cfroutesync:latest
+
+  ccCA: 'base64_encoded_cloud_controller_ca'
+  ccBaseURL: 'https://api.example.com'
+  uaaCA: 'base64_encoded_uaa_ca'
+  uaaBaseURL: 'https://uaa.example.com'
+  clientName: 'uaaClientName'
+  clientSecret: 'base64_encoded_uaaClientSecret'
+  eiriniPodLabelPrefix: 'eiriniPodLabelPrefix'
+
+service:
+  externalPort: 80

@@ -1,0 +1,7 @@
+/vendir
+/vendir-darwin-amd64
+/vendir-linux-amd64
+/vendir-windows-amd64.exe
+/tmp
+.DS_Store
+/test/e2e/assets/simple-app/empty-dir
