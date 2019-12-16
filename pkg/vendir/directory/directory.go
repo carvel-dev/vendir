@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bmatcuk/doublestar"
 )
@@ -122,7 +123,7 @@ func (d *Directory) syncGit(opts ConfigContentsGit, dstPath string) (LockConfigC
 	}
 
 	gitLockConf.SHA = info.SHA
-	gitLockConf.CommitTitle = info.CommitTitle
+	gitLockConf.CommitTitle = d.singleLineCommitTitle(info.CommitTitle)
 
 	err = os.Rename(incomingTmpPath, dstPath)
 	if err != nil {
@@ -130,6 +131,14 @@ func (d *Directory) syncGit(opts ConfigContentsGit, dstPath string) (LockConfigC
 	}
 
 	return gitLockConf, nil
+}
+
+func (*Directory) singleLineCommitTitle(in string) string {
+	pieces := strings.SplitN(in, "\n", 2)
+	if len(pieces) > 1 {
+		return pieces[0] + "..."
+	}
+	return pieces[0]
 }
 
 func (d *Directory) filterPaths(dirPath string, contents ConfigContents) error {

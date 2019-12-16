@@ -2,16 +2,7 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - git:
-      commitTitle: |-
-        feat: add /metrics prometheus scrapable endpoint
-
-        - emit `cfroutesync_fetched_routes` and `cfroutesync_last_updated_at`
-        metrics from cfroutesync
-
-        [#170244108](https://www.pivotaltracker.com/story/show/170244108)
-
-        Co-authored-by: Mikael Manukyan <mmanukyan@pivotal.io>
-        Co-authored-by: Nitya Dhanushkodi <ndhanushkodi@pivotal.io>
+      commitTitle: 'feat: add /metrics prometheus scrapable endpoint...'
       sha: 2b009b61fa8afb330a4302c694ee61b11104c54c
     path: github.com/cloudfoundry/cf-k8s-networking
   - manual: {}
