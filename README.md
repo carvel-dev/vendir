@@ -10,6 +10,8 @@
 $ vendir sync # from a directory that contains vendir.yml
 ```
 
+Example: [examples/git-and-manual](examples/git-and-manual).
+
 Features:
 
 - Pull Git repositories at particular revision
