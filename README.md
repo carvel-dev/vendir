@@ -7,7 +7,7 @@
 `vendir` allows to declaratively state what should be in a directory. It's could be used for vendoring software.
 
 ```bash
-$ vendir
+$ vendir sync # from a directory that contains vendir.yml
 ```
 
 Features:
@@ -15,6 +15,7 @@ Features:
 - Pull Git repositories at particular revision
 - Keep only particular portions of a pulled repository
 - State which directories are manually managed
+- Keep common legal files (LICENSE, etc.)
 
 ## Development
 
