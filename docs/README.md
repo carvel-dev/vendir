@@ -47,3 +47,5 @@ directories:
   - path: github.com/GoogleCloudPlatform/metacontroller
     manual: {}
 ```
+
+Try out example in [examples/git-and-manual](../examples/git-and-manual) directory.
