@@ -22,7 +22,7 @@ func NewLockConfig() LockConfig {
 }
 
 func (c LockConfig) WriteToFile(path string) error {
-	bs, err := yaml.Marshal(c)
+	bs, err := c.AsBytes()
 	if err != nil {
 		return fmt.Errorf("Marshaling lock config: %s", err)
 	}
@@ -33,4 +33,13 @@ func (c LockConfig) WriteToFile(path string) error {
 	}
 
 	return nil
+}
+
+func (c LockConfig) AsBytes() ([]byte, error) {
+	bs, err := yaml.Marshal(c)
+	if err != nil {
+		return nil, fmt.Errorf("Marshaling lock config: %s", err)
+	}
+
+	return bs, nil
 }

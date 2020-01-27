@@ -7,8 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultConfigName = "vendir.yml"
+	defaultLockName   = "vendir.lock.yml"
+)
+
 type SyncOptions struct {
-	ui ui.UI
+	ui   ui.UI
+	File string
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -21,11 +27,12 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		Short: "Sync directories",
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
+	cmd.Flags().StringVar(&o.File, "file", defaultConfigName, "Set configuration file")
 	return cmd
 }
 
 func (o *SyncOptions) Run() error {
-	conf, err := ctlconf.NewConfigFromFile("vendir.yml")
+	conf, err := ctlconf.NewConfigFromFile(o.File)
 	if err != nil {
 		return err
 	}
@@ -41,5 +48,16 @@ func (o *SyncOptions) Run() error {
 		lockConfig.Directories = append(lockConfig.Directories, dirLockConf)
 	}
 
-	return lockConfig.WriteToFile("vendir.lock.yml")
+	lockConfigBs, err := lockConfig.AsBytes()
+	if err != nil {
+		return err
+	}
+
+	o.ui.PrintBlock(lockConfigBs)
+
+	if o.File == defaultConfigName {
+		return lockConfig.WriteToFile(defaultLockName)
+	}
+
+	return nil
 }
