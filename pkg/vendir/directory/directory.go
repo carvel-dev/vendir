@@ -8,14 +8,16 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar"
+	"github.com/cppforlife/go-cli-ui/ui"
 )
 
 type Directory struct {
 	opts Config
+	ui   ui.UI
 }
 
-func NewDirectory(opts Config) *Directory {
-	return &Directory{opts}
+func NewDirectory(opts Config, ui ui.UI) *Directory {
+	return &Directory{opts, ui}
 }
 
 var (
@@ -55,6 +57,9 @@ func (d *Directory) Sync() (LockConfig, error) {
 
 		switch {
 		case contents.Git != nil:
+			d.ui.PrintLinef("%s + %s (git from %s@%s)",
+				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
+
 			gitLockConf, err := d.syncGit(*contents.Git, stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
@@ -71,6 +76,8 @@ func (d *Directory) Sync() (LockConfig, error) {
 			})
 
 		case contents.Manual != nil:
+			d.ui.PrintLinef("%s + %s (manual)", d.opts.Path, contents.Path)
+
 			srcPath := filepath.Join(d.opts.Path, contents.Path)
 
 			err := os.Rename(srcPath, stagingDstPath)
@@ -115,7 +122,7 @@ func (d *Directory) syncGit(opts ConfigContentsGit, dstPath string) (LockConfigC
 
 	defer os.RemoveAll(incomingTmpPath)
 
-	git := NewGit(opts)
+	git := NewGit(opts, NewInfoLog(d.ui))
 
 	info, err := git.Retrieve(incomingTmpPath)
 	if err != nil {

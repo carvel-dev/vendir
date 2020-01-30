@@ -40,7 +40,7 @@ func (o *SyncOptions) Run() error {
 	lockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
-		dirLockConf, err := ctldir.NewDirectory(dirConf).Sync()
+		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync()
 		if err != nil {
 			return err
 		}
@@ -53,6 +53,7 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
+	o.ui.PrintLinef("Lock config")
 	o.ui.PrintBlock(lockConfigBs)
 
 	if o.File == defaultConfigName {

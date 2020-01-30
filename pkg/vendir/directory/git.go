@@ -3,16 +3,18 @@ package directory
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 )
 
 type Git struct {
-	opts ConfigContentsGit
+	opts    ConfigContentsGit
+	infoLog io.Writer
 }
 
-func NewGit(opts ConfigContentsGit) *Git {
-	return &Git{opts}
+func NewGit(opts ConfigContentsGit, infoLog io.Writer) *Git {
+	return &Git{opts, infoLog}
 }
 
 type GitInfo struct {
@@ -67,8 +69,10 @@ func (t *Git) run(args []string, dstPath string) (string, string, error) {
 
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dstPath
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
+	cmd.Stdout = io.MultiWriter(t.infoLog, &stdoutBs)
+	cmd.Stderr = io.MultiWriter(t.infoLog, &stderrBs)
+
+	t.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
 
 	err := cmd.Run()
 	if err != nil {
