@@ -29,7 +29,7 @@ func NewVersionCmd(o *VersionOptions) *cobra.Command {
 }
 
 func (o *VersionOptions) Run() error {
-	o.ui.PrintBlock([]byte(fmt.Sprintf("Client Version: %s\n", Version)))
+	o.ui.PrintBlock([]byte(fmt.Sprintf("vendir version %s\n", Version)))
 
 	return nil
 }

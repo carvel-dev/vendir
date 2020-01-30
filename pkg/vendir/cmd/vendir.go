@@ -29,6 +29,7 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 		SilenceErrors:     true,
 		SilenceUsage:      true,
 		DisableAutoGenTag: true,
+		Version:           Version,
 	}
 
 	// TODO bash completion
