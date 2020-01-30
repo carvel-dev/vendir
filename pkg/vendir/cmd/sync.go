@@ -27,7 +27,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		Short: "Sync directories",
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
-	cmd.Flags().StringVar(&o.File, "file", defaultConfigName, "Set configuration file")
+	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
 	return cmd
 }
 
