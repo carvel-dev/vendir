@@ -2,10 +2,14 @@
 
 set -e -x -u
 
+# makes builds reproducible
+export CGO_ENABLED=0
+repro_flags="-ldflags=-buildid= -trimpath"
+
 go fmt ./cmd/... ./pkg/... ./test/...
 
 # export GOOS=linux GOARCH=amd64
-go build -o vendir ./cmd/vendir/...
+go build $repro_flags -o vendir ./cmd/vendir/...
 ./vendir version
 
 echo "Success"
