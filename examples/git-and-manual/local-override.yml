@@ -1,0 +1,19 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@overlay/match by=overlay.all
+---
+directories:
+#@overlay/match by="path"
+- path: vendor
+  contents:
+  #! use a different version of cf-k8s-networking
+  #@overlay/match by="path"
+  - path: github.com/cloudfoundry/cf-k8s-networking
+    git:
+      ref: origin/master
+  #! add another dependency
+  #@overlay/match by="path",expects=0
+  - path: github.com/k14s/k8s-lib
+    git:
+      url: https://github.com/k14s/k8s-lib
+      ref: origin/master
