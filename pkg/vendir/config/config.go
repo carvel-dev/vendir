@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
@@ -51,5 +53,34 @@ func (c Config) Validate() error {
 	if c.Kind != knownKind {
 		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
 	}
+
+	for i, dir := range c.Directories {
+		err := dir.Validate()
+		if err != nil {
+			return fmt.Errorf("Validating directory '%s' (%d): %s", dir.Path, i, err)
+		}
+	}
+
+	return c.checkOverlappingPaths()
+}
+
+func (c Config) checkOverlappingPaths() error {
+	paths := []string{}
+
+	for _, dir := range c.Directories {
+		for _, con := range dir.Contents {
+			paths = append(paths, filepath.Join(dir.Path, con.Path))
+		}
+	}
+
+	for i, path := range paths {
+		for i2, path2 := range paths {
+			if i != i2 && strings.Contains(path2, path) {
+				return fmt.Errorf("Expected to not "+
+					"manage overlapping paths: '%s' and '%s'", path2, path)
+			}
+		}
+	}
+
 	return nil
 }

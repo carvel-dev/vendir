@@ -132,6 +132,11 @@ func (d *Directory) syncGit(opts ConfigContentsGit, dstPath string) (LockConfigC
 	gitLockConf.SHA = info.SHA
 	gitLockConf.CommitTitle = d.singleLineCommitTitle(info.CommitTitle)
 
+	err = os.RemoveAll(dstPath)
+	if err != nil {
+		return gitLockConf, fmt.Errorf("Deleting dir %s: %s", dstPath, err)
+	}
+
 	err = os.Rename(incomingTmpPath, dstPath)
 	if err != nil {
 		return gitLockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
