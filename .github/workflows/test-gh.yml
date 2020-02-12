@@ -1,0 +1,22 @@
+name: test-gh
+on: [push]
+jobs:
+  test-all:
+    name: Test GH
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.13"
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+      with:
+        path: src/github.com/k14s/vendir
+    - name: Run Tests
+      run: |
+        set -e -x
+        export GOPATH=$(echo `pwd`/../../../../)
+        ./hack/build.sh
+        ./hack/test-all.sh
+        ./hack/build-binaries.sh
