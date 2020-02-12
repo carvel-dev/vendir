@@ -14,6 +14,17 @@ func TestExampleGitAndManual(t *testing.T) {
 	dir := "examples/git-and-manual"
 	path := "../../" + dir
 
+	reset := func() {
+		// Make sure state is reset
+		_, err := vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path})
+		if err != nil {
+			t.Fatalf("Expected no err")
+		}
+	}
+
+	reset()
+	defer reset()
+
 	// remove some directory
 	err := os.RemoveAll(path + "/vendor/github.com/cloudfoundry/cf-k8s-networking")
 	if err != nil {

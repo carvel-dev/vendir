@@ -64,6 +64,37 @@ func (c Config) Validate() error {
 	return c.checkOverlappingPaths()
 }
 
+func (c Config) UseDirectory(path, dirPath string) error {
+	var matched bool
+
+	for i, dir := range c.Directories {
+		for j, con := range dir.Contents {
+			if filepath.Join(dir.Path, con.Path) != path {
+				continue
+			}
+			if matched {
+				return fmt.Errorf("Expected to match exactly one directory, but matched multiple")
+			}
+			matched = true
+
+			newCon := ctldir.ConfigContents{
+				Path:         con.Path,
+				Directory:    &ctldir.ConfigContentsDirectory{Path: dirPath},
+				IncludePaths: con.IncludePaths,
+				ExcludePaths: con.ExcludePaths,
+				LegalPaths:   con.LegalPaths,
+			}
+			dir.Contents[j] = newCon
+			c.Directories[i] = dir
+		}
+	}
+
+	if !matched {
+		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
+	}
+	return nil
+}
+
 func (c Config) checkOverlappingPaths() error {
 	paths := []string{}
 

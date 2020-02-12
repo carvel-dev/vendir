@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/cppforlife/go-cli-ui/ui"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
@@ -13,8 +16,9 @@ const (
 )
 
 type SyncOptions struct {
-	ui   ui.UI
-	File string
+	ui           ui.UI
+	File         string
+	UseDirectory []string
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -28,6 +32,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
 	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
+	cmd.Flags().StringSliceVar(&o.UseDirectory, "use-directory", nil, "Set directory configuration (format: dir/sub-dir=local-dir)")
 	return cmd
 }
 
@@ -35,6 +40,20 @@ func (o *SyncOptions) Run() error {
 	conf, err := ctlconf.NewConfigFromFile(o.File)
 	if err != nil {
 		return err
+	}
+
+	shouldWriteLockConfig := o.File == defaultConfigName && len(o.UseDirectory) == 0
+
+	for _, val := range o.UseDirectory {
+		pieces := strings.SplitN(val, "=", 2)
+		if len(pieces) != 2 {
+			return fmt.Errorf("Expected '--use-directory' flag value '%s' to be in format 'dir/sub-dir=local-dir'", val)
+		}
+
+		err := conf.UseDirectory(pieces[0], pieces[1])
+		if err != nil {
+			return fmt.Errorf("Applying '--use-directory' flag value '%s' to config", val)
+		}
 	}
 
 	lockConfig := ctlconf.NewLockConfig()
@@ -56,7 +75,7 @@ func (o *SyncOptions) Run() error {
 	o.ui.PrintLinef("Lock config")
 	o.ui.PrintBlock(lockConfigBs)
 
-	if o.File == defaultConfigName {
+	if shouldWriteLockConfig {
 		return lockConfig.WriteToFile(defaultLockName)
 	}
 
