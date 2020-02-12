@@ -24,6 +24,11 @@ directories:
       # branch, tag, commit; origin is the name of the remote (required)
       ref: origin/master
 
+    # copy contents from local directory (optional)
+    directory:
+      # local file system path relative to vendir.yml
+      path: some-path
+
     # includes paths specify what should be included. by default
     # all paths are included (optional)
     includePaths:

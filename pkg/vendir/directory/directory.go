@@ -9,6 +9,7 @@ import (
 
 	"github.com/bmatcuk/doublestar"
 	"github.com/cppforlife/go-cli-ui/ui"
+	dircopy "github.com/otiai10/copy"
 )
 
 type Directory struct {
@@ -91,7 +92,22 @@ func (d *Directory) Sync() (LockConfig, error) {
 			})
 
 		case contents.Directory != nil:
-			panic("TODO")
+			d.ui.PrintLinef("%s + %s (directory)", d.opts.Path, contents.Path)
+
+			err := dircopy.Copy(contents.Directory.Path, stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Copying another directory contents into directory '%s': %s", contents.Path, err)
+			}
+
+			err = d.filterPaths(stagingDstPath, contents)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+				Path:      contents.Path,
+				Directory: &LockConfigContentsDirectory{},
+			})
 
 		default:
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s' (known: git, manual)", contents.Path)

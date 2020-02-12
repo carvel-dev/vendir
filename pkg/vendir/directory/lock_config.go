@@ -6,9 +6,10 @@ type LockConfig struct {
 }
 
 type LockConfigContents struct {
-	Path   string                    `json:"path"`
-	Git    *LockConfigContentsGit    `json:"git,omitempty"`
-	Manual *LockConfigContentsManual `json:"manual,omitempty"`
+	Path      string                       `json:"path"`
+	Git       *LockConfigContentsGit       `json:"git,omitempty"`
+	Manual    *LockConfigContentsManual    `json:"manual,omitempty"`
+	Directory *LockConfigContentsDirectory `json:"directory,omitempty"`
 }
 
 type LockConfigContentsGit struct {
@@ -17,3 +18,5 @@ type LockConfigContentsGit struct {
 }
 
 type LockConfigContentsManual struct{}
+
+type LockConfigContentsDirectory struct{}

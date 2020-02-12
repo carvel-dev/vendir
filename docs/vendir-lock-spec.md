@@ -20,4 +20,7 @@ directories:
       sha: 2b009b61fa8afb330a4302c694ee61b11104c54c
       # resolved checked out commit title
       commitTitle: 'feat: add /metrics prometheus scrapable endpoint...'
+
+    # present if this was sourced from local directory
+    directory: {}
 ```

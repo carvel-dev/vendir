@@ -9,5 +9,7 @@ directories:
     path: github.com/cloudfoundry/cc
   - manual: {}
     path: github.com/GoogleCloudPlatform/metacontroller
+  - directory: {}
+    path: local-dir
   path: vendor
 kind: LockConfig
