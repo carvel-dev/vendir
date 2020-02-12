@@ -1,0 +1,31 @@
+# github.com/bmatcuk/doublestar v1.2.1
+github.com/bmatcuk/doublestar
+# github.com/cppforlife/cobrautil v0.0.0-20180924214100-a39a1714c920
+github.com/cppforlife/cobrautil
+# github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
+github.com/cppforlife/go-cli-ui/ui
+github.com/cppforlife/go-cli-ui/ui/table
+# github.com/fatih/color v1.7.0
+github.com/fatih/color
+# github.com/ghodss/yaml v1.0.0
+github.com/ghodss/yaml
+# github.com/inconshreveable/mousetrap v1.0.0
+github.com/inconshreveable/mousetrap
+# github.com/mattn/go-colorable v0.0.9
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.3
+github.com/mattn/go-isatty
+# github.com/spf13/cobra v0.0.3
+github.com/spf13/cobra
+# github.com/spf13/pflag v1.0.2
+github.com/spf13/pflag
+# github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec
+github.com/vito/go-interact/interact
+github.com/vito/go-interact/interact/terminal
+# golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# gopkg.in/yaml.v2 v2.2.4
+gopkg.in/yaml.v2
