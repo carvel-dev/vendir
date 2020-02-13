@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	dircopy "github.com/otiai10/copy"
@@ -59,7 +58,7 @@ func (d *Directory) Sync() (LockConfig, error) {
 			d.ui.PrintLinef("%s + %s (git from %s@%s)",
 				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
 
-			gitLockConf, err := d.syncGit(*contents.Git, stagingDstPath)
+			gitLockConf, err := GitSync{*contents.Git, d.ui}.Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
 			}
@@ -123,48 +122,6 @@ func (d *Directory) Sync() (LockConfig, error) {
 	}
 
 	return lockConfig, nil
-}
-
-func (d *Directory) syncGit(opts ConfigContentsGit, dstPath string) (LockConfigContentsGit, error) {
-	gitLockConf := LockConfigContentsGit{}
-	incomingTmpPath := filepath.Join(incomingTmpDir, "git")
-
-	err := os.MkdirAll(incomingTmpPath, 0700)
-	if err != nil {
-		return gitLockConf, fmt.Errorf("Creating incoming dir '%s' for git fetching: %s", incomingTmpPath, err)
-	}
-
-	defer os.RemoveAll(incomingTmpPath)
-
-	git := NewGit(opts, NewInfoLog(d.ui))
-
-	info, err := git.Retrieve(incomingTmpPath)
-	if err != nil {
-		return gitLockConf, fmt.Errorf("Fetching git repository: %s", err)
-	}
-
-	gitLockConf.SHA = info.SHA
-	gitLockConf.CommitTitle = d.singleLineCommitTitle(info.CommitTitle)
-
-	err = os.RemoveAll(dstPath)
-	if err != nil {
-		return gitLockConf, fmt.Errorf("Deleting dir %s: %s", dstPath, err)
-	}
-
-	err = os.Rename(incomingTmpPath, dstPath)
-	if err != nil {
-		return gitLockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
-	}
-
-	return gitLockConf, nil
-}
-
-func (*Directory) singleLineCommitTitle(in string) string {
-	pieces := strings.SplitN(in, "\n", 2)
-	if len(pieces) > 1 {
-		return pieces[0] + "..."
-	}
-	return pieces[0]
 }
 
 func (d *Directory) cleanUpTmpDir() error {
