@@ -45,10 +45,13 @@ type ConfigContentsGit struct {
 }
 
 type ConfigContentsGithubRelease struct {
-	Slug                      string // e.g. organization/repository
-	Tag                       string
-	DisableChecksumValidation bool                         `json:"disableChecksumValidation"`
-	UnpackArchive             *ConfigContentsUnpackArchive `json:"unpackArchive"`
+	Slug string // e.g. organization/repository
+	Tag  string
+
+	Checksums                     map[string]string
+	DisableAutoChecksumValidation bool `json:"disableAutoChecksumValidation"`
+
+	UnpackArchive *ConfigContentsUnpackArchive `json:"unpackArchive"`
 }
 
 type ConfigContentsManual struct{}

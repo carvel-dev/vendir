@@ -34,14 +34,16 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 		return lockConf, fmt.Errorf("Downloading release info: %s", err)
 	}
 
-	lockConf.URL = releaseAPI.URL
-
 	fileChecksums := map[string]string{}
 
-	if !d.opts.DisableChecksumValidation {
-		fileChecksums, err = ReleaseNotesChecksums{}.Find(releaseAPI.AssetNames(), releaseAPI.Body)
-		if err != nil {
-			return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
+	if len(d.opts.Checksums) > 0 {
+		fileChecksums = d.opts.Checksums
+	} else {
+		if !d.opts.DisableAutoChecksumValidation {
+			fileChecksums, err = ReleaseNotesChecksums{}.Find(releaseAPI.AssetNames(), releaseAPI.Body)
+			if err != nil {
+				return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
+			}
 		}
 	}
 
@@ -58,7 +60,7 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 			return lockConf, fmt.Errorf("Checking asset '%s' size: %s", asset.Name, err)
 		}
 
-		if !d.opts.DisableChecksumValidation {
+		if len(fileChecksums) > 0 {
 			err = d.checkFileChecksum(path, fileChecksums[asset.Name])
 			if err != nil {
 				return lockConf, fmt.Errorf("Checking asset '%s' checksum: %s", asset.Name, err)
@@ -93,6 +95,8 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 	if err != nil {
 		return lockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
 	}
+
+	lockConf.URL = releaseAPI.URL
 
 	return lockConf, nil
 }

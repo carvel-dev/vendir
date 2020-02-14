@@ -30,10 +30,15 @@ directories:
       slug: k14s/kapp-controller
       # release tag (required)
       tag: v0.1.0
-      # disables checking checksums for downloaded assets (optional)
-      # checksums are found within release's body in following format
-      # `<sha256>  <filename>`
-      disableChecksumValidation: true
+      # checksums for downloaded files (optional)
+      # (if release text body contains checksums, it's not necessary
+      # to manually specify them here)
+      checkums:
+        release.yml: 26bf09c42d72ae448af3d1ee9f6a933c87c4ec81d04d37b30e1b6a339f5983a7
+      # disables checking auto-found checksums for downloaded files (optional)
+      # (checksums are extracted from release's text body
+      # based on following format `<sha256>  <filename>`)
+      disableAutoChecksumValidation: true
       # specifies which archive to unpack for contents (optional)
       unpackArchive:
         path: release.tgz

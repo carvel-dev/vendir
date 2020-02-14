@@ -15,7 +15,7 @@ directories:
     githubRelease:
       slug: pivotal/kpack
       tag: v0.0.6
-      disableChecksumValidation: true
+      disableAutoChecksumValidation: true
     includePaths:
     - release-0.0.6.yaml
 
@@ -24,6 +24,9 @@ directories:
     githubRelease:
       slug: cloudfoundry-incubator/eirini-release
       tag: v1.2.0
-      disableChecksumValidation: true
+      checksums:
+        eirini-cf.tgz: 819b37126f81ad479acc8dcd7e61e8b0e55153d8fa27aa9a04692c38d0c310fe
+        eirini-uaa.tgz: efe8a498c67368fac1c46fa52c484261cbf4e78b3291cff69e660cd863342674
+        eirini.tgz: b535d9434300e79d11d42acc417148d09054aa32808dab5f12264d3af59ad548
       unpackArchive:
         path: eirini.tgz
