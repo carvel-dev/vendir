@@ -21,6 +21,11 @@ directories:
       # resolved checked out commit title
       commitTitle: 'feat: add /metrics prometheus scrapable endpoint...'
 
+    # present if this was sources from github release assets
+    githubRelease:
+      # resolved release url
+      url: https://api.github.com/repos/pivotal/kpack/releases/22747441
+
     # present if this was sourced from local directory
     directory: {}
 ```

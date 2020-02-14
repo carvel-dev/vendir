@@ -24,6 +24,20 @@ directories:
       # branch, tag, commit; origin is the name of the remote (required)
       ref: origin/master
 
+    # fetches assets from a github release
+    githubRelease:
+      # slug for repository (org/repo) (required)
+      slug: k14s/kapp-controller
+      # release tag (required)
+      tag: v0.1.0
+      # disables checking checksums for downloaded assets (optional)
+      # checksums are found within release's body in following format
+      # `<sha256>  <filename>`
+      disableChecksumValidation: true
+      # specifies which archive to unpack for contents (optional)
+      unpackArchive:
+        path: release.tgz
+
     # copy contents from local directory (optional)
     directory:
       # local file system path relative to vendir.yml
