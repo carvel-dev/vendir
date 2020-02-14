@@ -1,0 +1,58 @@
+{{- if .Values.opi.metrics.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "eirini-metrics"
+spec:
+  selector:
+    matchLabels:
+      name: "eirini-metrics"
+  template:
+    metadata:
+      labels:
+        name: "eirini-metrics"
+    spec:
+      dnsPolicy: "ClusterFirst"
+      serviceAccountName: "eirini-metrics"
+      volumes:
+        - name: config-map-volume
+          configMap:
+            name: "eirini"
+            items:
+            - key: metrics.yml
+              path: metrics.yml
+        - name: cf-secrets
+          projected:
+            sources:
+            - secret:
+                name: "{{ .Values.opi.metrics.tls.client.secretName }}"
+                items:
+                - key: "{{ .Values.opi.metrics.tls.client.certPath }}"
+                  path: doppler.crt
+                - key: "{{ .Values.opi.metrics.tls.client.keyPath }}"
+                  path: doppler.key
+            - secret:
+                name: "{{ .Values.opi.metrics.tls.server.secretName }}"
+                items:
+                - key: "{{ .Values.opi.metrics.tls.server.caPath }}"
+                  path: doppler.ca
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: metrics-collector
+        {{- if .Values.opi.metrics_collector_image }}
+        image: {{ .Values.opi.metrics_collector_image }}:{{ .Values.opi.image_tag }}
+        {{- else }}
+        image: eirini/metrics-collector@{{ .Files.Get "versions/metrics-collector" }}
+        {{- end }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: config-map-volume
+          mountPath: /etc/eirini/config
+        - name: cf-secrets
+          mountPath: /etc/eirini/secrets
+        resources:
+          requests:
+            cpu: 15m
+            memory: 15Mi
+{{- end }}

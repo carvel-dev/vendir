@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "eirini"
+data:
+  opi.yml: |
+    opi:
+      app_namespace: {{ .Values.opi.namespace }}
+      cc_certs_secret_name: "{{ .Values.opi.staging.secretNameInAppNamespace }}"
+      {{- if .Values.opi.use_registry_ingress }}
+      registry_address: "registry.{{ .Values.opi.ingress_endpoint }}:443"
+      {{- else if .Values.services.loadbalanced }}
+      registry_address: "registry.{{ .Values.env.DOMAIN }}:6666"
+      {{- else }}
+      registry_address: "registry.{{ index .Values.kube.external_ips 0 }}.nip.io:6666"
+      {{- end }}
+      registry_secret_name: {{ .Values.opi.registry_secret_name }}
+      eirini_address: "https://eirini-opi.{{ .Release.Namespace }}.svc.cluster.local:8085"
+      {{- if .Values.opi.stager }}
+      downloader_image: "{{ .Values.opi.stager.downloader_image }}:{{ .Values.opi.image_tag }}"
+      executor_image: "{{ .Values.opi.stager.executor_image }}:{{ .Values.opi.image_tag }}"
+      uploader_image: "{{ .Values.opi.stager.uploader_image }}:{{ .Values.opi.image_tag }}"
+      {{- else }}
+      downloader_image: eirini/recipe-downloader@{{ .Files.Get "versions/staging-downloader" }}
+      executor_image: eirini/recipe-executor@{{ .Files.Get "versions/staging-executor" }}
+      uploader_image: eirini/recipe-uploader@{{ .Files.Get "versions/staging-uploader" }}
+      {{- end }}
+      cc_cert_path: "/workspace/jobs/opi/secrets/cc.crt"
+      cc_key_path: "/workspace/jobs/opi/secrets/cc.key"
+      cc_ca_path: "/workspace/jobs/opi/secrets/cc.ca"
+      rootfs_version: {{ .Values.global.rootfs_version }}
+      client_ca_path: "/workspace/jobs/opi/secrets/eirini.ca"
+      server_cert_path: "/workspace/jobs/opi/secrets/eirini-server.crt"
+      server_key_path: "/workspace/jobs/opi/secrets/eirini-server.key"
+      tls_port: 8085
+      disk_limit_mb: {{ .Values.opi.disk_limit_mb }}
+  routing.yml: |
+    app_namespace: {{ .Values.opi.namespace }}
+    nats_ip: "nats-nats.{{ .Release.Namespace }}.svc.cluster.local"
+    nats_port: 4222
+  metrics.yml: |
+    app_namespace: {{ .Values.opi.namespace }}
+    loggregator_address: "doppler-doppler-set.{{ .Release.Namespace }}.svc.cluster.local:8082"
+    loggergator_cert_path: "/etc/eirini/secrets/doppler.crt"
+    loggregator_key_path: "/etc/eirini/secrets/doppler.key"
+    loggregator_ca_path: "/etc/eirini/secrets/doppler.ca"
+  events.yml: |
+    app_namespace: {{ .Values.opi.namespace }}
+    cc_internal_api: "https://api.{{ .Release.Namespace }}.svc.cluster.local:9023"
+    cc_cert_path: "/etc/eirini/secrets/cc.crt"
+    cc_key_path: "/etc/eirini/secrets/cc.key"
+    cc_ca_path: "/etc/eirini/secrets/cc.ca"

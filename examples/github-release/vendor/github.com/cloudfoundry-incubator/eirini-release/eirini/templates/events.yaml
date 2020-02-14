@@ -1,0 +1,58 @@
+{{- if .Values.opi.events.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "eirini-events"
+spec:
+  selector:
+    matchLabels:
+      name: "eirini-events"
+  template:
+    metadata:
+      labels:
+        name: "eirini-events"
+    spec:
+      dnsPolicy: "ClusterFirst"
+      serviceAccountName: "eirini-events"
+      volumes:
+        - name: config-map-volume
+          configMap:
+            name: "eirini"
+            items:
+            - key: events.yml
+              path: events.yml
+        - name: cf-secrets
+          projected:
+            sources:
+            - secret:
+                name: "{{ .Values.opi.events.tls.capiClient.secretName }}"
+                items:
+                - key: "{{ .Values.opi.events.tls.capiClient.certPath }}"
+                  path: cc.crt
+                - key: "{{ .Values.opi.events.tls.capiClient.keyPath }}"
+                  path: cc.key
+            - secret:
+                name: "{{ .Values.opi.events.tls.capi.secretName }}"
+                items:
+                - key: "{{ .Values.opi.events.tls.capi.caPath }}"
+                  path: cc.ca
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: event-reporter
+        {{- if .Values.opi.event_reporter_image }}
+        image: {{ .Values.opi.event_reporter_image }}:{{ .Values.opi.event_reporter_image_tag }}
+        {{- else }}
+        image: eirini/event-reporter@{{ .Files.Get "versions/event-reporter" }}
+        {{- end }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: config-map-volume
+          mountPath: /etc/eirini/config
+        - name: cf-secrets
+          mountPath: /etc/eirini/secrets
+        resources:
+          requests:
+            cpu: 15m
+            memory: 15Mi
+{{- end }}

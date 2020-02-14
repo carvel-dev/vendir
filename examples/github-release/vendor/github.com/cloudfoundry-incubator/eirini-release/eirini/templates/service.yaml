@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "eirini-opi"
+spec:
+{{- if not .Values.opi.use_registry_ingress }}
+  externalIPs: {{ .Values.kube.external_ips | toJson }}
+{{- end }}
+  ports:
+    - port: 8085
+      protocol: TCP
+      name: https
+  selector:
+    name: "eirini"

@@ -1,0 +1,37 @@
+{{- if .Values.opi.rootfsPatcher.enable }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "rootfs-patcher-{{ .Values.global.rootfs_version }}-{{ .Release.Revision }}"
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: bits-waiter
+        {{- if .Values.opi.bits_waiter_image }}
+        image: {{.Values.opi.bits_waiter_image}}:{{ .Values.opi.image_tag }}
+        {{- else }}
+        image: eirini/bits-waiter@{{ .Files.Get "versions/bits-waiter" }}
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bits-waiter
+        - --namespace={{ .Release.Namespace }}
+        - --timeout={{ .Values.opi.rootfsPatcher.timeout }}
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: patch
+        command:
+        - /rootfs-patcher
+        - --namespace={{ .Values.opi.namespace }}
+        - --rootfs-version={{ .Values.global.rootfs_version }}
+        {{- if .Values.opi.rootfs_patcher_image }}
+        image: {{.Values.opi.rootfs_patcher_image}}:{{ .Values.opi.image_tag }}
+        {{- else }}
+        image: eirini/rootfs-patcher@{{ .Files.Get "versions/rootfs-patcher" }}
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+      restartPolicy: OnFailure
+      serviceAccountName: eirini-rootfs-patcher
+{{- end }}

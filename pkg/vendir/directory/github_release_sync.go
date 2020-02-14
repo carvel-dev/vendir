@@ -24,7 +24,7 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 
 	err := os.MkdirAll(incomingTmpPath, 0700)
 	if err != nil {
-		return lockConf, fmt.Errorf("Creating incoming dir '%s' for git fetching: %s", incomingTmpPath, err)
+		return lockConf, fmt.Errorf("Creating incoming dir '%s' for github release: %s", incomingTmpPath, err)
 	}
 
 	defer os.RemoveAll(incomingTmpPath)
@@ -64,6 +64,24 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 				return lockConf, fmt.Errorf("Checking asset '%s' checksum: %s", asset.Name, err)
 			}
 		}
+	}
+
+	if d.opts.UnpackArchive != nil {
+		newIncomingTmpPath := filepath.Join(incomingTmpDir, "github-release-unpack")
+
+		err := os.MkdirAll(newIncomingTmpPath, 0700)
+		if err != nil {
+			return lockConf, fmt.Errorf("Creating incoming dir '%s' for github release unpack: %s", newIncomingTmpPath, err)
+		}
+
+		defer os.RemoveAll(newIncomingTmpPath)
+
+		err = Archive{filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path)}.Unpack(newIncomingTmpPath)
+		if err != nil {
+			return lockConf, fmt.Errorf("Unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
+		}
+
+		incomingTmpPath = newIncomingTmpPath
 	}
 
 	err = os.RemoveAll(dstPath)

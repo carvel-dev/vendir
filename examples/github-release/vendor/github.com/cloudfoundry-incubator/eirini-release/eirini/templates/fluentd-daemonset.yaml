@@ -1,0 +1,119 @@
+{{- if .Values.opi.logs.enable }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: loggregator-fluentd
+spec:
+  selector:
+    matchLabels:
+      name: loggregator-fluentd
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: loggregator-fluentd
+    spec:
+      serviceAccountName: fluentd
+      initContainers:
+      - name: config-copier
+        image: alpine:latest
+        command: [ "/bin/sh", "-c", "cp /input/fluent.conf /output" ]
+        volumeMounts:
+        - name: fluentd-conf
+          mountPath: /input
+        - name: config-volume
+          mountPath: /output
+          readOnly: false
+      securityContext:
+        runAsNonRoot: false
+      containers:
+      - name: loggregator-fluentd
+        {{- if .Values.opi.loggregator_fluentd_image }}
+        image: {{ .Values.opi.loggregator_fluentd_image }}:{{ .Values.opi.image_tag }}
+        {{- else }}
+        image: eirini/loggregator-fluentd@{{ .Files.Get "versions/fluentd" }}
+        {{- end }}
+        imagePullPolicy: Always
+        env:
+        - name: FLUENT_UID
+          value: "0"
+        volumeMounts:
+        - name: vardata
+          mountPath: /var/data
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: config-volume
+          mountPath: /fluentd/etc/
+          readOnly: false
+        - name: loggregator-tls-certs
+          mountPath: /fluentd/certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 120Mi
+      - name: loggregator-agent
+        image: loggregator/agent
+        imagePullPolicy: Always
+        env:
+        - name: AGENT_METRIC_SOURCE_ID
+          value: scf/daemonset/loggregator-fluentd
+        - name: ROUTER_ADDR
+          value: doppler-doppler.{{ .Release.Namespace }}.svc.cluster.local:8082
+        - name: ROUTER_ADDR_WITH_AZ
+          value: doppler-doppler.{{ .Release.Namespace }}.svc.cluster.local:8082
+        - name: AGENT_PPROF_PORT
+          value: "6062"
+        - name: AGENT_HEALTH_ENDPOINT_PORT
+          value: "6063"
+        ports:
+        - name: health
+          containerPort: 6063
+        volumeMounts:
+        - name: loggregator-tls-certs
+          mountPath: /srv/certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: 5m
+            memory: 10Mi
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: vardata
+        hostPath:
+          path: /var/data
+      - name: config-volume
+        emptyDir: {}
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluentd-conf
+        configMap:
+          name: fluentd-conf
+          items:
+          - key: fluentd-conf
+            path: fluent.conf
+      - name: loggregator-tls-certs
+        projected:
+          sources:
+          - secret:
+              name: "{{ .Values.opi.logs.tls.client.secretName }}"
+              items:
+              - key: "{{ .Values.opi.logs.tls.client.certPath }}"
+                path: agent.crt
+              - key: "{{ .Values.opi.logs.tls.client.keyPath }}"
+                path: agent.key
+          - secret:
+              name: "{{ .Values.opi.logs.tls.server.secretName }}"
+              items:
+              - key: "{{ .Values.opi.logs.tls.server.caPath }}"
+                path: ca.crt
+{{- end }}

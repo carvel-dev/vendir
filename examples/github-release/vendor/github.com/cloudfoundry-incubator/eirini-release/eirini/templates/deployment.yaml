@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "eirini"
+spec:
+  selector:
+    matchLabels:
+      name: "eirini"
+  template:
+    metadata:
+      labels:
+        name: "eirini"
+        eirinifs_version: "{{  .Values.global.rootfs_version  }}"
+    spec:
+      dnsPolicy: "ClusterFirst"
+      serviceAccountName: "opi"
+      volumes:
+        - name: config-map-volume
+          configMap:
+            name: "eirini"
+            items:
+            - key: opi.yml
+              path: opi.yml
+        - name: cf-secrets
+          projected:
+            sources:
+            - secret:
+                name: "{{ .Values.opi.tls.opiCapiClient.secretName }}"
+                items:
+                - key: "{{ .Values.opi.tls.opiCapiClient.certPath }}"
+                  path: cc.crt
+                - key: "{{ .Values.opi.tls.opiCapiClient.keyPath }}"
+                  path: cc.key
+            - secret:
+                name: "{{ .Values.opi.tls.capi.secretName }}"
+                items:
+                - key: "{{ .Values.opi.tls.capi.caPath }}"
+                  path: cc.ca
+            - secret:
+                name: "{{ .Values.opi.tls.opiServer.secretName }}"
+                items:
+                - key: "{{ .Values.opi.tls.opiServer.certPath }}"
+                  path: eirini-server.crt
+                - key: "{{ .Values.opi.tls.opiServer.keyPath }}"
+                  path: eirini-server.key
+            - secret:
+                name: "{{ .Values.opi.tls.eirini.secretName }}"
+                items:
+                - key: "{{ .Values.opi.tls.eirini.caPath }}"
+                  path: eirini.ca
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: opi
+        {{- if .Values.opi.image }}
+        image: {{ .Values.opi.image }}:{{ .Values.opi.image_tag }}
+        {{- else }}
+        image: eirini/opi@{{ .Files.Get "versions/opi" }}
+        {{- end }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: config-map-volume
+          mountPath: /workspace/jobs/opi/config
+        - name: cf-secrets
+          mountPath: /workspace/jobs/opi/secrets
+        ports:
+        - containerPort: 8085
+          name: https
+        resources:
+          requests:
+            cpu: 20m
+            memory: 20Mi

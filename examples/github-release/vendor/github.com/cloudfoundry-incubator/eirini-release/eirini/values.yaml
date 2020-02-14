@@ -1,0 +1,94 @@
+opi:
+  # used when bits service is using ingress
+  use_registry_ingress: false
+  # set ingress_endoint when 'use_registry_ingress' is set to true
+  ingress_endpoint: ~
+
+  # secret name in app namespace. Created by secret smuggler
+  registry_secret_name: registry-credentials
+  disk_limit_mb: 2048
+  namespace: eirini
+  version: 0.0.0
+
+  tls:
+    opiCapiClient:
+      secretName: "secrets-2.16.4-2"
+      keyPath: "cc-server-crt-key"
+      certPath: "cc-server-crt"
+    opiServer:
+      secretName: "secrets-2.16.4-2"
+      certPath: "eirini-client-crt"
+      keyPath: "eirini-client-crt-key"
+    capi:
+      secretName: "secrets-2.16.4-2"
+      caPath: "internal-ca-cert"
+    eirini:
+      secretName: "secrets-2.16.4-2"
+      caPath: "internal-ca-cert"
+
+  # components
+  events:
+    enable: true
+    tls:
+      capiClient:
+        secretName: "secrets-2.16.4-2"
+        keyPath: "cc-server-crt-key"
+        certPath: "cc-server-crt"
+      capi:
+        secretName: "secrets-2.16.4-2"
+        caPath: "internal-ca-cert"
+
+  logs:
+    enable: true
+    tls:
+      client:
+        secretName: "secrets-2.16.4-2"
+        keyPath: "loggregator-agent-cert-key"
+        certPath: "loggregator-agent-cert"
+      server:
+        secretName: "secrets-2.16.4-2"
+        caPath: "internal-ca-cert"
+
+  metrics:
+    enable: true
+    tls:
+      client:
+        secretName: "secrets-2.16.4-2"
+        keyPath: "doppler-cert-key"
+        certPath: "doppler-cert"
+      server:
+        secretName: "secrets-2.16.4-2"
+        caPath: "internal-ca-cert"
+
+  rootfsPatcher:
+    enable: true
+    timeout: 2m
+
+  routing:
+    enable: true
+    nats:
+      secretName: "secrets-2.16.4-2"
+      passwordPath: "nats-password"
+
+  secretSmuggler:
+    enable: true
+    scfSecretName: "secrets-2.16.4-2"
+
+  staging:
+    # secret that is used to connect to CAPI and Blobstore. Copied by secret smuggler
+    secretNameInAppNamespace: "secrets-2.16.4-2"
+
+services:
+  loadbalanced: false
+env:
+  # Base domain of the SCF cluster.
+  # Example: "my-scf-cluster.com"
+  # used to get bits service URL if it is load balanced and not behind ingress
+  DOMAIN: ~
+
+# used to construct bits service URL if it is not load balanced and does not behind ingress
+kube:
+  external_ips: []
+
+global:
+  rootfs_version: v75.0.0
