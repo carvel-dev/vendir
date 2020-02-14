@@ -1,0 +1,16 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: github.com/pivotal/kpack
+    githubRelease:
+      slug: pivotal/kpack
+      tag: v0.0.6
+      disableChecksumValidation: true
+    includePaths:
+    - release-0.0.6.yaml
+  - path: github.com/k14s/kapp-controller
+    githubRelease:
+      slug: k14s/kapp-controller
+      tag: v0.1.0

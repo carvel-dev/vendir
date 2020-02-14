@@ -1,0 +1,406 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kpack
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: builds.build.pivotal.io
+spec:
+  group: build.pivotal.io
+  version: v1alpha1
+  names:
+    kind: Build
+    singular: build
+    plural: builds
+    shortNames:
+    - cnbbuild
+    - cnbbuilds
+    - bld
+    categories:
+    - kpack
+  scope: Namespaced
+  subresources:
+    status: {}
+  additionalPrinterColumns:
+  - name: Image
+    type: string
+    JSONPath: .status.latestImage
+  - name: Succeeded
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Succeeded")].status
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: builders.build.pivotal.io
+spec:
+  group: build.pivotal.io
+  version: v1alpha1
+  names:
+    kind: Builder
+    singular: builder
+    plural: builders
+    shortNames:
+    - cnbbuilder
+    - cnbbuilders
+    - bldr
+    categories:
+    - kpack
+  scope: Namespaced
+  subresources:
+    status: {}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: clusterbuilders.build.pivotal.io
+spec:
+  group: build.pivotal.io
+  version: v1alpha1
+  names:
+    kind: ClusterBuilder
+    singular: clusterbuilder
+    plural: clusterbuilders
+    shortNames:
+    - clstbldr
+    categories:
+    - kpack
+  scope: Cluster
+  subresources:
+    status: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kpack-controller-admin
+rules:
+- apiGroups:
+  - build.pivotal.io
+  resources:
+  - builds
+  - builds/status
+  - builds/finalizers
+  - images
+  - images/status
+  - images/finalizers
+  - builders
+  - builders/status
+  - clusterbuilders
+  - clusterbuilders/status
+  - sourceresolvers
+  - sourceresolvers/status
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - watch
+- apiGroups:
+  - experimental.kpack.pivotal.io
+  resources:
+  - custombuilders
+  - custombuilders/status
+  - customclusterbuilders
+  - customclusterbuilders/status
+  - stores
+  - stores/status
+  - stacks
+  - stacks/status
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kpack-webhook-admin
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - deployments/finalizers
+  verbs:
+  - get
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - get
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kpack-controller-admin
+subjects:
+- kind: ServiceAccount
+  name: controller
+  namespace: kpack
+roleRef:
+  kind: ClusterRole
+  name: kpack-controller-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kpack-webhook-admin
+subjects:
+- kind: ServiceAccount
+  name: webhook
+  namespace: kpack
+roleRef:
+  kind: ClusterRole
+  name: kpack-webhook-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kpack-controller
+  namespace: kpack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kpack-controller
+  template:
+    metadata:
+      labels:
+        app: kpack-controller
+        version: 0.0.6-rc.45
+    spec:
+      serviceAccountName: controller
+      containers:
+      - name: controller
+        image: gcr.io/cf-build-service-public/kpack/controller@sha256:febeb4b845a3d908c8a77dcbefb4bb30345a43d9b66ad63f7fa78eb54e584b5d
+        env:
+        - name: BUILD_INIT_IMAGE
+          value: gcr.io/cf-build-service-public/kpack/build-init@sha256:5205844aefba7c91803198ef81da9134031f637d605d293dfe4531c622aa42b1
+        - name: REBASE_IMAGE
+          value: gcr.io/cf-build-service-public/kpack/rebase@sha256:fbc2a6bf5c535b44e6da45cd13de3b09880b0e8ccf7d5022f568065eccf5efee
+        - name: COMPLETION_IMAGE
+          value: gcr.io/cf-build-service-public/kpack/completion@sha256:35ea89f438450d6f322af0b24a1ca48031788c98e15c0d3c45aa26999bc1e34b
+        - name: LIFECYCLE_IMAGE
+          value: gcr.io/cf-build-service-public/kpack/lifecycle@sha256:31a73391d4bf8b919fc2a15455ba0844fed109f935c43cd3e97e0d1e16662d74
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: custombuilders.experimental.kpack.pivotal.io
+spec:
+  group: experimental.kpack.pivotal.io
+  version: v1alpha1
+  names:
+    kind: CustomBuilder
+    singular: custombuilder
+    plural: custombuilders
+    shortNames:
+    - custmbldr
+    categories:
+    - kpack
+  scope: Namespaced
+  subresources:
+    status: {}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: customclusterbuilders.experimental.kpack.pivotal.io
+spec:
+  group: experimental.kpack.pivotal.io
+  version: v1alpha1
+  names:
+    kind: CustomClusterBuilder
+    singular: customclusterbuilder
+    plural: customclusterbuilders
+    shortNames:
+    - ccb
+    categories:
+    - kpack
+  scope: Cluster
+  subresources:
+    status: {}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: images.build.pivotal.io
+spec:
+  group: build.pivotal.io
+  version: v1alpha1
+  names:
+    kind: Image
+    singular: image
+    plural: images
+    shortNames:
+    - cnbimage
+    - cnbimages
+    categories:
+    - kpack
+  scope: Namespaced
+  subresources:
+    status: {}
+  additionalPrinterColumns:
+  - name: LatestImage
+    type: string
+    JSONPath: .status.latestImage
+  - name: Ready
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Ready")].status
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kpack-webhook
+  namespace: kpack
+spec:
+  ports:
+  - port: 443
+    targetPort: 8443
+  selector:
+    role: webhook
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller
+  namespace: kpack
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook
+  namespace: kpack
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: sourceresolvers.build.pivotal.io
+spec:
+  group: build.pivotal.io
+  version: v1alpha1
+  names:
+    kind: SourceResolver
+    singular: sourceresolver
+    plural: sourceresolvers
+    categories:
+    - kpack
+  scope: Namespaced
+  subresources:
+    status: {}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: stacks.experimental.kpack.pivotal.io
+spec:
+  group: experimental.kpack.pivotal.io
+  version: v1alpha1
+  names:
+    kind: Stack
+    singular: stack
+    plural: stacks
+    categories:
+    - kpack
+  scope: Cluster
+  subresources:
+    status: {}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: stores.experimental.kpack.pivotal.io
+spec:
+  group: experimental.kpack.pivotal.io
+  version: v1alpha1
+  names:
+    kind: Store
+    singular: store
+    plural: stores
+    categories:
+    - kpack
+  scope: Cluster
+  subresources:
+    status: {}
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: resource.webhook.kpack.pivotal.io
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: kpack-webhook
+      namespace: kpack
+  failurePolicy: Fail
+  name: resource.webhook.kpack.pivotal.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kpack-webhook
+  namespace: kpack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kpack-webhook
+  template:
+    metadata:
+      labels:
+        app: kpack-webhook
+        role: webhook
+        version: 0.0.6-rc.45
+    spec:
+      serviceAccountName: webhook
+      containers:
+      - name: webhook
+        image: gcr.io/cf-build-service-public/kpack/webhook@sha256:ff46bf4da756bbc6344dd1a3ea37efaa206fe8564e5a05922268a1e887be28a2
+        env:
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace

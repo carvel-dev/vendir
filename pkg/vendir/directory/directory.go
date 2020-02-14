@@ -73,6 +73,25 @@ func (d *Directory) Sync() (LockConfig, error) {
 				Git:  &gitLockConf,
 			})
 
+		case contents.GithubRelease != nil:
+			d.ui.PrintLinef("%s + %s (github release %s@%s)",
+				d.opts.Path, contents.Path, contents.GithubRelease.Slug, contents.GithubRelease.Tag)
+
+			lockConf, err := GithubReleaseSync{*contents.GithubRelease, d.ui}.Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with github release contents: %s", contents.Path, err)
+			}
+
+			err = FileFilter{contents}.Apply(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+				Path:          contents.Path,
+				GithubRelease: &lockConf,
+			})
+
 		case contents.Manual != nil:
 			d.ui.PrintLinef("%s + %s (manual)", d.opts.Path, contents.Path)
 

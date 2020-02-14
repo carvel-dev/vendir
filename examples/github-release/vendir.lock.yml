@@ -1,0 +1,11 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - githubRelease:
+      url: https://api.github.com/repos/pivotal/kpack/releases/22747441
+    path: github.com/pivotal/kpack
+  - githubRelease:
+      url: https://api.github.com/repos/k14s/kapp-controller/releases/21912613
+    path: github.com/k14s/kapp-controller
+  path: vendor
+kind: LockConfig

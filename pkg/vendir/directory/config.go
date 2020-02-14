@@ -27,9 +27,10 @@ type Config struct {
 type ConfigContents struct {
 	Path string
 
-	Git       *ConfigContentsGit
-	Manual    *ConfigContentsManual
-	Directory *ConfigContentsDirectory
+	Git           *ConfigContentsGit
+	GithubRelease *ConfigContentsGithubRelease
+	Manual        *ConfigContentsManual
+	Directory     *ConfigContentsDirectory
 
 	IncludePaths []string `json:"includePaths"`
 	ExcludePaths []string `json:"excludePaths"`
@@ -41,6 +42,12 @@ type ConfigContents struct {
 type ConfigContentsGit struct {
 	URL string
 	Ref string
+}
+
+type ConfigContentsGithubRelease struct {
+	Slug                      string // e.g. organization/repository
+	Tag                       string
+	DisableChecksumValidation bool `json:"disableChecksumValidation"`
 }
 
 type ConfigContentsManual struct{}
