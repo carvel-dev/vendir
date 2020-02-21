@@ -11,9 +11,9 @@ import (
 )
 
 type Config struct {
-	APIVersion  string `json:"apiVersion"`
-	Kind        string
-	Directories []ctldir.Config
+	APIVersion  string          `json:"apiVersion"`
+	Kind        string          `json:"kind"`
+	Directories []ctldir.Config `json:"directories,omitempty"`
 }
 
 func NewConfigFromFile(path string) (Config, error) {

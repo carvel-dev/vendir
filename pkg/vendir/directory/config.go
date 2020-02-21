@@ -20,48 +20,48 @@ var (
 )
 
 type Config struct {
-	Path     string
-	Contents []ConfigContents
+	Path     string           `json:"path"`
+	Contents []ConfigContents `json:"contents,omitempty"`
 }
 
 type ConfigContents struct {
-	Path string
+	Path string `json:"path"`
 
-	Git           *ConfigContentsGit
-	GithubRelease *ConfigContentsGithubRelease
-	Manual        *ConfigContentsManual
-	Directory     *ConfigContentsDirectory
+	Git           *ConfigContentsGit           `json:"git,omitempty"`
+	GithubRelease *ConfigContentsGithubRelease `json:"githubRelease,omitempty"`
+	Manual        *ConfigContentsManual        `json:"manual,omitempty"`
+	Directory     *ConfigContentsDirectory     `json:"directory,omitempty"`
 
-	IncludePaths []string `json:"includePaths"`
-	ExcludePaths []string `json:"excludePaths"`
+	IncludePaths []string `json:"includePaths,omitempty"`
+	ExcludePaths []string `json:"excludePaths,omitempty"`
 
 	// By default LICENSE/LICENCE/NOTICE/COPYRIGHT files are kept
-	LegalPaths []string `json:"legalPaths"`
+	LegalPaths []string `json:"legalPaths,omitempty"`
 }
 
 type ConfigContentsGit struct {
-	URL string
-	Ref string
+	URL string `json:"url"`
+	Ref string `json:"ref"`
 }
 
 type ConfigContentsGithubRelease struct {
-	Slug string // e.g. organization/repository
-	Tag  string
+	Slug string `json:"slug"` // e.g. organization/repository
+	Tag  string `json:"tag"`
 
-	Checksums                     map[string]string
-	DisableAutoChecksumValidation bool `json:"disableAutoChecksumValidation"`
+	Checksums                     map[string]string `json:"checksums,omitempty"`
+	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
 
-	UnpackArchive *ConfigContentsUnpackArchive `json:"unpackArchive"`
+	UnpackArchive *ConfigContentsUnpackArchive `json:"unpackArchive,omitempty"`
 }
 
 type ConfigContentsManual struct{}
 
 type ConfigContentsDirectory struct {
-	Path string
+	Path string `json:"path"`
 }
 
 type ConfigContentsUnpackArchive struct {
-	Path string
+	Path string `json:"path"`
 }
 
 func (c Config) Validate() error {
