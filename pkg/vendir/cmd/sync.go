@@ -42,20 +42,12 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
-	shouldWriteLockConfig := o.File == defaultConfigName && len(o.UseDirectory) == 0
-
-	for _, val := range o.UseDirectory {
-		pieces := strings.SplitN(val, "=", 2)
-		if len(pieces) != 2 {
-			return fmt.Errorf("Expected '--use-directory' flag value '%s' to be in format 'dir/sub-dir=local-dir'", val)
-		}
-
-		err := conf.UseDirectory(pieces[0], pieces[1])
-		if err != nil {
-			return fmt.Errorf("Applying '--use-directory' flag value '%s' to config", val)
-		}
+	err = o.applyUseDirectories(&conf)
+	if err != nil {
+		return err
 	}
 
+	shouldWriteLockConfig := (o.File == defaultConfigName) && len(o.UseDirectory) == 0
 	lockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
@@ -75,8 +67,25 @@ func (o *SyncOptions) Run() error {
 	o.ui.PrintLinef("Lock config")
 	o.ui.PrintBlock(lockConfigBs)
 
-	if shouldWriteLockConfig {
-		return lockConfig.WriteToFile(defaultLockName)
+	if !shouldWriteLockConfig {
+		o.ui.PrintLinef("Lock config is not saved to '%s' due to command line overrides", defaultLockName)
+		return nil
+	}
+
+	return lockConfig.WriteToFile(defaultLockName)
+}
+
+func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config) error {
+	for _, val := range o.UseDirectory {
+		pieces := strings.SplitN(val, "=", 2)
+		if len(pieces) != 2 {
+			return fmt.Errorf("Expected '--use-directory' flag value '%s' to be in format 'dir/sub-dir=local-dir'", val)
+		}
+
+		err := conf.UseDirectory(pieces[0], pieces[1])
+		if err != nil {
+			return fmt.Errorf("Applying '--use-directory' flag value '%s' to config", val)
+		}
 	}
 
 	return nil
