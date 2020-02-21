@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/cppforlife/go-cli-ui/ui"
@@ -98,21 +100,6 @@ func (o *SyncOptions) Run() error {
 	return lockConfig.WriteToFile(defaultLockName)
 }
 
-type dirOverride struct {
-	Path     string
-	LocalDir string
-}
-
-type dirOverrides []dirOverride
-
-func (dirs dirOverrides) Paths() []string {
-	var result []string
-	for _, d := range dirs {
-		result = append(result, d.Path)
-	}
-	return result
-}
-
 func (o *SyncOptions) markedDirectories() ([]dirOverride, error) {
 	var dirs []dirOverride
 
@@ -134,6 +121,8 @@ func (o *SyncOptions) markedDirectories() ([]dirOverride, error) {
 		dirs = append(dirs, dirOverride{Path: pieces[0], LocalDir: pieces[1]})
 	}
 
+	dirOverrides(dirs).ExpandUserHomeDirs()
+
 	return dirs, nil
 }
 
@@ -148,4 +137,46 @@ func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverri
 		}
 	}
 	return nil
+}
+
+type dirOverride struct {
+	Path     string
+	LocalDir string
+}
+
+type dirOverrides []dirOverride
+
+func (dirs dirOverrides) Paths() []string {
+	var result []string
+	for _, d := range dirs {
+		result = append(result, d.Path)
+	}
+	return result
+}
+
+func (dirs dirOverrides) ExpandUserHomeDirs() error {
+	homeDir, expandErr := dirs.userHomeDir()
+
+	for i, dir := range dirs {
+		if len(dir.LocalDir) > 0 {
+			// TODO does not support ~user convention
+			if strings.HasPrefix(dir.LocalDir, "~") {
+				if len(homeDir) == 0 && expandErr != nil {
+					return expandErr
+				}
+				dir.LocalDir = filepath.Join(homeDir, dir.LocalDir[1:])
+				dirs[i] = dir
+			}
+		}
+	}
+
+	return nil
+}
+
+func (dirOverrides) userHomeDir() (string, error) {
+	out, err := exec.Command("sh", "-c", "echo ~").Output()
+	if err != nil {
+		return "", fmt.Errorf("Expanding user home directory: %s", err)
+	}
+	return strings.TrimSpace(string(out)), nil
 }
