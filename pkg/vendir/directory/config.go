@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	entireDirPath = "."
+	EntireDirPath = "."
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 		"{NOTICE,Notice}{,.md,.txt,.rst}",
 	}
 
-	disallowedPaths = []string{"/", entireDirPath, "..", ""}
+	disallowedPaths = []string{"/", EntireDirPath, "..", ""}
 )
 
 type Config struct {
@@ -78,7 +78,7 @@ func (c Config) Validate() error {
 			}
 		}
 		if consumesEntireDir && len(c.Contents) != 1 {
-			return fmt.Errorf("Expected only one directory contents if path is set to '%s'", entireDirPath)
+			return fmt.Errorf("Expected only one directory contents if path is set to '%s'", EntireDirPath)
 		}
 	}
 
@@ -87,7 +87,7 @@ func (c Config) Validate() error {
 
 func (c ConfigContents) Validate() error {
 	// entire dir path is allowed for contents
-	if c.Path != entireDirPath {
+	if c.Path != EntireDirPath {
 		err := isDisallowedPath(c.Path)
 		if err != nil {
 			return err
@@ -97,7 +97,7 @@ func (c ConfigContents) Validate() error {
 }
 
 func (c ConfigContents) IsEntireDir() bool {
-	return c.Path == entireDirPath
+	return c.Path == EntireDirPath
 }
 
 func (c ConfigContents) LegalPathsWithDefaults() []string {
