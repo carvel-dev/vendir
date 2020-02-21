@@ -42,7 +42,7 @@ func TestUseDirectory(t *testing.T) {
 
 	checkFileContent("file\n")
 
-	_, err = vendir.RunWithOpts([]string{"sync", "--use-directory", "vendor/local-dir=local-dir-dev"}, RunOpts{Dir: path})
+	_, err = vendir.RunWithOpts([]string{"sync", "--directory", "vendor/local-dir=local-dir-dev"}, RunOpts{Dir: path})
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}

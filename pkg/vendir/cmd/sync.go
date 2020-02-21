@@ -20,9 +20,8 @@ const (
 type SyncOptions struct {
 	ui ui.UI
 
-	File         string
-	Directories  []string
-	UseDirectory []string
+	File        string
+	Directories []string
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -36,8 +35,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
 	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
-	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Only sync specific directory (format: dir/sub-dir[=local-dir])")
-	cmd.Flags().StringSliceVar(&o.UseDirectory, "use-directory", nil, "Set directory configuration (format: dir/sub-dir=local-dir)")
+	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	return cmd
 }
 
@@ -47,7 +45,7 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
-	dirs, err := o.markedDirectories()
+	dirs, err := o.directories()
 	if err != nil {
 		return err
 	}
@@ -100,7 +98,7 @@ func (o *SyncOptions) Run() error {
 	return lockConfig.WriteToFile(defaultLockName)
 }
 
-func (o *SyncOptions) markedDirectories() ([]dirOverride, error) {
+func (o *SyncOptions) directories() ([]dirOverride, error) {
 	var dirs []dirOverride
 
 	for _, val := range o.Directories {
@@ -110,15 +108,6 @@ func (o *SyncOptions) markedDirectories() ([]dirOverride, error) {
 		} else {
 			dirs = append(dirs, dirOverride{Path: pieces[0], LocalDir: pieces[1]})
 		}
-	}
-
-	for _, val := range o.UseDirectory {
-		pieces := strings.SplitN(val, "=", 2)
-		if len(pieces) != 2 {
-			return nil, fmt.Errorf("Expected '--use-directory' flag value '%s' to be in format 'dir/sub-dir=local-dir'", val)
-		}
-
-		dirs = append(dirs, dirOverride{Path: pieces[0], LocalDir: pieces[1]})
 	}
 
 	dirOverrides(dirs).ExpandUserHomeDirs()
