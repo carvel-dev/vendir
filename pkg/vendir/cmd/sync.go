@@ -76,7 +76,7 @@ func (o *SyncOptions) Run() error {
 	for _, dirConf := range conf.Directories {
 		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync()
 		if err != nil {
-			return err
+			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
 
 		lockConfig.Directories = append(lockConfig.Directories, dirLockConf)
@@ -144,7 +144,7 @@ func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverri
 		}
 		err := conf.UseDirectory(dir.Path, dir.LocalDir)
 		if err != nil {
-			return fmt.Errorf("Overriding '%s' with local directory", dir.Path)
+			return fmt.Errorf("Overriding '%s' with local directory: %s", dir.Path, err)
 		}
 	}
 	return nil
