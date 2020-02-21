@@ -64,6 +64,15 @@ func (c Config) Validate() error {
 	return c.checkOverlappingPaths()
 }
 
+func (c Config) AsBytes() ([]byte, error) {
+	bs, err := yaml.Marshal(c)
+	if err != nil {
+		return nil, fmt.Errorf("Marshaling config: %s", err)
+	}
+
+	return bs, nil
+}
+
 func (c Config) UseDirectory(path, dirPath string) error {
 	var matched bool
 
@@ -93,6 +102,50 @@ func (c Config) UseDirectory(path, dirPath string) error {
 		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
 	}
 	return nil
+}
+
+func (c Config) Subset(paths []string) (Config, error) {
+	result := Config{
+		APIVersion: c.APIVersion,
+		Kind:       c.Kind,
+	}
+	pathsToSeen := map[string]bool{}
+
+	for _, path := range paths {
+		pathsToSeen[path] = false
+	}
+
+	for _, dir := range c.Directories {
+		for _, con := range dir.Contents {
+			path := filepath.Join(dir.Path, con.Path)
+
+			seen, found := pathsToSeen[path]
+			if !found {
+				continue
+			}
+			if seen {
+				return Config{}, fmt.Errorf("Expected to match path '%s' once, but matched multiple", path)
+			}
+			pathsToSeen[path] = true
+
+			newCon := con // copy (but not deep unfortunately)
+			newCon.Path = ctldir.EntireDirPath
+
+			result.Directories = append(result.Directories, ctldir.Config{
+				Path:     path,
+				Contents: []ctldir.ConfigContents{newCon},
+			})
+		}
+	}
+
+	for path, seen := range pathsToSeen {
+		if !seen {
+			return Config{}, fmt.Errorf("Expected to match path '%s' once, but did not match any", path)
+		}
+	}
+
+	// return validated config
+	return result, result.Validate()
 }
 
 func (c Config) checkOverlappingPaths() error {
