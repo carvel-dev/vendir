@@ -69,7 +69,7 @@ func (d FileFilter) Apply(dirPath string) error {
 		return err
 	}
 
-	_, err = d.deleteEmptyDirs(dirPath)
+	_, err = d.deleteEmptyDirs(dirPath, true)
 	return err
 }
 
@@ -93,7 +93,7 @@ func (d FileFilter) matchAgainstPatterns(path string, patterns []string) (bool, 
 	return false, nil
 }
 
-func (d FileFilter) deleteEmptyDirs(dirPath string) (bool, error) {
+func (d FileFilter) deleteEmptyDirs(dirPath string, topLevel bool) (bool, error) {
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		return false, err
@@ -103,7 +103,7 @@ func (d FileFilter) deleteEmptyDirs(dirPath string) (bool, error) {
 
 	for _, file := range files {
 		if file.IsDir() {
-			hasFilesInside, err := d.deleteEmptyDirs(filepath.Join(dirPath, file.Name()))
+			hasFilesInside, err := d.deleteEmptyDirs(filepath.Join(dirPath, file.Name()), false)
 			if err != nil {
 				return false, err
 			}
@@ -116,6 +116,9 @@ func (d FileFilter) deleteEmptyDirs(dirPath string) (bool, error) {
 	}
 
 	if !hasFiles {
+		if topLevel {
+			return false, fmt.Errorf("Expected to find at least one file within directory")
+		}
 		// not RemoveAll to double check directory is empty
 		return false, os.Remove(dirPath)
 	}
