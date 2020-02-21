@@ -82,10 +82,39 @@ func (c Config) Validate() error {
 		}
 	}
 
+	for i, con := range c.Contents {
+		err := con.Validate()
+		if err != nil {
+			return fmt.Errorf("Validating directory contents '%s' (%d): %s", con.Path, i, err)
+		}
+	}
+
 	return nil
 }
 
 func (c ConfigContents) Validate() error {
+	var srcTypes []string
+
+	if c.Git != nil {
+		srcTypes = append(srcTypes, "git")
+	}
+	if c.GithubRelease != nil {
+		srcTypes = append(srcTypes, "githubRelease")
+	}
+	if c.Manual != nil {
+		srcTypes = append(srcTypes, "manual")
+	}
+	if c.Directory != nil {
+		srcTypes = append(srcTypes, "directory")
+	}
+
+	if len(srcTypes) == 0 {
+		return fmt.Errorf("Expected directory contents type to be specified (one of git, manual, etc.)")
+	}
+	if len(srcTypes) > 1 {
+		return fmt.Errorf("Expected exactly one directory contents type to be specified (multiple found: %s)", strings.Join(srcTypes, ", "))
+	}
+
 	// entire dir path is allowed for contents
 	if c.Path != EntireDirPath {
 		err := isDisallowedPath(c.Path)
@@ -93,6 +122,7 @@ func (c ConfigContents) Validate() error {
 			return err
 		}
 	}
+
 	return nil
 }
 
