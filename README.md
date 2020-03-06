@@ -14,8 +14,10 @@ Example: [examples/git-and-manual](examples/git-and-manual).
 
 Features:
 
-- Pull Git repositories at particular revision
-- Keep only particular portions of a pulled repository
+- Various sources
+  - Pull Git repositories at particular revision
+  - Pull Github release at particular version
+- Keep only particular portions of pulled content
 - State which directories are manually managed
 - Keep common legal files (LICENSE, etc.)
 
