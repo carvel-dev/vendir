@@ -8,6 +8,7 @@ require (
 	github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/hashicorp/go-version v1.2.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect

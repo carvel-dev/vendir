@@ -7,12 +7,17 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	semver "github.com/hashicorp/go-version"
 	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
+	"github.com/k14s/vendir/pkg/vendir/version"
 )
 
 type Config struct {
-	APIVersion  string          `json:"apiVersion"`
-	Kind        string          `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Kind       string `json:"kind"`
+
+	MinimumRequiredVersion string `json:"minimumRequiredVersion"`
+
 	Directories []ctldir.Config `json:"directories,omitempty"`
 }
 
@@ -52,6 +57,27 @@ func (c Config) Validate() error {
 	}
 	if c.Kind != knownKind {
 		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
+	}
+
+	if len(c.MinimumRequiredVersion) > 0 {
+		if c.MinimumRequiredVersion[0] == 'v' {
+			return fmt.Errorf("Validating minimum version: Must not have prefix 'v' (e.g. '0.8.0')")
+		}
+
+		userConstraint, err := semver.NewConstraint(">=" + c.MinimumRequiredVersion)
+		if err != nil {
+			return fmt.Errorf("Parsing minimum version constraint: %s", err)
+		}
+
+		vendirVersion, err := semver.NewVersion(version.Version)
+		if err != nil {
+			return fmt.Errorf("Parsing version constraint: %s", err)
+		}
+
+		if !userConstraint.Check(vendirVersion) {
+			return fmt.Errorf("vendir version '%s' does "+
+				"not meet the minimum required version '%s'", version.Version, c.MinimumRequiredVersion)
+		}
 	}
 
 	for i, dir := range c.Directories {

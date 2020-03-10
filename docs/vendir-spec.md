@@ -4,6 +4,9 @@
 apiVersion: vendir.k14s.io/v1alpha1
 kind: Config
 
+# optional declaration of minimum vendir version
+requiredMinimumVersion: 0.8.0
+
 # one or more directories to manage with vendir
 directories:
 - # path is relative to vendir.yml location

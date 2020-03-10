@@ -5,6 +5,7 @@ import (
 
 	"github.com/cppforlife/cobrautil"
 	"github.com/cppforlife/go-cli-ui/ui"
+	"github.com/k14s/vendir/pkg/vendir/version"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 		SilenceErrors:     true,
 		SilenceUsage:      true,
 		DisableAutoGenTag: true,
-		Version:           Version,
+		Version:           version.Version,
 	}
 
 	// TODO bash completion

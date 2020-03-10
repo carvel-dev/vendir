@@ -4,11 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cppforlife/go-cli-ui/ui"
+	"github.com/k14s/vendir/pkg/vendir/version"
 	"github.com/spf13/cobra"
-)
-
-const (
-	Version = "0.7.0"
 )
 
 type VersionOptions struct {
@@ -29,7 +26,7 @@ func NewVersionCmd(o *VersionOptions) *cobra.Command {
 }
 
 func (o *VersionOptions) Run() error {
-	o.ui.PrintBlock([]byte(fmt.Sprintf("vendir version %s\n", Version)))
+	o.ui.PrintBlock([]byte(fmt.Sprintf("vendir version %s\n", version.Version)))
 
 	return nil
 }
