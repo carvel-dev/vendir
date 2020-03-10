@@ -16,6 +16,10 @@ Configuration specs:
 - [`vendir.yml` spec](vendir-spec.md)
 - [`vendir.lock.yml` spec](vendir-lock-spec.md)
 
+Source specific details:
+
+- [Github release](github-release.md)
+
 Examples could be found in [examples/](../examples/) directory.
 
 ### Sync with local changes override

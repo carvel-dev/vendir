@@ -14,8 +14,9 @@ import (
 )
 
 type GithubReleaseSync struct {
-	opts ConfigContentsGithubRelease
-	ui   ui.UI
+	opts     ConfigContentsGithubRelease
+	apiToken string
+	ui       ui.UI
 }
 
 func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease, error) {
@@ -105,14 +106,30 @@ func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 	releaseAPI := GithubReleaseAPI{}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/tags/%s", d.opts.Slug, d.opts.Tag)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return releaseAPI, err
+	}
+
+	if len(d.apiToken) > 0 {
+		req.Header.Add("Authorization", "token "+d.apiToken)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return releaseAPI, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return releaseAPI, fmt.Errorf("Expected response status 200, but was '%d'", resp.StatusCode)
+		errMsg := fmt.Sprintf("Expected response status 200, but was '%d'", resp.StatusCode)
+		switch resp.StatusCode {
+		case 401, 403:
+			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
+			bs, _ := ioutil.ReadAll(resp.Body)
+			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+		}
+		return releaseAPI, fmt.Errorf(errMsg)
 	}
 
 	bs, err := ioutil.ReadAll(resp.Body)

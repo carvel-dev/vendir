@@ -24,7 +24,11 @@ var (
 	incomingTmpDir = filepath.Join(tmpDir, "incoming")
 )
 
-func (d *Directory) Sync() (LockConfig, error) {
+type SyncOpts struct {
+	GithubAPIToken string
+}
+
+func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 	lockConfig := LockConfig{Path: d.opts.Path}
 
 	err := d.cleanUpTmpDir()
@@ -77,7 +81,7 @@ func (d *Directory) Sync() (LockConfig, error) {
 			d.ui.PrintLinef("%s + %s (github release %s@%s)",
 				d.opts.Path, contents.Path, contents.GithubRelease.Slug, contents.GithubRelease.Tag)
 
-			lockConf, err := GithubReleaseSync{*contents.GithubRelease, d.ui}.Sync(stagingDstPath)
+			lockConf, err := GithubReleaseSync{*contents.GithubRelease, syncOpts.GithubAPIToken, d.ui}.Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with github release contents: %s", contents.Path, err)
 			}

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -73,8 +74,10 @@ func (o *SyncOptions) Run() error {
 	shouldWriteLockConfig := (o.File == defaultConfigName) && len(dirs) == 0
 	lockConfig := ctlconf.NewLockConfig()
 
+	syncOpts := ctldir.SyncOpts{GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN")}
+
 	for _, dirConf := range conf.Directories {
-		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync()
+		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
