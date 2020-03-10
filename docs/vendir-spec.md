@@ -16,10 +16,6 @@ directories:
   - # path lives relative to directory path # (required)
     path: github.com/cloudfoundry/cf-k8s-networking
 
-    # states that directory specified by above path
-    # is managed by hand; nothing to do for vendir (optional)
-    manual: {}
-
     # uses git to clone repository (optional)
     git:
       # http or ssh urls are supported (required)
@@ -54,6 +50,10 @@ directories:
     directory:
       # local file system path relative to vendir.yml
       path: some-path
+
+    # states that directory specified by above path
+    # is managed by hand; nothing to do for vendir (optional)
+    manual: {}
 
     # includes paths specify what should be included. by default
     # all paths are included (optional)
