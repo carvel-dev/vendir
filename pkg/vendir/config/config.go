@@ -148,6 +148,24 @@ func (c Config) Subset(paths []string) (Config, error) {
 	return result, result.Validate()
 }
 
+func (c Config) Lock(lockConfig LockConfig) error {
+	for _, dir := range c.Directories {
+		for _, con := range dir.Contents {
+			lockContents, err := lockConfig.FindContents(dir.Path, con.Path)
+			if err != nil {
+				return err
+			}
+
+			err = con.Lock(lockContents)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c Config) checkOverlappingPaths() error {
 	paths := []string{}
 

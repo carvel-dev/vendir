@@ -23,6 +23,7 @@ type SyncOptions struct {
 
 	File        string
 	Directories []string
+	Locked      bool
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -37,6 +38,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
+	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
 	return cmd
 }
 
@@ -68,6 +70,26 @@ func (o *SyncOptions) Run() error {
 		}
 
 		o.ui.PrintLinef("Config with overrides")
+		o.ui.PrintBlock(configBs)
+	}
+
+	if o.Locked {
+		lockConfig, err := ctlconf.NewLockConfigFromFile(defaultLockName)
+		if err != nil {
+			return err
+		}
+
+		err = conf.Lock(lockConfig)
+		if err != nil {
+			return err
+		}
+
+		configBs, err := conf.AsBytes()
+		if err != nil {
+			return err
+		}
+
+		o.ui.PrintLinef("Config with locks")
 		o.ui.PrintBlock(configBs)
 	}
 

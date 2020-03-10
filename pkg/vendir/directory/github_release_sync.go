@@ -104,7 +104,11 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 
 func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 	releaseAPI := GithubReleaseAPI{}
+
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/tags/%s", d.opts.Slug, d.opts.Tag)
+	if len(d.opts.URL) > 0 {
+		url = d.opts.URL
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

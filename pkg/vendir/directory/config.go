@@ -47,6 +47,7 @@ type ConfigContentsGit struct {
 type ConfigContentsGithubRelease struct {
 	Slug string `json:"slug"` // e.g. organization/repository
 	Tag  string `json:"tag"`
+	URL  string `json:"url,omitempty"`
 
 	Checksums                     map[string]string `json:"checksums,omitempty"`
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
@@ -144,5 +145,42 @@ func isDisallowedPath(path string) error {
 				strings.Join(disallowedPaths, "', '"))
 		}
 	}
+	return nil
+}
+
+func (c ConfigContents) Lock(lockConfig LockConfigContents) error {
+	switch {
+	case c.Git != nil:
+		return c.Git.Lock(lockConfig.Git)
+	case c.GithubRelease != nil:
+		return c.GithubRelease.Lock(lockConfig.GithubRelease)
+	case c.Directory != nil:
+		return nil // nothing to lock
+	case c.Manual != nil:
+		return nil // nothing to lock
+	default:
+		panic("Unknown contents type")
+	}
+}
+
+func (c *ConfigContentsGit) Lock(lockConfig *LockConfigContentsGit) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected git lock configuration to be non-empty")
+	}
+	if len(lockConfig.SHA) == 0 {
+		return fmt.Errorf("Expected git SHA to be non-empty")
+	}
+	c.Ref = lockConfig.SHA
+	return nil
+}
+
+func (c *ConfigContentsGithubRelease) Lock(lockConfig *LockConfigContentsGithubRelease) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected github release lock configuration to be non-empty")
+	}
+	if len(lockConfig.URL) == 0 {
+		return fmt.Errorf("Expected github release URL to be non-empty")
+	}
+	c.URL = lockConfig.URL
 	return nil
 }

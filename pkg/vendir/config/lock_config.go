@@ -21,6 +21,31 @@ func NewLockConfig() LockConfig {
 	}
 }
 
+func NewLockConfigFromFile(path string) (LockConfig, error) {
+	bs, err := ioutil.ReadFile(path)
+	if err != nil {
+		return LockConfig{}, fmt.Errorf("Reading lock config '%s': %s", path, err)
+	}
+
+	return NewLockConfigFromBytes(bs)
+}
+
+func NewLockConfigFromBytes(bs []byte) (LockConfig, error) {
+	var config LockConfig
+
+	err := yaml.Unmarshal(bs, &config)
+	if err != nil {
+		return LockConfig{}, fmt.Errorf("Unmarshaling lock config: %s", err)
+	}
+
+	err = config.Validate()
+	if err != nil {
+		return LockConfig{}, fmt.Errorf("Validating lock config: %s", err)
+	}
+
+	return config, nil
+}
+
 func (c LockConfig) WriteToFile(path string) error {
 	bs, err := c.AsBytes()
 	if err != nil {
@@ -42,4 +67,35 @@ func (c LockConfig) AsBytes() ([]byte, error) {
 	}
 
 	return bs, nil
+}
+
+func (c LockConfig) Validate() error {
+	const (
+		knownAPIVersion = "vendir.k14s.io/v1alpha1"
+		knownKind       = "LockConfig"
+	)
+
+	if c.APIVersion != knownAPIVersion {
+		return fmt.Errorf("Validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
+	}
+	if c.Kind != knownKind {
+		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
+	}
+	return nil
+}
+
+func (c LockConfig) FindContents(dirPath, conPath string) (ctldir.LockConfigContents, error) {
+	for _, dir := range c.Directories {
+		if dir.Path == dirPath {
+			for _, con := range dir.Contents {
+				if con.Path == conPath {
+					return con, nil
+				}
+			}
+			return ctldir.LockConfigContents{}, fmt.Errorf("Expected to find contents '%s' "+
+				"within directory '%s' in lock config, but did not", conPath, dirPath)
+		}
+	}
+	return ctldir.LockConfigContents{}, fmt.Errorf(
+		"Expected to find directory '%s' within lock config, but did not", dirPath)
 }
