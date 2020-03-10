@@ -1,0 +1,18 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: github.com/k14s/kapp-controller
+    githubRelease:
+      #! not an absolute reference (url)
+      slug: k14s/kapp-controller
+      tag: v0.1.0
+  - path: github.com/cloudfoundry/cf-k8s-networking
+    git:
+      url: https://github.com/cloudfoundry/cf-k8s-networking
+      ref: origin/master #! not an absolute reference (ie sha)
+    includePaths:
+    - cfroutesync/crds/**/*
+    - config/cfroutesync/**/*
+    - config/istio-generated/**/*

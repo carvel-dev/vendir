@@ -1,0 +1,40 @@
+#! This overlay is optional. It will make Prometheus, deployed by Istio to pull metrics from cfroutesync
+#! To make this overlay work you have to provide the Prometheus configmap. For example:
+#! ```bash
+#! ytt -f prometheus.yml=<(kubectl get -n istio-system cm prometheus -o yaml) -f <this overlay>
+#! ```
+#!
+#! Or you can use this overlay while installing Istio, as Istio YAML will container this configmap, if Prometheu
+#! is enabled.
+
+#@ load("@ytt:yaml", "yaml")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+#@ def additional_conf():
+scrape_configs:
+  #@overlay/match by="job_name",missing_ok=True
+  - job_name: cfroutesync
+    scrape_interval: 10s
+    #@overlay/replace
+    kubernetes_sd_configs:
+      - role: service
+        namespaces:
+          names:
+            - #@ data.values.systemNamespace
+            #@overlay/replace
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: cfroutesync
+#@ end
+
+#@ def update_scrapes(a,b):
+#@   return yaml.encode(overlay.apply(yaml.decode(a), additional_conf()))
+#@ end
+
+#@overlay/match by=overlay.subset({"kind": "ConfigMap", "metadata":{"name": "prometheus",  "namespace": "istio-system"}}),expects="0+"
+---
+data:
+  #@overlay/replace via=update_scrapes
+  prometheus.yml: ""

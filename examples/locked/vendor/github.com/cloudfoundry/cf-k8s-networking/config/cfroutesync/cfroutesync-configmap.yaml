@@ -1,0 +1,16 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cfroutesync-config
+  namespace: #@ data.values.systemNamespace
+  annotations:
+    kapp.k14s.io/versioned: ""
+    kapp.k14s.io/num-versions: "2"
+data:
+  ccBaseURL: #@ data.values.cfroutesync.ccBaseURL
+  uaaBaseURL: #@ data.values.cfroutesync.uaaBaseURL
+  ccCA: #@ data.values.cfroutesync.ccCA
+  uaaCA: #@ data.values.cfroutesync.uaaCA
+  clientName: #@ data.values.cfroutesync.clientName
