@@ -10,7 +10,11 @@
 $ vendir sync # from a directory that contains vendir.yml
 ```
 
-Example: [examples/git-and-manual](examples/git-and-manual).
+Examples:
+- [examples/git-and-manual](examples/git-and-manual) to show how to pull Git repos
+- [examples/github-release](examples/github-release) to show how to pull Github releases
+- [examples/entire-dir](examples/entire-dir) to show how to once upstream for entire directory
+- [...others...](examples/)
 
 Features:
 
