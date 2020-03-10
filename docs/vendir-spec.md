@@ -4,8 +4,8 @@
 apiVersion: vendir.k14s.io/v1alpha1
 kind: Config
 
-# optional declaration of minimum vendir version
-requiredMinimumVersion: 0.8.0
+# declaration of minimum required vendir binary version (optional)
+minimumRequiredVersion: 0.8.0
 
 # one or more directories to manage with vendir
 directories:
@@ -31,8 +31,12 @@ directories:
     githubRelease:
       # slug for repository (org/repo) (required)
       slug: k14s/kapp-controller
-      # release tag (required)
+      # use release tag (optional)
       tag: v0.1.0
+      # use latest published version (optional)
+      latest: true
+      # use exact release URL (optional)
+      url: https://api.github.com/repos/k14s/kapp-controller/releases/21912613
       # checksums for downloaded files (optional)
       # (if release text body contains checksums, it's not necessary
       # to manually specify them here)
