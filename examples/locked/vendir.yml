@@ -5,9 +5,8 @@ directories:
   contents:
   - path: github.com/k14s/kapp-controller
     githubRelease:
-      #! not an absolute reference (url)
       slug: k14s/kapp-controller
-      tag: v0.1.0
+      latest: true #! not an absolute reference (tag or url)
   - path: github.com/cloudfoundry/cf-k8s-networking
     git:
       url: https://github.com/cloudfoundry/cf-k8s-networking

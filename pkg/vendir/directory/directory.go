@@ -78,10 +78,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 			})
 
 		case contents.GithubRelease != nil:
-			d.ui.PrintLinef("%s + %s (github release %s@%s)",
-				d.opts.Path, contents.Path, contents.GithubRelease.Slug, contents.GithubRelease.Tag)
+			sync := GithubReleaseSync{*contents.GithubRelease, syncOpts.GithubAPIToken, d.ui}
 
-			lockConf, err := GithubReleaseSync{*contents.GithubRelease, syncOpts.GithubAPIToken, d.ui}.Sync(stagingDstPath)
+			desc, _, _ := sync.DescAndURL()
+			d.ui.PrintLinef("%s + %s (github release %s)", d.opts.Path, contents.Path, desc)
+
+			lockConf, err := sync.Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with github release contents: %s", contents.Path, err)
 			}

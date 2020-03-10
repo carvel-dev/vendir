@@ -19,6 +19,26 @@ type GithubReleaseSync struct {
 	ui       ui.UI
 }
 
+func (d GithubReleaseSync) DescAndURL() (string, string, error) {
+	desc := ""
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
+
+	switch {
+	case len(d.opts.URL) > 0:
+		desc = d.opts.URL
+		url = d.opts.URL
+	case len(d.opts.Tag) > 0:
+		desc = d.opts.Slug + "@" + d.opts.Tag
+		url += "/tags/" + d.opts.Tag
+	case d.opts.Latest:
+		desc = d.opts.Slug + "@latest"
+		url += "/latest"
+	default:
+		return "", "", fmt.Errorf("Expected to have non-empty tag, latest or url")
+	}
+	return desc, url, nil
+}
+
 func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease, error) {
 	lockConf := LockConfigContentsGithubRelease{}
 	incomingTmpPath := filepath.Join(incomingTmpDir, "github-release")
@@ -105,9 +125,9 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 	releaseAPI := GithubReleaseAPI{}
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/tags/%s", d.opts.Slug, d.opts.Tag)
-	if len(d.opts.URL) > 0 {
-		url = d.opts.URL
+	_, url, err := d.DescAndURL()
+	if err != nil {
+		return releaseAPI, err
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -132,6 +152,9 @@ func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
 			bs, _ := ioutil.ReadAll(resp.Body)
 			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+		case 404:
+			hintMsg := "(hint: if you are using 'latest: true', there may not be any non-pre-release releases)"
+			errMsg += " " + hintMsg
 		}
 		return releaseAPI, fmt.Errorf(errMsg)
 	}

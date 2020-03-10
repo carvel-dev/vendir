@@ -45,9 +45,10 @@ type ConfigContentsGit struct {
 }
 
 type ConfigContentsGithubRelease struct {
-	Slug string `json:"slug"` // e.g. organization/repository
-	Tag  string `json:"tag"`
-	URL  string `json:"url,omitempty"`
+	Slug   string `json:"slug"` // e.g. organization/repository
+	Tag    string `json:"tag"`
+	Latest bool   `json:"latest,omitempty"`
+	URL    string `json:"url,omitempty"`
 
 	Checksums                     map[string]string `json:"checksums,omitempty"`
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
