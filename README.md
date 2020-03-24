@@ -10,12 +10,6 @@
 $ vendir sync # from a directory that contains vendir.yml
 ```
 
-Examples:
-- [examples/git-and-manual](examples/git-and-manual) to show how to pull Git repos
-- [examples/github-release](examples/github-release) to show how to pull Github releases
-- [examples/entire-dir](examples/entire-dir) to show how to once upstream for entire directory
-- [...others...](examples/)
-
 Features:
 
 - Various sources
@@ -24,6 +18,12 @@ Features:
 - Keep only particular portions of pulled content
 - State which directories are manually managed
 - Keep common legal files (LICENSE, etc.)
+
+Examples:
+- [examples/git-and-manual](examples/git-and-manual) to show how to pull Git repos
+- [examples/github-release](examples/github-release) to show how to pull Github releases
+- [examples/entire-dir](examples/entire-dir) to show how to once upstream for entire directory
+- [...others...](examples/)
 
 ## Development
 
