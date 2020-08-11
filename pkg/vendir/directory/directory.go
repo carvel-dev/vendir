@@ -141,6 +141,13 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 		return lockConfig, fmt.Errorf("Deleting dir %s: %s", d.opts.Path, err)
 	}
 
+	parentPath := filepath.Dir(d.opts.Path)
+
+	err = os.MkdirAll(parentPath, 0700)
+	if err != nil {
+		return lockConfig, fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
+	}
+
 	err = os.Rename(stagingTmpDir, d.opts.Path)
 	if err != nil {
 		return lockConfig, fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", stagingTmpDir, d.opts.Path, err)
