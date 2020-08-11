@@ -71,7 +71,7 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 	for _, asset := range releaseAPI.Assets {
 		path := filepath.Join(incomingTmpPath, asset.Name)
 
-		err := d.downloadFile(asset.BrowserDownloadURL, path)
+		err := d.downloadFile(asset.URL, path)
 		if err != nil {
 			return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
 		}
@@ -173,11 +173,33 @@ func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 }
 
 func (d GithubReleaseSync) downloadFile(url string, dstPath string) error {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	// Forces Github to redirect to asset contents
+	req.Header.Add("Accept", "application/octet-stream")
+
+	if len(d.apiToken) > 0 {
+		req.Header.Add("Authorization", "token "+d.apiToken)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		errMsg := fmt.Sprintf("Expected response status 200, but was '%d'", resp.StatusCode)
+		switch resp.StatusCode {
+		case 401, 403:
+			bs, _ := ioutil.ReadAll(resp.Body)
+			errMsg += fmt.Sprintf(" (body: '%s')", bs)
+		}
+		return fmt.Errorf(errMsg)
+	}
 
 	out, err := os.Create(dstPath)
 	if err != nil {
@@ -233,9 +255,11 @@ type GithubReleaseAPI struct {
 }
 
 type GithubReleaseAssetAPI struct {
-	Name               string
-	Size               int64
-	BrowserDownloadURL string `json:"browser_download_url"`
+	URL  string
+	Name string
+	Size int64
+	// This URL does not work for private repo assets
+	// BrowserDownloadURL string `json:"browser_download_url"`
 }
 
 func (a GithubReleaseAPI) AssetNames() []string {
