@@ -45,7 +45,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 func (o *SyncOptions) Run() error {
 	conf, err := ctlconf.NewConfigFromFile(o.File)
 	if err != nil {
-		return err
+		return o.configReadHintErrMsg(err, o.File)
 	}
 
 	dirs, err := o.directories()
@@ -151,6 +151,17 @@ func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverri
 		}
 	}
 	return nil
+}
+
+func (*SyncOptions) configReadHintErrMsg(origErr error, path string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) && path == defaultConfigName {
+			hintMsg := "(hint: Did you name your configuration file something different than 'vendir.yml', e.g. wrong extension?)"
+			return fmt.Errorf("%s %s", origErr, hintMsg)
+		}
+	}
+	return origErr
 }
 
 type dirOverride struct {
