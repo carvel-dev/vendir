@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/ghodss/yaml"
 	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
@@ -98,4 +99,44 @@ func (c LockConfig) FindContents(dirPath, conPath string) (ctldir.LockConfigCont
 	}
 	return ctldir.LockConfigContents{}, fmt.Errorf(
 		"Expected to find directory '%s' within lock config, but did not", dirPath)
+}
+
+func (c LockConfig) Merge(other LockConfig) error {
+	for _, dir := range other.Directories {
+		for _, con := range dir.Contents {
+			err := c.MergeContents(filepath.Join(dir.Path, con.Path), con)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c LockConfig) MergeContents(path string, replaceCon ctldir.LockConfigContents) error {
+	var matched bool
+
+	for i, dir := range c.Directories {
+		for j, con := range dir.Contents {
+			if filepath.Join(dir.Path, con.Path) != path {
+				continue
+			}
+
+			if matched {
+				return fmt.Errorf("Expected to match exactly one directory, but matched multiple")
+			}
+			matched = true
+
+			newCon := replaceCon
+			newCon.Path = con.Path
+
+			dir.Contents[j] = newCon
+			c.Directories[i] = dir
+		}
+	}
+
+	if !matched {
+		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
+	}
+	return nil
 }

@@ -21,7 +21,9 @@ const (
 type SyncOptions struct {
 	ui ui.UI
 
-	File        string
+	File     string
+	LockFile string
+
 	Directories []string
 	Locked      bool
 }
@@ -37,6 +39,8 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
 	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
+	cmd.Flags().StringVar(&o.LockFile, "lock-file", defaultLockName, "Set lock file")
+
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
 	return cmd
@@ -53,7 +57,7 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
-	err = o.applyUseDirectories(&conf, dirs)
+	usesLocalDir, err := o.applyUseDirectories(&conf, dirs)
 	if err != nil {
 		return err
 	}
@@ -73,13 +77,15 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
+	// If syncing against a lock file, apply lock information
+	// on top of existing config
 	if o.Locked {
-		lockConfig, err := ctlconf.NewLockConfigFromFile(defaultLockName)
+		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
 		if err != nil {
 			return err
 		}
 
-		err = conf.Lock(lockConfig)
+		err = conf.Lock(existingLockConfig)
 		if err != nil {
 			return err
 		}
@@ -93,10 +99,8 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
-	shouldWriteLockConfig := (o.File == defaultConfigName) && len(dirs) == 0
-	lockConfig := ctlconf.NewLockConfig()
-
 	syncOpts := ctldir.SyncOpts{GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN")}
+	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
 		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync(syncOpts)
@@ -104,23 +108,38 @@ func (o *SyncOptions) Run() error {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
 
-		lockConfig.Directories = append(lockConfig.Directories, dirLockConf)
+		newLockConfig.Directories = append(newLockConfig.Directories, dirLockConf)
 	}
 
-	lockConfigBs, err := lockConfig.AsBytes()
+	// Update only selected directories in lock file
+	if len(dirs) > 0 {
+		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
+		if err != nil {
+			return err
+		}
+
+		err = existingLockConfig.Merge(newLockConfig)
+		if err != nil {
+			return err
+		}
+
+		newLockConfig = existingLockConfig
+	}
+
+	newLockConfigBs, err := newLockConfig.AsBytes()
 	if err != nil {
 		return err
 	}
 
 	o.ui.PrintLinef("Lock config")
-	o.ui.PrintBlock(lockConfigBs)
+	o.ui.PrintBlock(newLockConfigBs)
 
-	if !shouldWriteLockConfig {
-		o.ui.PrintLinef("Lock config is not saved to '%s' due to command line overrides", defaultLockName)
+	if usesLocalDir {
+		o.ui.PrintLinef("Lock config is not saved to '%s' due to command line overrides", o.LockFile)
 		return nil
 	}
 
-	return lockConfig.WriteToFile(defaultLockName)
+	return newLockConfig.WriteToFile(o.LockFile)
 }
 
 func (o *SyncOptions) directories() ([]dirOverride, error) {
@@ -140,17 +159,21 @@ func (o *SyncOptions) directories() ([]dirOverride, error) {
 	return dirs, nil
 }
 
-func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverride) error {
+func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverride) (bool, error) {
+	usesLocalDir := false
+
 	for _, dir := range dirs {
 		if len(dir.LocalDir) == 0 {
 			continue
 		}
+		usesLocalDir = true
+
 		err := conf.UseDirectory(dir.Path, dir.LocalDir)
 		if err != nil {
-			return fmt.Errorf("Overriding '%s' with local directory: %s", dir.Path, err)
+			return false, fmt.Errorf("Overriding '%s' with local directory: %s", dir.Path, err)
 		}
 	}
-	return nil
+	return usesLocalDir, nil
 }
 
 func (*SyncOptions) configReadHintErrMsg(origErr error, path string) error {
