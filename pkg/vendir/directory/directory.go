@@ -141,7 +141,8 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 		return lockConfig, fmt.Errorf("Deleting dir %s: %s", d.opts.Path, err)
 	}
 
-	parentPath := filepath.Dir(d.opts.Path)
+	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
+	parentPath := filepath.Dir(filepath.Clean(d.opts.Path))
 
 	err = os.MkdirAll(parentPath, 0700)
 	if err != nil {
