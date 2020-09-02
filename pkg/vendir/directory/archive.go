@@ -15,7 +15,7 @@ type Archive struct {
 	path string
 }
 
-func (t Archive) Unpack(dstPath string) error {
+func (t Archive) Unpack(dstPath string) (bool, error) {
 	contentExtractorFuncs := []func(string, string) (bool, error){
 		t.tryZip,
 		t.tryTgz,
@@ -23,13 +23,13 @@ func (t Archive) Unpack(dstPath string) error {
 	}
 
 	for _, f := range contentExtractorFuncs {
-		ok, err := f(t.path, dstPath)
-		if ok {
-			return err
+		final, err := f(t.path, dstPath)
+		if final {
+			return true, err
 		}
 	}
 
-	return fmt.Errorf("Expected known archive type (zip, tgz, tar)")
+	return false, nil
 }
 
 func (t Archive) writeIntoFile(srcFile io.Reader, dstPath, additionalPath string) error {
@@ -117,7 +117,7 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 	}
 
 	tarReader := tar.NewReader(fileReader)
-	firstFile := true
+	readEntries := false
 
 	for {
 		header, err := tarReader.Next()
@@ -125,10 +125,10 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 			if err == io.EOF {
 				break
 			}
-			return firstFile, fmt.Errorf("Reading next tar header: %s", err)
+			return readEntries, fmt.Errorf("Reading next tar header: %s", err)
 		}
 
-		firstFile = false
+		readEntries = true
 
 		switch header.Typeflag {
 		case tar.TypeDir:

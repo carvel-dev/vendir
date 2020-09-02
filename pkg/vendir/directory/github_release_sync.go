@@ -99,9 +99,12 @@ func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease
 
 		defer os.RemoveAll(newIncomingTmpPath)
 
-		err = Archive{filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path)}.Unpack(newIncomingTmpPath)
+		final, err = Archive{filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path)}.Unpack(newIncomingTmpPath)
 		if err != nil {
 			return lockConf, fmt.Errorf("Unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
+		}
+		if !final {
+			return lockConf, fmt.Errorf("Expected known archive type (zip, tgz, tar)")
 		}
 
 		incomingTmpPath = newIncomingTmpPath
