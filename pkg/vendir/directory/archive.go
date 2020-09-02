@@ -6,13 +6,16 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	gourl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 type Archive struct {
-	path string
+	path               string
+	fallbackOnPlain    bool
+	fallbackOnPlainURL string
 }
 
 func (t Archive) Unpack(dstPath string) (bool, error) {
@@ -27,6 +30,10 @@ func (t Archive) Unpack(dstPath string) (bool, error) {
 		if final {
 			return true, err
 		}
+	}
+
+	if t.fallbackOnPlain {
+		return true, t.tryPlain(t.path, dstPath)
 	}
 
 	return false, nil
@@ -147,4 +154,26 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 	}
 
 	return true, nil
+}
+
+func (t Archive) tryPlain(path, dstPath string) error {
+	parsedURL, err := gourl.Parse(t.fallbackOnPlainURL)
+	if err != nil {
+		return fmt.Errorf("Parsing URL: %s", err)
+	}
+
+	pathSegs := strings.Split(parsedURL.Path, "/")
+
+	fileName := pathSegs[len(pathSegs)-1]
+	if len(fileName) == 0 {
+		fileName = "content"
+	}
+
+	srcFile, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("Opening file %s: %s", path, err)
+	}
+
+	// Cannot just move since it may be on a different device
+	return t.writeIntoFileAndClose(srcFile, dstPath, fileName)
 }
