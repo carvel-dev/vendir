@@ -77,6 +77,42 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				Git:  &gitLockConf,
 			})
 
+		case contents.HTTP != nil:
+			d.ui.PrintLinef("%s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
+
+			httpLockConf, err := (&HTTPSync{*contents.HTTP, NoopRefFetcher{}}).Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with HTTP contents: %s", contents.Path, err)
+			}
+
+			err = FileFilter{contents}.Apply(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+				Path: contents.Path,
+				HTTP: &httpLockConf,
+			})
+
+		case contents.Image != nil:
+			d.ui.PrintLinef("%s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
+
+			imageLockConf, err := (&ImageSync{*contents.Image, NoopRefFetcher{}}).Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with image contents: %s", contents.Path, err)
+			}
+
+			err = FileFilter{contents}.Apply(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+				Path:  contents.Path,
+				Image: &imageLockConf,
+			})
+
 		case contents.GithubRelease != nil:
 			sync := GithubReleaseSync{*contents.GithubRelease, syncOpts.GithubAPIToken, d.ui}
 
@@ -96,6 +132,27 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
 				Path:          contents.Path,
 				GithubRelease: &lockConf,
+			})
+
+		case contents.HelmChart != nil:
+			helmChartSync := &HelmChart{*contents.HelmChart, NoopRefFetcher{}}
+
+			d.ui.PrintLinef("%s + %s (helm chart from %s)",
+				d.opts.Path, contents.Path, helmChartSync.Desc())
+
+			chartLockConf, err := helmChartSync.Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
+			}
+
+			err = FileFilter{contents}.Apply(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+				Path:      contents.Path,
+				HelmChart: &chartLockConf,
 			})
 
 		case contents.Manual != nil:

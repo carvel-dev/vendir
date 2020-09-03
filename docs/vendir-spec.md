@@ -23,6 +23,28 @@ directories:
       # branch, tag, commit; origin is the name of the remote (required)
       ref: origin/master
 
+    # fetches asset over HTTP (optional)
+    http:
+      # asset URL (required)
+      url: 
+      # verification checksum (optional)
+      sha256: ""
+      # specifies name of a secret with basic auth details;
+      # secret may include 'username', 'password' keys (optional)
+      secretRef:
+        # (required)
+        name: my-http-auth
+
+    # fetches asset from an image registry (optional)
+    image:
+      # image URL; could be plain, tagged or digest reference (required)
+      url: gcr.io/repo/image:v1.0.0
+      # specifies name of a secret with registry auth details;
+      # secret may include 'username', 'password' and/or 'token' keys (optional)
+      secretRef:
+        # (required)
+        name: my-image-auth
+
     # fetches assets from a github release
     githubRelease:
       # slug for repository (org/repo) (required)
@@ -44,7 +66,24 @@ directories:
       disableAutoChecksumValidation: true
       # specifies which archive to unpack for contents (optional)
       unpackArchive:
+        # (required)
         path: release.tgz
+
+    # fetch Helm chart contents (optional)
+    helmChart:
+      # chart name (required)
+      name: stable/redis
+      # use specific chart version (string; optional)
+      version: "1.2.1"
+      # specifies Helm repository to fetch from (optional)
+      repository:
+        # repository url (required)
+        url: https://...
+        # specifies name of a secret with helm repo auth details;
+        # secret may include 'username', 'password' (optional)
+        secretRef:
+          # (required)
+          name: my-helm-auth
 
     # copy contents from local directory (optional)
     directory:

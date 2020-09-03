@@ -28,7 +28,10 @@ type ConfigContents struct {
 	Path string `json:"path"`
 
 	Git           *ConfigContentsGit           `json:"git,omitempty"`
+	HTTP          *ConfigContentsHTTP          `json:"http,omitempty"`
+	Image         *ConfigContentsImage         `json:"image,omitempty"`
 	GithubRelease *ConfigContentsGithubRelease `json:"githubRelease,omitempty"`
+	HelmChart     *ConfigContentsHelmChart     `json:"helmChart,omitempty"`
 	Manual        *ConfigContentsManual        `json:"manual,omitempty"`
 	Directory     *ConfigContentsDirectory     `json:"directory,omitempty"`
 
@@ -40,8 +43,33 @@ type ConfigContents struct {
 }
 
 type ConfigContentsGit struct {
-	URL string `json:"url"`
-	Ref string `json:"ref"`
+	URL string `json:"url,omitempty"`
+	Ref string `json:"ref,omitempty"`
+	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
+	// +optional
+	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+	// +optional
+	LFSSkipSmudge bool `json:"lfsSkipSmudge,omitempty"`
+}
+
+type ConfigContentsHTTP struct {
+	// URL can point to one of following formats: text, tgz, zip
+	URL string `json:"url,omitempty"`
+	// +optional
+	SHA256 string `json:"sha256,omitempty"`
+	// Secret may include one or more keys: username, password
+	// +optional
+	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+}
+
+type ConfigContentsImage struct {
+	// Example: username/app1-config:v0.1.0
+	URL string `json:"url,omitempty"`
+	// Secret may include one or more keys: username, password, token.
+	// By default anonymous access is used for authentication.
+	// TODO support docker config formated secret
+	// +optional
+	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
 }
 
 type ConfigContentsGithubRelease struct {
@@ -56,6 +84,20 @@ type ConfigContentsGithubRelease struct {
 	UnpackArchive *ConfigContentsUnpackArchive `json:"unpackArchive,omitempty"`
 }
 
+type ConfigContentsHelmChart struct {
+	// Example: stable/redis
+	Name string `json:"name,omitempty"`
+	// +optional
+	Version    string                       `json:"version,omitempty"`
+	Repository *ConfigContentsHelmChartRepo `json:"repository,omitempty"`
+}
+
+type ConfigContentsHelmChartRepo struct {
+	URL string `json:"url,omitempty"`
+	// +optional
+	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+}
+
 type ConfigContentsManual struct{}
 
 type ConfigContentsDirectory struct {
@@ -64,6 +106,10 @@ type ConfigContentsDirectory struct {
 
 type ConfigContentsUnpackArchive struct {
 	Path string `json:"path"`
+}
+
+type ConfigContentsLocalRef struct {
+	Name string `json:"name,omitempty"`
 }
 
 func (c Config) Validate() error {
@@ -100,8 +146,17 @@ func (c ConfigContents) Validate() error {
 	if c.Git != nil {
 		srcTypes = append(srcTypes, "git")
 	}
+	if c.HTTP != nil {
+		srcTypes = append(srcTypes, "http")
+	}
+	if c.Image != nil {
+		srcTypes = append(srcTypes, "image")
+	}
 	if c.GithubRelease != nil {
 		srcTypes = append(srcTypes, "githubRelease")
+	}
+	if c.HelmChart != nil {
+		srcTypes = append(srcTypes, "helmChart")
 	}
 	if c.Manual != nil {
 		srcTypes = append(srcTypes, "manual")
@@ -153,8 +208,14 @@ func (c ConfigContents) Lock(lockConfig LockConfigContents) error {
 	switch {
 	case c.Git != nil:
 		return c.Git.Lock(lockConfig.Git)
+	case c.HTTP != nil:
+		return c.HTTP.Lock(lockConfig.HTTP)
+	case c.Image != nil:
+		return c.Image.Lock(lockConfig.Image)
 	case c.GithubRelease != nil:
 		return c.GithubRelease.Lock(lockConfig.GithubRelease)
+	case c.HelmChart != nil:
+		return c.HelmChart.Lock(lockConfig.HelmChart)
 	case c.Directory != nil:
 		return nil // nothing to lock
 	case c.Manual != nil:
@@ -175,6 +236,24 @@ func (c *ConfigContentsGit) Lock(lockConfig *LockConfigContentsGit) error {
 	return nil
 }
 
+func (c *ConfigContentsHTTP) Lock(lockConfig *LockConfigContentsHTTP) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected HTTP lock configuration to be non-empty")
+	}
+	return nil
+}
+
+func (c *ConfigContentsImage) Lock(lockConfig *LockConfigContentsImage) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected image lock configuration to be non-empty")
+	}
+	if len(lockConfig.URL) == 0 {
+		return fmt.Errorf("Expected image URL to be non-empty")
+	}
+	c.URL = lockConfig.URL
+	return nil
+}
+
 func (c *ConfigContentsGithubRelease) Lock(lockConfig *LockConfigContentsGithubRelease) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected github release lock configuration to be non-empty")
@@ -183,5 +262,16 @@ func (c *ConfigContentsGithubRelease) Lock(lockConfig *LockConfigContentsGithubR
 		return fmt.Errorf("Expected github release URL to be non-empty")
 	}
 	c.URL = lockConfig.URL
+	return nil
+}
+
+func (c *ConfigContentsHelmChart) Lock(lockConfig *LockConfigContentsHelmChart) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected helm chart lock configuration to be non-empty")
+	}
+	if len(lockConfig.Version) == 0 {
+		return fmt.Errorf("Expected helm chart version to be non-empty")
+	}
+	c.Version = lockConfig.Version
 	return nil
 }

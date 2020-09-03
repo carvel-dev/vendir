@@ -14,12 +14,16 @@ Features:
 
 - Various sources
   - Pull Git repositories at particular revision
+  - Pull HTTP asset
+  - Pull Docker image contents
   - Pull Github release at particular version
+  - Pull Helm chart contents
 - Keep only particular portions of pulled content
 - State which directories are manually managed
 - Keep common legal files (LICENSE, etc.)
 
 Examples:
+
 - [examples/git-and-manual](examples/git-and-manual) to show how to pull Git repos
 - [examples/github-release](examples/github-release) to show how to pull Github releases
 - [examples/entire-dir](examples/entire-dir) to show how to once upstream for entire directory
