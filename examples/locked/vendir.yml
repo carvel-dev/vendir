@@ -4,10 +4,6 @@ minimumRequiredVersion: 0.8.0
 directories:
 - path: vendor
   contents:
-  - path: github.com/k14s/kapp-controller
-    githubRelease:
-      slug: k14s/kapp-controller
-      latest: true #! not an absolute reference (tag or url)
   - path: github.com/cloudfoundry/cf-k8s-networking
     git:
       url: https://github.com/cloudfoundry/cf-k8s-networking
@@ -16,3 +12,15 @@ directories:
     - cfroutesync/crds/**/*
     - config/cfroutesync/**/*
     - config/istio-generated/**/*
+
+  - path: github.com/k14s/kapp-controller
+    githubRelease:
+      slug: k14s/kapp-controller
+      latest: true #! not an absolute reference (tag or url)
+
+  - path: helm-chart
+    helmChart:
+      name: contour
+      #! no version, not an absolute reference
+      repository:
+        url: https://charts.bitnami.com/bitnami

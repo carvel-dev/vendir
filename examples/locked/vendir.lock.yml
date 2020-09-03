@@ -1,12 +1,16 @@
 apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
-  - githubRelease:
-      url: https://api.github.com/repos/k14s/kapp-controller/releases/21912613
-    path: github.com/k14s/kapp-controller
   - git:
       commitTitle: 'config: make prometheus config optional'
       sha: e4f715485ff4484ce571cd31dcba5b6e47475f22
     path: github.com/cloudfoundry/cf-k8s-networking
+  - githubRelease:
+      url: https://api.github.com/repos/k14s/kapp-controller/releases/21912613
+    path: github.com/k14s/kapp-controller
+  - helmChart:
+      appVersion: 1.8.0
+      version: 1.2.1
+    path: helm-chart
   path: vendor
 kind: LockConfig

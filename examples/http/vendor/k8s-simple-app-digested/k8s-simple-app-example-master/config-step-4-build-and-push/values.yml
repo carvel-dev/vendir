@@ -1,0 +1,7 @@
+#@data/values
+---
+svc_port: 80
+app_port: 80
+hello_msg: stranger
+push_images: true
+push_images_repo: "" #! e.g. "docker.io/dkalinin/k8s-simple-app"

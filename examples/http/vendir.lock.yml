@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - http: {}
+    path: k8s-simple-app-plain
+  - http: {}
+    path: k8s-simple-app-digested
+  path: vendor
+kind: LockConfig

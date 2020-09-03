@@ -1,0 +1,15 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: default-repo
+    helmChart:
+      name: stable/redis
+
+  - path: custom-repo-custom-version
+    helmChart:
+      name: contour
+      version: "1.2.1"
+      repository:
+        url: https://charts.bitnami.com/bitnami
