@@ -27,10 +27,10 @@ jobs:
           chmod +x /tmp/bin/imgpkg
 
         # helm
-        wget -O- https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz > /helm.tgz && \
-          echo "38614a665859c0f01c9c1d84fa9a5027364f936814d1e47839b05327e400bf55  /helm.tgz" | shasum -c - && \
-          mkdir /helm-unpacked && tar -C /helm-unpacked -xzvf /helm.tgz && \
-          mv /helm-unpacked/linux-amd64/helm /tmp/bin/helm
+        wget -O- https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz > /tmp/helm.tgz && \
+          echo "38614a665859c0f01c9c1d84fa9a5027364f936814d1e47839b05327e400bf55  /tmp/helm.tgz" | shasum -c - && \
+          mkdir /tmp/helm-unpacked && tar -C /tmp/helm-unpacked -xzvf /tmp/helm.tgz && \
+          mv /tmp/helm-unpacked/linux-amd64/helm /tmp/bin/helm
 
         ./hack/build.sh
         ./hack/test-all.sh
