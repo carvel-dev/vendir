@@ -8,18 +8,23 @@ import (
 
 type exampleTest struct {
 	Name       string
+	Env        []string
 	OnlyLocked bool
 }
 
 func TestExamplesDir(t *testing.T) {
+	env := BuildEnv(t)
+
 	tests := []exampleTest{
 		{Name: "http"},
 		{Name: "image"},
-		{Name: "helm-chart"},
+		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm2Binary}},
+		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "github-release"},
 		{Name: "entire-dir"},
 		{Name: "locked", OnlyLocked: true},
 	}
+
 	for _, test := range tests {
 		test.Check(t)
 	}
@@ -59,7 +64,7 @@ func (et exampleTest) check(t *testing.T, vendir Vendir) error {
 	}
 
 	if !et.OnlyLocked {
-		_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path})
+		_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path, Env: et.Env})
 		if err != nil {
 			return fmt.Errorf("Expected no err")
 		}
@@ -71,7 +76,7 @@ func (et exampleTest) check(t *testing.T, vendir Vendir) error {
 		}
 	}
 
-	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path})
+	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: et.Env})
 	if err != nil {
 		return fmt.Errorf("Expected no err")
 	}

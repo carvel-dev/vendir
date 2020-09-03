@@ -11,12 +11,14 @@ func TestExampleLocked(t *testing.T) {
 	env := BuildEnv(t)
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
+	osEnv := []string{"VENDIR_HELM_BINARY="+env.Helm2Binary}
+
 	dir := "examples/locked"
 	path := "../../" + dir
 
 	reset := func() {
 		// Make sure state is reset
-		_, err := vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path})
+		_, err := vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: osEnv})
 		if err != nil {
 			t.Fatalf("Expected no err")
 		}
@@ -50,7 +52,7 @@ func TestExampleLocked(t *testing.T) {
 		t.Fatalf("Expected extra file to be added, but was: >>>%s<<<", gitOut)
 	}
 
-	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path})
+	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: osEnv})
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}

@@ -24,6 +24,7 @@ type RunOpts struct {
 	CancelCh     chan struct{}
 	Redact       bool
 	Dir          string
+	Env          []string
 }
 
 func (k Vendir) Run(args []string) string {
@@ -35,6 +36,7 @@ func (k Vendir) RunWithOpts(args []string, opts RunOpts) (string, error) {
 	k.l.Debugf("Running '%s'...\n", k.cmdDesc(args, opts))
 
 	cmd := exec.Command(k.binaryPath, args...)
+	cmd.Env = append(os.Environ(), opts.Env...)
 	cmd.Stdin = opts.StdinReader
 
 	if len(opts.Dir) > 0 {

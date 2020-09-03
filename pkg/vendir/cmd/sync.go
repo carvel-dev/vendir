@@ -99,7 +99,10 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
-	syncOpts := ctldir.SyncOpts{GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN")}
+	syncOpts := ctldir.SyncOpts{
+		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
+		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
+	}
 	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {

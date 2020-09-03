@@ -10,17 +10,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/ghodss/yaml"
 )
 
 type HelmChart struct {
 	opts       ConfigContentsHelmChart
+	helmBinary string
 	refFetcher RefFetcher
 }
 
-func NewHelmChart(opts ConfigContentsHelmChart, refFetcher RefFetcher) *HelmChart {
-	return &HelmChart{opts, refFetcher}
+func NewHelmChart(opts ConfigContentsHelmChart,
+	helmBinary string, refFetcher RefFetcher) *HelmChart {
+
+	if helmBinary == "" {
+		helmBinary = "helm"
+	}
+	return &HelmChart{opts, helmBinary, refFetcher}
 }
 
 func (t *HelmChart) Desc() string {
@@ -51,12 +58,19 @@ func (t *HelmChart) Sync(dstPath string) (LockConfigContentsHelmChart, error) {
 
 	defer os.RemoveAll(chartsDir)
 
-	err = t.init(chartsDir)
+	helmHomeDir, err := TempDir("helm-home")
 	if err != nil {
 		return lockConf, err
 	}
 
-	err = t.fetch(chartsDir)
+	defer os.RemoveAll(helmHomeDir)
+
+	err = t.init(helmHomeDir)
+	if err != nil {
+		return lockConf, err
+	}
+
+	err = t.fetch(helmHomeDir, chartsDir)
 	if err != nil {
 		return lockConf, err
 	}
@@ -82,26 +96,46 @@ func (t *HelmChart) Sync(dstPath string) (LockConfigContentsHelmChart, error) {
 	return lockConf, nil
 }
 
-func (t *HelmChart) init(chartsPath string) error {
+func (t *HelmChart) init(helmHomeDir string) error {
 	args := []string{"init", "--client-only"}
 
 	var stdoutBs, stderrBs bytes.Buffer
 
-	cmd := exec.Command("helm", args...)
-	cmd.Env = []string{"HOME=" + chartsPath}
+	cmd := exec.Command(t.helmBinary, args...)
+	cmd.Env = []string{"HOME=" + helmHomeDir}
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Init helm: %s (stderr: %s)", err, stderrBs.String())
+		stderrStr := stderrBs.String()
+		// Helm 3 does not have/need init command
+		if strings.Contains(stderrStr, "unknown command") {
+			return nil
+		}
+
+		return fmt.Errorf("Init helm: %s (stderr: %s)", err, stderrStr)
 	}
 
 	return nil
 }
 
-func (t *HelmChart) fetch(chartsPath string) error {
-	args := []string{"fetch", t.opts.Name, "--untar", "--untardir", chartsPath}
+func (t *HelmChart) fetch(helmHomeDir, chartsPath string) error {
+	const (
+		stablePrefix  = "stable/"
+		stableRepoURL = "https://kubernetes-charts.storage.googleapis.com"
+	)
+
+	var name, repoURL string
+
+	if strings.HasPrefix(t.opts.Name, stablePrefix) {
+		name = strings.TrimPrefix(t.opts.Name, stablePrefix)
+		repoURL = stableRepoURL
+	} else {
+		name = t.opts.Name
+	}
+
+	args := []string{"fetch", name, "--untar", "--untardir", chartsPath}
 
 	if len(t.opts.Version) > 0 {
 		args = append(args, []string{"--version", t.opts.Version}...)
@@ -111,13 +145,16 @@ func (t *HelmChart) fetch(chartsPath string) error {
 		if len(t.opts.Repository.URL) == 0 {
 			return fmt.Errorf("Expected non-empty repository URL")
 		}
+		repoURL = t.opts.Repository.URL
+	}
 
-		// Add repo explicitly for helm to recognize it
+	if len(repoURL) > 0 {
+		// Add repo explicitly for helm to be recognized in fetch command
 		{
 			var stdoutBs, stderrBs bytes.Buffer
 
-			cmd := exec.Command("helm", "repo", "add", "bitnami", t.opts.Repository.URL)
-			cmd.Env = []string{"HOME=" + chartsPath}
+			cmd := exec.Command(t.helmBinary, "repo", "add", "vendir-unused", repoURL)
+			cmd.Env = []string{"HOME=" + helmHomeDir}
 			cmd.Stdout = &stdoutBs
 			cmd.Stderr = &stderrBs
 
@@ -127,7 +164,7 @@ func (t *HelmChart) fetch(chartsPath string) error {
 			}
 		}
 
-		args = append(args, []string{"--repo", t.opts.Repository.URL}...)
+		args = append(args, []string{"--repo", repoURL}...)
 
 		var err error
 
@@ -139,8 +176,8 @@ func (t *HelmChart) fetch(chartsPath string) error {
 
 	var stdoutBs, stderrBs bytes.Buffer
 
-	cmd := exec.Command("helm", args...)
-	cmd.Env = []string{"HOME=" + chartsPath}
+	cmd := exec.Command(t.helmBinary, args...)
+	cmd.Env = []string{"HOME=" + helmHomeDir}
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
@@ -183,23 +220,23 @@ func (t *HelmChart) findChartDir(chartsPath string) (string, error) {
 		return "", err
 	}
 
-	var result []os.FileInfo
+	var dirNames []string
 	for _, file := range files {
-		if file.IsDir() && file.Name() != ".helm" {
-			result = append(result, file)
+		if file.IsDir() && !strings.HasSuffix(file.Name(), ".tgz") {
+			dirNames = append(dirNames, file.Name())
 		}
 	}
 
-	if len(result) != 1 {
-		return "", fmt.Errorf("Expected single directory in charts directory")
+	if len(dirNames) != 1 {
+		return "", fmt.Errorf("Expected single directory in charts directory, but was: %#v", dirNames)
 	}
-	return filepath.Join(chartsPath, result[0].Name()), nil
+	return filepath.Join(chartsPath, dirNames[0]), nil
 }
 
 func (t *HelmChart) addAuthArgs(args []string) ([]string, error) {
 	var authArgs []string
 
-	if t.opts.Repository.SecretRef != nil {
+	if t.opts.Repository != nil && t.opts.Repository.SecretRef != nil {
 		secret, err := t.refFetcher.GetSecret(t.opts.Repository.SecretRef.Name)
 		if err != nil {
 			return nil, err

@@ -18,6 +18,9 @@ jobs:
         set -e -x
         export GOPATH=$(echo `pwd`/../../../../)
 
+        # Delete default installed helm
+        sudo rm `which helm`
+
         mkdir -p /tmp/bin
         export PATH=/tmp/bin:$PATH
 
@@ -26,11 +29,20 @@ jobs:
           echo "57a73c4721c39f815408f486c1acfb720af82450996e2bfdf4c2c280d8a28dcc  /tmp/bin/imgpkg" | shasum -c - && \
           chmod +x /tmp/bin/imgpkg
 
-        # helm
-        wget -O- https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz > /tmp/helm.tgz && \
-          echo "38614a665859c0f01c9c1d84fa9a5027364f936814d1e47839b05327e400bf55  /tmp/helm.tgz" | shasum -c - && \
-          mkdir /tmp/helm-unpacked && tar -C /tmp/helm-unpacked -xzvf /tmp/helm.tgz && \
-          mv /tmp/helm-unpacked/linux-amd64/helm /tmp/bin/helm
+        # helm 2
+        wget -O- https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz > /tmp/helm2.tgz && \
+          echo "38614a665859c0f01c9c1d84fa9a5027364f936814d1e47839b05327e400bf55  /tmp/helm2.tgz" | shasum -c - && \
+          mkdir /tmp/helm2-unpacked && tar -C /tmp/helm2-unpacked -xzvf /tmp/helm2.tgz && \
+          mv /tmp/helm2-unpacked/linux-amd64/helm /tmp/bin/helm2
+
+        # helm 3
+        wget -O- https://get.helm.sh/helm-v3.3.1-linux-amd64.tar.gz > /tmp/helm3.tgz && \
+          echo "81e3974927b4f76e9f679d1f6d6b45748f8c84081a571741d48b2902d816e14c  /tmp/helm3.tgz" | shasum -c - && \
+          mkdir /tmp/helm3-unpacked && tar -C /tmp/helm3-unpacked -xzvf /tmp/helm3.tgz && \
+          mv /tmp/helm3-unpacked/linux-amd64/helm /tmp/bin/helm3
+
+        export VENDIR_E2E_HELM2_BINARY=helm2
+        export VENDIR_E2E_HELM3_BINARY=helm3
 
         ./hack/build.sh
         ./hack/test-all.sh
