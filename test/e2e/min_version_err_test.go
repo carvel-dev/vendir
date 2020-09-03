@@ -5,17 +5,17 @@ import (
 	"testing"
 )
 
-func TestExampleOverlappingDir(t *testing.T) {
+func TestMinVersionErr(t *testing.T) {
 	env := BuildEnv(t)
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
-	path := "../../examples/overlapping-dir"
+	path := "../../examples/min-version"
 
 	_, err := vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path, AllowError: true})
 	if err == nil {
 		t.Fatalf("Expected err")
 	}
-	if !strings.Contains(err.Error(), "Expected to not manage overlapping paths") {
+	if !strings.Contains(err.Error(), "does not meet the minimum required version '100.0.0'") {
 		t.Fatalf("Expected overlapping err: %s", err)
 	}
 }
