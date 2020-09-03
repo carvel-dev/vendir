@@ -17,6 +17,21 @@ jobs:
       run: |
         set -e -x
         export GOPATH=$(echo `pwd`/../../../../)
+
+        mkdir -p /tmp/bin
+        export PATH=/tmp/bin:$PATH
+
+        # imgpkg
+        wget -O- https://github.com/k14s/imgpkg/releases/download/v0.2.0/imgpkg-linux-amd64 > /tmp/bin/imgpkg && \
+          echo "57a73c4721c39f815408f486c1acfb720af82450996e2bfdf4c2c280d8a28dcc  /tmp/bin/imgpkg" | shasum -c - && \
+          chmod +x /tmp/bin/imgpkg
+
+        # helm
+        wget -O- https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz > /helm.tgz && \
+          echo "38614a665859c0f01c9c1d84fa9a5027364f936814d1e47839b05327e400bf55  /helm.tgz" | shasum -c - && \
+          mkdir /helm-unpacked && tar -C /helm-unpacked -xzvf /helm.tgz && \
+          mv /helm-unpacked/linux-amd64/helm /tmp/bin/helm
+
         ./hack/build.sh
         ./hack/test-all.sh
         ./hack/build-binaries.sh
