@@ -24,7 +24,7 @@ func TestExampleSecrets(t *testing.T) {
 		t.Fatalf("Expected no error for server start")
 	}
 
-	exampleTest{Name: "secrets"}.Check(t)
+	example{Name: "secrets"}.Check(t)
 
 	server.Shutdown(context.TODO())
 }
