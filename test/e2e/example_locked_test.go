@@ -11,7 +11,7 @@ func TestExampleLocked(t *testing.T) {
 	env := BuildEnv(t)
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
-	osEnv := []string{"VENDIR_HELM_BINARY="+env.Helm2Binary}
+	osEnv := []string{"VENDIR_HELM_BINARY=" + env.Helm2Binary}
 
 	dir := "examples/locked"
 	path := "../../" + dir
