@@ -8,7 +8,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	semver "github.com/hashicorp/go-version"
-	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
 	"github.com/k14s/vendir/pkg/vendir/version"
 )
 
@@ -18,7 +17,11 @@ type Config struct {
 
 	MinimumRequiredVersion string `json:"minimumRequiredVersion"`
 
-	Directories []ctldir.Config `json:"directories,omitempty"`
+	Directories []Directory `json:"directories,omitempty"`
+}
+
+func NewConfigFromFiles(paths []string) (Config, error) {
+	return NewConfigFromFile(paths[0])
 }
 
 func NewConfigFromFile(path string) (Config, error) {
@@ -112,9 +115,9 @@ func (c Config) UseDirectory(path, dirPath string) error {
 			}
 			matched = true
 
-			newCon := ctldir.ConfigContents{
+			newCon := DirectoryContents{
 				Path:         con.Path,
-				Directory:    &ctldir.ConfigContentsDirectory{Path: dirPath},
+				Directory:    &DirectoryContentsDirectory{Path: dirPath},
 				IncludePaths: con.IncludePaths,
 				ExcludePaths: con.ExcludePaths,
 				LegalPaths:   con.LegalPaths,
@@ -155,11 +158,11 @@ func (c Config) Subset(paths []string) (Config, error) {
 			pathsToSeen[path] = true
 
 			newCon := con // copy (but not deep unfortunately)
-			newCon.Path = ctldir.EntireDirPath
+			newCon.Path = EntireDirPath
 
-			result.Directories = append(result.Directories, ctldir.Config{
+			result.Directories = append(result.Directories, Directory{
 				Path:     path,
-				Contents: []ctldir.ConfigContents{newCon},
+				Contents: []DirectoryContents{newCon},
 			})
 		}
 	}

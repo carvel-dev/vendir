@@ -6,15 +6,16 @@ import (
 	"path/filepath"
 
 	"github.com/cppforlife/go-cli-ui/ui"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 	dircopy "github.com/otiai10/copy"
 )
 
 type Directory struct {
-	opts Config
+	opts ctlconf.Directory
 	ui   ui.UI
 }
 
-func NewDirectory(opts Config, ui ui.UI) *Directory {
+func NewDirectory(opts ctlconf.Directory, ui ui.UI) *Directory {
 	return &Directory{opts, ui}
 }
 
@@ -29,8 +30,8 @@ type SyncOpts struct {
 	HelmBinary     string
 }
 
-func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
-	lockConfig := LockConfig{Path: d.opts.Path}
+func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
+	lockConfig := ctlconf.LockDirectory{Path: d.opts.Path}
 
 	err := d.cleanUpTmpDir()
 	if err != nil {
@@ -73,7 +74,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path: contents.Path,
 				Git:  &gitLockConf,
 			})
@@ -91,7 +92,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path: contents.Path,
 				HTTP: &httpLockConf,
 			})
@@ -109,7 +110,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path:  contents.Path,
 				Image: &imageLockConf,
 			})
@@ -130,7 +131,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path:          contents.Path,
 				GithubRelease: &lockConf,
 			})
@@ -151,7 +152,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path:      contents.Path,
 				HelmChart: &chartLockConf,
 			})
@@ -166,9 +167,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Moving directory '%s' to staging dir: %s", srcPath, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path:   contents.Path,
-				Manual: &LockConfigContentsManual{},
+				Manual: &ctlconf.LockDirectoryContentsManual{},
 			})
 
 		case contents.Directory != nil:
@@ -184,9 +185,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (LockConfig, error) {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
 			}
 
-			lockConfig.Contents = append(lockConfig.Contents, LockConfigContents{
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
 				Path:      contents.Path,
-				Directory: &LockConfigContentsDirectory{},
+				Directory: &ctlconf.LockDirectoryContentsDirectory{},
 			})
 
 		default:

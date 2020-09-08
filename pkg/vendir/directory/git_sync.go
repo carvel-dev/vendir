@@ -7,15 +7,16 @@ import (
 	"strings"
 
 	"github.com/cppforlife/go-cli-ui/ui"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type GitSync struct {
-	opts ConfigContentsGit
+	opts ctlconf.DirectoryContentsGit
 	ui   ui.UI
 }
 
-func (d GitSync) Sync(dstPath string) (LockConfigContentsGit, error) {
-	gitLockConf := LockConfigContentsGit{}
+func (d GitSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGit, error) {
+	gitLockConf := ctlconf.LockDirectoryContentsGit{}
 	incomingTmpPath := filepath.Join(incomingTmpDir, "git")
 
 	err := os.MkdirAll(incomingTmpPath, 0700)

@@ -6,13 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
-	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
 )
 
 type LockConfig struct {
-	APIVersion  string              `json:"apiVersion"`
-	Kind        string              `json:"kind"`
-	Directories []ctldir.LockConfig `json:"directories"`
+	APIVersion  string          `json:"apiVersion"`
+	Kind        string          `json:"kind"`
+	Directories []LockDirectory `json:"directories"`
 }
 
 func NewLockConfig() LockConfig {
@@ -85,7 +84,7 @@ func (c LockConfig) Validate() error {
 	return nil
 }
 
-func (c LockConfig) FindContents(dirPath, conPath string) (ctldir.LockConfigContents, error) {
+func (c LockConfig) FindContents(dirPath, conPath string) (LockDirectoryContents, error) {
 	for _, dir := range c.Directories {
 		if dir.Path == dirPath {
 			for _, con := range dir.Contents {
@@ -93,11 +92,11 @@ func (c LockConfig) FindContents(dirPath, conPath string) (ctldir.LockConfigCont
 					return con, nil
 				}
 			}
-			return ctldir.LockConfigContents{}, fmt.Errorf("Expected to find contents '%s' "+
+			return LockDirectoryContents{}, fmt.Errorf("Expected to find contents '%s' "+
 				"within directory '%s' in lock config, but did not", conPath, dirPath)
 		}
 	}
-	return ctldir.LockConfigContents{}, fmt.Errorf(
+	return LockDirectoryContents{}, fmt.Errorf(
 		"Expected to find directory '%s' within lock config, but did not", dirPath)
 }
 
@@ -113,7 +112,7 @@ func (c LockConfig) Merge(other LockConfig) error {
 	return nil
 }
 
-func (c LockConfig) MergeContents(path string, replaceCon ctldir.LockConfigContents) error {
+func (c LockConfig) MergeContents(path string, replaceCon LockDirectoryContents) error {
 	var matched bool
 
 	for i, dir := range c.Directories {

@@ -21,7 +21,7 @@ const (
 type SyncOptions struct {
 	ui ui.UI
 
-	File     string
+	Files    []string
 	LockFile string
 
 	Directories []string
@@ -38,7 +38,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 		Short: "Sync directories",
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
-	cmd.Flags().StringVarP(&o.File, "file", "f", defaultConfigName, "Set configuration file")
+	cmd.Flags().StringSliceVarP(&o.Files, "file", "f", []string{defaultConfigName}, "Set configuration file")
 	cmd.Flags().StringVar(&o.LockFile, "lock-file", defaultLockName, "Set lock file")
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
@@ -47,9 +47,9 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 }
 
 func (o *SyncOptions) Run() error {
-	conf, err := ctlconf.NewConfigFromFile(o.File)
+	conf, err := ctlconf.NewConfigFromFiles(o.Files)
 	if err != nil {
-		return o.configReadHintErrMsg(err, o.File)
+		return o.configReadHintErrMsg(err, o.Files)
 	}
 
 	dirs, err := o.directories()
@@ -179,7 +179,12 @@ func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverri
 	return usesLocalDir, nil
 }
 
-func (*SyncOptions) configReadHintErrMsg(origErr error, path string) error {
+func (*SyncOptions) configReadHintErrMsg(origErr error, paths []string) error {
+	if len(paths) != 1 {
+		return origErr
+	}
+	path := paths[0]
+
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) && path == defaultConfigName {

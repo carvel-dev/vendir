@@ -1,4 +1,4 @@
-package directory
+package config
 
 import (
 	"fmt"
@@ -19,21 +19,21 @@ var (
 	disallowedPaths = []string{"/", EntireDirPath, "..", ""}
 )
 
-type Config struct {
-	Path     string           `json:"path"`
-	Contents []ConfigContents `json:"contents,omitempty"`
+type Directory struct {
+	Path     string              `json:"path"`
+	Contents []DirectoryContents `json:"contents,omitempty"`
 }
 
-type ConfigContents struct {
+type DirectoryContents struct {
 	Path string `json:"path"`
 
-	Git           *ConfigContentsGit           `json:"git,omitempty"`
-	HTTP          *ConfigContentsHTTP          `json:"http,omitempty"`
-	Image         *ConfigContentsImage         `json:"image,omitempty"`
-	GithubRelease *ConfigContentsGithubRelease `json:"githubRelease,omitempty"`
-	HelmChart     *ConfigContentsHelmChart     `json:"helmChart,omitempty"`
-	Manual        *ConfigContentsManual        `json:"manual,omitempty"`
-	Directory     *ConfigContentsDirectory     `json:"directory,omitempty"`
+	Git           *DirectoryContentsGit           `json:"git,omitempty"`
+	HTTP          *DirectoryContentsHTTP          `json:"http,omitempty"`
+	Image         *DirectoryContentsImage         `json:"image,omitempty"`
+	GithubRelease *DirectoryContentsGithubRelease `json:"githubRelease,omitempty"`
+	HelmChart     *DirectoryContentsHelmChart     `json:"helmChart,omitempty"`
+	Manual        *DirectoryContentsManual        `json:"manual,omitempty"`
+	Directory     *DirectoryContentsDirectory     `json:"directory,omitempty"`
 
 	IncludePaths []string `json:"includePaths,omitempty"`
 	ExcludePaths []string `json:"excludePaths,omitempty"`
@@ -42,37 +42,37 @@ type ConfigContents struct {
 	LegalPaths []string `json:"legalPaths,omitempty"`
 }
 
-type ConfigContentsGit struct {
+type DirectoryContentsGit struct {
 	URL string `json:"url,omitempty"`
 	Ref string `json:"ref,omitempty"`
 	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
 	// +optional
-	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 	// +optional
 	LFSSkipSmudge bool `json:"lfsSkipSmudge,omitempty"`
 }
 
-type ConfigContentsHTTP struct {
+type DirectoryContentsHTTP struct {
 	// URL can point to one of following formats: text, tgz, zip
 	URL string `json:"url,omitempty"`
 	// +optional
 	SHA256 string `json:"sha256,omitempty"`
 	// Secret may include one or more keys: username, password
 	// +optional
-	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 }
 
-type ConfigContentsImage struct {
+type DirectoryContentsImage struct {
 	// Example: username/app1-config:v0.1.0
 	URL string `json:"url,omitempty"`
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
 	// TODO support docker config formated secret
 	// +optional
-	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 }
 
-type ConfigContentsGithubRelease struct {
+type DirectoryContentsGithubRelease struct {
 	Slug   string `json:"slug"` // e.g. organization/repository
 	Tag    string `json:"tag"`
 	Latest bool   `json:"latest,omitempty"`
@@ -81,38 +81,38 @@ type ConfigContentsGithubRelease struct {
 	Checksums                     map[string]string `json:"checksums,omitempty"`
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
 
-	UnpackArchive *ConfigContentsUnpackArchive `json:"unpackArchive,omitempty"`
+	UnpackArchive *DirectoryContentsUnpackArchive `json:"unpackArchive,omitempty"`
 }
 
-type ConfigContentsHelmChart struct {
+type DirectoryContentsHelmChart struct {
 	// Example: stable/redis
 	Name string `json:"name,omitempty"`
 	// +optional
-	Version    string                       `json:"version,omitempty"`
-	Repository *ConfigContentsHelmChartRepo `json:"repository,omitempty"`
+	Version    string                          `json:"version,omitempty"`
+	Repository *DirectoryContentsHelmChartRepo `json:"repository,omitempty"`
 }
 
-type ConfigContentsHelmChartRepo struct {
+type DirectoryContentsHelmChartRepo struct {
 	URL string `json:"url,omitempty"`
 	// +optional
-	SecretRef *ConfigContentsLocalRef `json:"secretRef,omitempty"`
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 }
 
-type ConfigContentsManual struct{}
+type DirectoryContentsManual struct{}
 
-type ConfigContentsDirectory struct {
+type DirectoryContentsDirectory struct {
 	Path string `json:"path"`
 }
 
-type ConfigContentsUnpackArchive struct {
+type DirectoryContentsUnpackArchive struct {
 	Path string `json:"path"`
 }
 
-type ConfigContentsLocalRef struct {
+type DirectoryContentsLocalRef struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (c Config) Validate() error {
+func (c Directory) Validate() error {
 	err := isDisallowedPath(c.Path)
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func (c ConfigContents) Validate() error {
+func (c DirectoryContents) Validate() error {
 	var srcTypes []string
 
 	if c.Git != nil {
@@ -183,11 +183,11 @@ func (c ConfigContents) Validate() error {
 	return nil
 }
 
-func (c ConfigContents) IsEntireDir() bool {
+func (c DirectoryContents) IsEntireDir() bool {
 	return c.Path == EntireDirPath
 }
 
-func (c ConfigContents) LegalPathsWithDefaults() []string {
+func (c DirectoryContents) LegalPathsWithDefaults() []string {
 	if len(c.LegalPaths) == 0 {
 		return append([]string{}, DefaultLegalPaths...)
 	}
@@ -204,7 +204,7 @@ func isDisallowedPath(path string) error {
 	return nil
 }
 
-func (c ConfigContents) Lock(lockConfig LockConfigContents) error {
+func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 	switch {
 	case c.Git != nil:
 		return c.Git.Lock(lockConfig.Git)
@@ -225,7 +225,7 @@ func (c ConfigContents) Lock(lockConfig LockConfigContents) error {
 	}
 }
 
-func (c *ConfigContentsGit) Lock(lockConfig *LockConfigContentsGit) error {
+func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected git lock configuration to be non-empty")
 	}
@@ -236,14 +236,14 @@ func (c *ConfigContentsGit) Lock(lockConfig *LockConfigContentsGit) error {
 	return nil
 }
 
-func (c *ConfigContentsHTTP) Lock(lockConfig *LockConfigContentsHTTP) error {
+func (c *DirectoryContentsHTTP) Lock(lockConfig *LockDirectoryContentsHTTP) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected HTTP lock configuration to be non-empty")
 	}
 	return nil
 }
 
-func (c *ConfigContentsImage) Lock(lockConfig *LockConfigContentsImage) error {
+func (c *DirectoryContentsImage) Lock(lockConfig *LockDirectoryContentsImage) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected image lock configuration to be non-empty")
 	}
@@ -254,7 +254,7 @@ func (c *ConfigContentsImage) Lock(lockConfig *LockConfigContentsImage) error {
 	return nil
 }
 
-func (c *ConfigContentsGithubRelease) Lock(lockConfig *LockConfigContentsGithubRelease) error {
+func (c *DirectoryContentsGithubRelease) Lock(lockConfig *LockDirectoryContentsGithubRelease) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected github release lock configuration to be non-empty")
 	}
@@ -265,7 +265,7 @@ func (c *ConfigContentsGithubRelease) Lock(lockConfig *LockConfigContentsGithubR
 	return nil
 }
 
-func (c *ConfigContentsHelmChart) Lock(lockConfig *LockConfigContentsHelmChart) error {
+func (c *DirectoryContentsHelmChart) Lock(lockConfig *LockDirectoryContentsHelmChart) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected helm chart lock configuration to be non-empty")
 	}

@@ -11,10 +11,11 @@ import (
 	"path/filepath"
 
 	"github.com/cppforlife/go-cli-ui/ui"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type GithubReleaseSync struct {
-	opts     ConfigContentsGithubRelease
+	opts     ctlconf.DirectoryContentsGithubRelease
 	apiToken string
 	ui       ui.UI
 }
@@ -39,8 +40,8 @@ func (d GithubReleaseSync) DescAndURL() (string, string, error) {
 	return desc, url, nil
 }
 
-func (d GithubReleaseSync) Sync(dstPath string) (LockConfigContentsGithubRelease, error) {
-	lockConf := LockConfigContentsGithubRelease{}
+func (d GithubReleaseSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGithubRelease, error) {
+	lockConf := ctlconf.LockDirectoryContentsGithubRelease{}
 	incomingTmpPath := filepath.Join(incomingTmpDir, "github-release")
 
 	err := os.MkdirAll(incomingTmpPath, 0700)

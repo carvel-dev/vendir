@@ -10,19 +10,21 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type HTTPSync struct {
-	opts       ConfigContentsHTTP
+	opts       ctlconf.DirectoryContentsHTTP
 	refFetcher RefFetcher
 }
 
-func NewHTTPSync(opts ConfigContentsHTTP, refFetcher RefFetcher) *HTTPSync {
+func NewHTTPSync(opts ctlconf.DirectoryContentsHTTP, refFetcher RefFetcher) *HTTPSync {
 	return &HTTPSync{opts, refFetcher}
 }
 
-func (t *HTTPSync) Sync(dstPath string) (LockConfigContentsHTTP, error) {
-	lockConf := LockConfigContentsHTTP{}
+func (t *HTTPSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsHTTP, error) {
+	lockConf := ctlconf.LockDirectoryContentsHTTP{}
 
 	if len(t.opts.URL) == 0 {
 		return lockConf, fmt.Errorf("Expected non-empty URL")

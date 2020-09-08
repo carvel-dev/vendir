@@ -6,14 +6,16 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type Git struct {
-	opts    ConfigContentsGit
+	opts    ctlconf.DirectoryContentsGit
 	infoLog io.Writer
 }
 
-func NewGit(opts ConfigContentsGit, infoLog io.Writer) *Git {
+func NewGit(opts ctlconf.DirectoryContentsGit, infoLog io.Writer) *Git {
 	return &Git{opts, infoLog}
 }
 

@@ -9,14 +9,16 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type ImageSync struct {
-	opts       ConfigContentsImage
+	opts       ctlconf.DirectoryContentsImage
 	refFetcher RefFetcher
 }
 
-func NewImageSync(opts ConfigContentsImage, refFetcher RefFetcher) *ImageSync {
+func NewImageSync(opts ctlconf.DirectoryContentsImage, refFetcher RefFetcher) *ImageSync {
 	return &ImageSync{opts, refFetcher}
 }
 
@@ -26,8 +28,8 @@ var (
 	imgpkgPulledImageRef = regexp.MustCompile("(?m)^Pulling image '(.+)'$")
 )
 
-func (t *ImageSync) Sync(dstPath string) (LockConfigContentsImage, error) {
-	lockConf := LockConfigContentsImage{}
+func (t *ImageSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) {
+	lockConf := ctlconf.LockDirectoryContentsImage{}
 
 	if len(t.opts.URL) == 0 {
 		return lockConf, fmt.Errorf("Expected non-empty URL")

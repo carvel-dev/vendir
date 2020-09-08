@@ -13,15 +13,16 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type HelmChart struct {
-	opts       ConfigContentsHelmChart
+	opts       ctlconf.DirectoryContentsHelmChart
 	helmBinary string
 	refFetcher RefFetcher
 }
 
-func NewHelmChart(opts ConfigContentsHelmChart,
+func NewHelmChart(opts ctlconf.DirectoryContentsHelmChart,
 	helmBinary string, refFetcher RefFetcher) *HelmChart {
 
 	if helmBinary == "" {
@@ -44,8 +45,8 @@ func (t *HelmChart) Desc() string {
 	return desc
 }
 
-func (t *HelmChart) Sync(dstPath string) (LockConfigContentsHelmChart, error) {
-	lockConf := LockConfigContentsHelmChart{}
+func (t *HelmChart) Sync(dstPath string) (ctlconf.LockDirectoryContentsHelmChart, error) {
+	lockConf := ctlconf.LockDirectoryContentsHelmChart{}
 
 	if len(t.opts.Name) == 0 {
 		return lockConf, fmt.Errorf("Expected non-empty name")

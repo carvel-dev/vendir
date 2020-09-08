@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/bmatcuk/doublestar"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type FileFilter struct {
-	contents ConfigContents
+	contents ctlconf.DirectoryContents
 }
 
 func (d FileFilter) Apply(dirPath string) error {
