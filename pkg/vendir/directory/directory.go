@@ -26,6 +26,7 @@ var (
 )
 
 type SyncOpts struct {
+	RefFetcher     RefFetcher
 	GithubAPIToken string
 	HelmBinary     string
 }
@@ -82,7 +83,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.HTTP != nil:
 			d.ui.PrintLinef("%s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
 
-			httpLockConf, err := (&HTTPSync{*contents.HTTP, NoopRefFetcher{}}).Sync(stagingDstPath)
+			httpLockConf, err := (&HTTPSync{*contents.HTTP, syncOpts.RefFetcher}).Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with HTTP contents: %s", contents.Path, err)
 			}
@@ -100,7 +101,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.Image != nil:
 			d.ui.PrintLinef("%s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
 
-			imageLockConf, err := NewImageSync(*contents.Image, NoopRefFetcher{}).Sync(stagingDstPath)
+			imageLockConf, err := NewImageSync(*contents.Image, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with image contents: %s", contents.Path, err)
 			}
@@ -137,7 +138,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			})
 
 		case contents.HelmChart != nil:
-			helmChartSync := NewHelmChart(*contents.HelmChart, syncOpts.HelmBinary, NoopRefFetcher{})
+			helmChartSync := NewHelmChart(*contents.HelmChart, syncOpts.HelmBinary, syncOpts.RefFetcher)
 
 			d.ui.PrintLinef("%s + %s (helm chart from %s)",
 				d.opts.Path, contents.Path, helmChartSync.Desc())

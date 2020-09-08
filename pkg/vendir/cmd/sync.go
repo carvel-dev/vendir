@@ -47,7 +47,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 }
 
 func (o *SyncOptions) Run() error {
-	conf, _, err := ctlconf.NewConfigFromFiles(o.Files)
+	conf, secrets, err := ctlconf.NewConfigFromFiles(o.Files)
 	if err != nil {
 		return o.configReadHintErrMsg(err, o.Files)
 	}
@@ -100,6 +100,7 @@ func (o *SyncOptions) Run() error {
 	}
 
 	syncOpts := ctldir.SyncOpts{
+		RefFetcher:     ctldir.NewNamedRefFetcher(secrets),
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 	}

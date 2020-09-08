@@ -51,7 +51,7 @@ func (et exampleTest) check(t *testing.T, vendir Vendir) error {
 
 	vendorDir, err := os.Stat(vendorPath)
 	if err != nil {
-		return fmt.Errorf("Expected no err")
+		return fmt.Errorf("Expected no err for stat")
 	}
 	if !vendorDir.IsDir() {
 		return fmt.Errorf("Expected to be dir")
@@ -60,13 +60,13 @@ func (et exampleTest) check(t *testing.T, vendir Vendir) error {
 	// remove all vendored bits
 	err = os.RemoveAll(vendorPath)
 	if err != nil {
-		return fmt.Errorf("Expected no err")
+		return fmt.Errorf("Expected no err for remove all")
 	}
 
 	if !et.OnlyLocked {
 		_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path, Env: et.Env})
 		if err != nil {
-			return fmt.Errorf("Expected no err")
+			return fmt.Errorf("Expected no err for sync")
 		}
 
 		// This assumes that example's vendor directory is committed to git
@@ -78,7 +78,7 @@ func (et exampleTest) check(t *testing.T, vendir Vendir) error {
 
 	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: et.Env})
 	if err != nil {
-		return fmt.Errorf("Expected no err")
+		return fmt.Errorf("Expected no err for sync locked")
 	}
 
 	gitOut := gitDiffExamplesDir(t, dir)
