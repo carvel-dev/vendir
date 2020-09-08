@@ -9,6 +9,8 @@ github.com/cppforlife/go-cli-ui/ui/table
 github.com/fatih/color
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
+# github.com/go-logr/logr v0.2.0
+github.com/go-logr/logr
 # github.com/hashicorp/go-version v1.2.0
 github.com/hashicorp/go-version
 # github.com/inconshreveable/mousetrap v1.0.0
@@ -21,15 +23,22 @@ github.com/mattn/go-isatty
 github.com/otiai10/copy
 # github.com/spf13/cobra v0.0.3
 github.com/spf13/cobra
-# github.com/spf13/pflag v1.0.2
+# github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
 # github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec
 github.com/vito/go-interact/interact
 github.com/vito/go-interact/interact/terminal
-# golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb
+# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
+# golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# gopkg.in/yaml.v2 v2.2.4
+# gopkg.in/yaml.v2 v2.2.8
 gopkg.in/yaml.v2
+# k8s.io/apimachinery v0.19.0
+k8s.io/apimachinery/pkg/util/yaml
+# k8s.io/klog/v2 v2.2.0
+k8s.io/klog/v2
+# sigs.k8s.io/yaml v1.2.0
+sigs.k8s.io/yaml

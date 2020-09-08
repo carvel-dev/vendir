@@ -17,7 +17,6 @@ require (
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.2 // indirect
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect
-	golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb // indirect
+	k8s.io/apimachinery v0.19.0
 )

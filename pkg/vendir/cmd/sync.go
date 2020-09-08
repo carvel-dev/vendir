@@ -47,7 +47,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 }
 
 func (o *SyncOptions) Run() error {
-	conf, err := ctlconf.NewConfigFromFiles(o.Files)
+	conf, _, err := ctlconf.NewConfigFromFiles(o.Files)
 	if err != nil {
 		return o.configReadHintErrMsg(err, o.Files)
 	}

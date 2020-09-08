@@ -2,13 +2,17 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	semver "github.com/hashicorp/go-version"
 	"github.com/k14s/vendir/pkg/vendir/version"
+)
+
+const (
+	knownAPIVersion = "vendir.k14s.io/v1alpha1"
+	knownKind       = "Config"
 )
 
 type Config struct {
@@ -20,17 +24,53 @@ type Config struct {
 	Directories []Directory `json:"directories,omitempty"`
 }
 
-func NewConfigFromFiles(paths []string) (Config, error) {
-	return NewConfigFromFile(paths[0])
-}
+func NewConfigFromFiles(paths []string) (Config, []Secret, error) {
+	var configs []Config
+	var secrets []Secret
 
-func NewConfigFromFile(path string) (Config, error) {
-	bs, err := ioutil.ReadFile(path)
+	err := parseResources(paths, func(docBytes []byte) error {
+		var res resource
+
+		err := yaml.Unmarshal(docBytes, &res)
+		if err != nil {
+			return fmt.Errorf("Unmarshaling doc: %s", err)
+		}
+
+		switch {
+		case res.APIVersion == "v1" && res.Kind == "Secret":
+			var secret Secret
+
+			err := yaml.Unmarshal(docBytes, &secret)
+			if err != nil {
+				return fmt.Errorf("Unmarshaling secret: %s", err)
+			}
+			secrets = append(secrets, secret)
+
+		case res.APIVersion == knownAPIVersion && res.Kind == knownKind:
+			config, err := NewConfigFromBytes(docBytes)
+			if err != nil {
+				return fmt.Errorf("Unmarshaling config: %s", err)
+			}
+			configs = append(configs, config)
+
+		default:
+			return fmt.Errorf("Unknown apiVersion '%s' or kind '%s' for resource",
+				res.APIVersion, res.Kind)
+		}
+		return nil
+	})
 	if err != nil {
-		return Config{}, fmt.Errorf("Reading config '%s': %s", path, err)
+		return Config{}, nil, err
 	}
 
-	return NewConfigFromBytes(bs)
+	if len(configs) == 0 {
+		return Config{}, nil, fmt.Errorf("Expected to find at least one config, but found none")
+	}
+	if len(configs) > 1 {
+		return Config{}, nil, fmt.Errorf("Expected to find exactly one config, but found multiple")
+	}
+
+	return configs[0], secrets, nil
 }
 
 func NewConfigFromBytes(bs []byte) (Config, error) {
@@ -50,11 +90,6 @@ func NewConfigFromBytes(bs []byte) (Config, error) {
 }
 
 func (c Config) Validate() error {
-	const (
-		knownAPIVersion = "vendir.k14s.io/v1alpha1"
-		knownKind       = "Config"
-	)
-
 	if c.APIVersion != knownAPIVersion {
 		return fmt.Errorf("Validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
 	}
