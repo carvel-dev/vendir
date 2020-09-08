@@ -86,7 +86,7 @@ func (t *ImageSync) addAuthArgs(args []string) ([]string, error) {
 			case "token":
 				authArgs = append(authArgs, []string{"--registry-token", string(val)}...)
 			default:
-				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Name)
+				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 			}
 		}
 	}

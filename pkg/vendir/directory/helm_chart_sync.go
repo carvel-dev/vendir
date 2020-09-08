@@ -245,12 +245,12 @@ func (t *HelmChart) addAuthArgs(args []string) ([]string, error) {
 
 		for name, val := range secret.Data {
 			switch name {
-			case k8s_corev1_BasicAuthUsernameKey:
+			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 				authArgs = append(authArgs, []string{"--username", string(val)}...)
-			case k8s_corev1_BasicAuthPasswordKey:
+			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
 				authArgs = append(authArgs, []string{"--password", string(val)}...)
 			default:
-				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Name)
+				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 			}
 		}
 	}

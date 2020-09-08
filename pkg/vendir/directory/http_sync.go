@@ -133,16 +133,16 @@ func (t *HTTPSync) addAuth(req *http.Request) error {
 
 	for name, _ := range secret.Data {
 		switch name {
-		case k8s_corev1_BasicAuthUsernameKey:
-		case k8s_corev1_BasicAuthPasswordKey:
+		case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
+		case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
 		default:
-			return fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Name)
+			return fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 		}
 	}
 
-	if _, found := secret.Data[k8s_corev1_BasicAuthUsernameKey]; found {
-		req.SetBasicAuth(string(secret.Data[k8s_corev1_BasicAuthUsernameKey]),
-			string(secret.Data[k8s_corev1_BasicAuthPasswordKey]))
+	if _, found := secret.Data[ctlconf.SecretK8sCorev1BasicAuthUsernameKey]; found {
+		req.SetBasicAuth(string(secret.Data[ctlconf.SecretK8sCorev1BasicAuthUsernameKey]),
+			string(secret.Data[ctlconf.SecretK8sCorev1BasicAuthPasswordKey]))
 	}
 
 	return nil

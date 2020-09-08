@@ -2,26 +2,18 @@ package directory
 
 import (
 	"fmt"
-)
 
-const (
-	k8s_corev1_BasicAuthUsernameKey = "username"
-	k8s_corev1_BasicAuthPasswordKey = "password"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type RefFetcher interface {
-	GetSecret(string) (Secret, error)
-}
-
-type Secret struct {
-	Name string
-	Data map[string][]byte
+	GetSecret(string) (ctlconf.Secret, error)
 }
 
 type NoopRefFetcher struct{}
 
 var _ RefFetcher = NoopRefFetcher{}
 
-func (f NoopRefFetcher) GetSecret(name string) (Secret, error) {
-	return Secret{}, fmt.Errorf("Not found")
+func (f NoopRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
+	return ctlconf.Secret{}, fmt.Errorf("Not found")
 }
