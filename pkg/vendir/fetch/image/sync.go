@@ -1,7 +1,7 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package directory
+package image
 
 import (
 	"bytes"
@@ -11,15 +11,16 @@ import (
 	"strings"
 
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
 
-type ImageSync struct {
+type Sync struct {
 	opts       ctlconf.DirectoryContentsImage
-	refFetcher RefFetcher
+	refFetcher ctlfetch.RefFetcher
 }
 
-func NewImageSync(opts ctlconf.DirectoryContentsImage, refFetcher RefFetcher) *ImageSync {
-	return &ImageSync{opts, refFetcher}
+func NewSync(opts ctlconf.DirectoryContentsImage, refFetcher ctlfetch.RefFetcher) *Sync {
+	return &Sync{opts, refFetcher}
 }
 
 var (
@@ -28,7 +29,7 @@ var (
 	imgpkgPulledImageRef = regexp.MustCompile("(?m)^Pulling image '(.+)'$")
 )
 
-func (t *ImageSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) {
+func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) {
 	lockConf := ctlconf.LockDirectoryContentsImage{}
 
 	if len(t.opts.URL) == 0 {
@@ -68,7 +69,7 @@ func (t *ImageSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, er
 	return lockConf, nil
 }
 
-func (t *ImageSync) addAuthArgs(args []string) ([]string, error) {
+func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 	var authArgs []string
 
 	if t.opts.SecretRef != nil {

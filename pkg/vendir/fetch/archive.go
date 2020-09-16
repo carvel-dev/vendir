@@ -1,4 +1,4 @@
-package directory
+package fetch
 
 import (
 	"archive/tar"
@@ -16,6 +16,10 @@ type Archive struct {
 	path               string
 	fallbackOnPlain    bool
 	fallbackOnPlainURL string
+}
+
+func NewArchive(path string, fallbackOnPlain bool, fallbackOnPlainURL string) Archive {
+	return Archive{path, fallbackOnPlain, fallbackOnPlainURL}
 }
 
 func (t Archive) Unpack(dstPath string) (bool, error) {

@@ -1,7 +1,7 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package directory
+package helmchart
 
 import (
 	"bytes"
@@ -14,24 +14,25 @@ import (
 
 	"github.com/ghodss/yaml"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
 
-type HelmChart struct {
+type Sync struct {
 	opts       ctlconf.DirectoryContentsHelmChart
 	helmBinary string
-	refFetcher RefFetcher
+	refFetcher ctlfetch.RefFetcher
 }
 
-func NewHelmChart(opts ctlconf.DirectoryContentsHelmChart,
-	helmBinary string, refFetcher RefFetcher) *HelmChart {
+func NewSync(opts ctlconf.DirectoryContentsHelmChart,
+	helmBinary string, refFetcher ctlfetch.RefFetcher) *Sync {
 
 	if helmBinary == "" {
 		helmBinary = "helm"
 	}
-	return &HelmChart{opts, helmBinary, refFetcher}
+	return &Sync{opts, helmBinary, refFetcher}
 }
 
-func (t *HelmChart) Desc() string {
+func (t *Sync) Desc() string {
 	desc := ""
 	if t.opts.Repository != nil && len(t.opts.Repository.URL) > 0 {
 		desc += t.opts.Repository.URL + "@"
@@ -45,21 +46,21 @@ func (t *HelmChart) Desc() string {
 	return desc
 }
 
-func (t *HelmChart) Sync(dstPath string) (ctlconf.LockDirectoryContentsHelmChart, error) {
+func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsHelmChart, error) {
 	lockConf := ctlconf.LockDirectoryContentsHelmChart{}
 
 	if len(t.opts.Name) == 0 {
 		return lockConf, fmt.Errorf("Expected non-empty name")
 	}
 
-	chartsDir, err := TempDir("helm-chart")
+	chartsDir, err := tempArea.NewTempDir("helm-chart")
 	if err != nil {
 		return lockConf, err
 	}
 
 	defer os.RemoveAll(chartsDir)
 
-	helmHomeDir, err := TempDir("helm-home")
+	helmHomeDir, err := tempArea.NewTempDir("helm-home")
 	if err != nil {
 		return lockConf, err
 	}
@@ -86,7 +87,7 @@ func (t *HelmChart) Sync(dstPath string) (ctlconf.LockDirectoryContentsHelmChart
 		return lockConf, fmt.Errorf("Retrieving helm chart metadata: %s", err)
 	}
 
-	err = MoveDir(chartPath, dstPath)
+	err = ctlfetch.MoveDir(chartPath, dstPath)
 	if err != nil {
 		return lockConf, err
 	}
@@ -97,7 +98,7 @@ func (t *HelmChart) Sync(dstPath string) (ctlconf.LockDirectoryContentsHelmChart
 	return lockConf, nil
 }
 
-func (t *HelmChart) init(helmHomeDir string) error {
+func (t *Sync) init(helmHomeDir string) error {
 	args := []string{"init", "--client-only"}
 
 	var stdoutBs, stderrBs bytes.Buffer
@@ -121,7 +122,7 @@ func (t *HelmChart) init(helmHomeDir string) error {
 	return nil
 }
 
-func (t *HelmChart) fetch(helmHomeDir, chartsPath string) error {
+func (t *Sync) fetch(helmHomeDir, chartsPath string) error {
 	const (
 		stablePrefix  = "stable/"
 		stableRepoURL = "https://kubernetes-charts.storage.googleapis.com"
@@ -195,7 +196,7 @@ type chartMeta struct {
 	Version    string
 }
 
-func (t *HelmChart) retrieveChartMeta(chartPath string) (chartMeta, error) {
+func (t *Sync) retrieveChartMeta(chartPath string) (chartMeta, error) {
 	var meta chartMeta
 
 	bs, err := ioutil.ReadFile(filepath.Join(chartPath, "Chart.yaml"))
@@ -215,7 +216,7 @@ func (t *HelmChart) retrieveChartMeta(chartPath string) (chartMeta, error) {
 	return meta, nil
 }
 
-func (t *HelmChart) findChartDir(chartsPath string) (string, error) {
+func (t *Sync) findChartDir(chartsPath string) (string, error) {
 	files, err := ioutil.ReadDir(chartsPath)
 	if err != nil {
 		return "", err
@@ -234,7 +235,7 @@ func (t *HelmChart) findChartDir(chartsPath string) (string, error) {
 	return filepath.Join(chartsPath, dirNames[0]), nil
 }
 
-func (t *HelmChart) addAuthArgs(args []string) ([]string, error) {
+func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 	var authArgs []string
 
 	if t.opts.Repository != nil && t.opts.Repository.SecretRef != nil {

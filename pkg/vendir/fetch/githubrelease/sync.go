@@ -1,4 +1,4 @@
-package directory
+package githubrelease
 
 import (
 	"crypto/sha256"
@@ -10,17 +10,20 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cppforlife/go-cli-ui/ui"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
 
-type GithubReleaseSync struct {
+type Sync struct {
 	opts     ctlconf.DirectoryContentsGithubRelease
 	apiToken string
-	ui       ui.UI
 }
 
-func (d GithubReleaseSync) DescAndURL() (string, string, error) {
+func NewSync(opts ctlconf.DirectoryContentsGithubRelease, apiToken string) Sync {
+	return Sync{opts, apiToken}
+}
+
+func (d Sync) DescAndURL() (string, string, error) {
 	desc := ""
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
 
@@ -40,13 +43,12 @@ func (d GithubReleaseSync) DescAndURL() (string, string, error) {
 	return desc, url, nil
 }
 
-func (d GithubReleaseSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGithubRelease, error) {
+func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGithubRelease, error) {
 	lockConf := ctlconf.LockDirectoryContentsGithubRelease{}
-	incomingTmpPath := filepath.Join(incomingTmpDir, "github-release")
 
-	err := os.MkdirAll(incomingTmpPath, 0700)
+	incomingTmpPath, err := tempArea.NewTempDir("github-release")
 	if err != nil {
-		return lockConf, fmt.Errorf("Creating incoming dir '%s' for github release: %s", incomingTmpPath, err)
+		return lockConf, err
 	}
 
 	defer os.RemoveAll(incomingTmpPath)
@@ -91,16 +93,14 @@ func (d GithubReleaseSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGi
 	}
 
 	if d.opts.UnpackArchive != nil {
-		newIncomingTmpPath := filepath.Join(incomingTmpDir, "github-release-unpack")
-
-		err := os.MkdirAll(newIncomingTmpPath, 0700)
+		newIncomingTmpPath, err := tempArea.NewTempDir("github-release-unpack")
 		if err != nil {
-			return lockConf, fmt.Errorf("Creating incoming dir '%s' for github release unpack: %s", newIncomingTmpPath, err)
+			return lockConf, err
 		}
 
 		defer os.RemoveAll(newIncomingTmpPath)
 
-		final, err := Archive{filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path), false, ""}.Unpack(newIncomingTmpPath)
+		final, err := ctlfetch.NewArchive(filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path), false, "").Unpack(newIncomingTmpPath)
 		if err != nil {
 			return lockConf, fmt.Errorf("Unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
 		}
@@ -126,7 +126,7 @@ func (d GithubReleaseSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGi
 	return lockConf, nil
 }
 
-func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
+func (d Sync) downloadRelease() (GithubReleaseAPI, error) {
 	releaseAPI := GithubReleaseAPI{}
 
 	_, url, err := d.DescAndURL()
@@ -176,7 +176,7 @@ func (d GithubReleaseSync) downloadRelease() (GithubReleaseAPI, error) {
 	return releaseAPI, nil
 }
 
-func (d GithubReleaseSync) downloadFile(url string, dstPath string) error {
+func (d Sync) downloadFile(url string, dstPath string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (d GithubReleaseSync) downloadFile(url string, dstPath string) error {
 	return err
 }
 
-func (d GithubReleaseSync) checkFileSize(path string, expectedSize int64) error {
+func (d Sync) checkFileSize(path string, expectedSize int64) error {
 	fi, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -226,7 +226,7 @@ func (d GithubReleaseSync) checkFileSize(path string, expectedSize int64) error 
 	return nil
 }
 
-func (d GithubReleaseSync) checkFileChecksum(path string, expectedChecksum string) error {
+func (d Sync) checkFileChecksum(path string, expectedChecksum string) error {
 	if len(expectedChecksum) == 0 {
 		panic("Expected non-empty checksum as argument")
 	}

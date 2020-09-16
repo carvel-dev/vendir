@@ -1,4 +1,4 @@
-package directory
+package git
 
 import (
 	"bytes"

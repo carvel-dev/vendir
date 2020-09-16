@@ -1,32 +1,35 @@
-package directory
+package git
 
 import (
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/cppforlife/go-cli-ui/ui"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
 
-type GitSync struct {
+type Sync struct {
 	opts ctlconf.DirectoryContentsGit
-	ui   ui.UI
+	log  io.Writer
 }
 
-func (d GitSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGit, error) {
-	gitLockConf := ctlconf.LockDirectoryContentsGit{}
-	incomingTmpPath := filepath.Join(incomingTmpDir, "git")
+func NewSync(opts ctlconf.DirectoryContentsGit, log io.Writer) Sync {
+	return Sync{opts, log}
+}
 
-	err := os.MkdirAll(incomingTmpPath, 0700)
+func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGit, error) {
+	gitLockConf := ctlconf.LockDirectoryContentsGit{}
+
+	incomingTmpPath, err := tempArea.NewTempDir("git")
 	if err != nil {
-		return gitLockConf, fmt.Errorf("Creating incoming dir '%s' for git fetching: %s", incomingTmpPath, err)
+		return gitLockConf, err
 	}
 
 	defer os.RemoveAll(incomingTmpPath)
 
-	git := NewGit(d.opts, NewInfoLog(d.ui))
+	git := NewGit(d.opts, d.log)
 
 	info, err := git.Retrieve(incomingTmpPath)
 	if err != nil {
@@ -49,7 +52,7 @@ func (d GitSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsGit, error) 
 	return gitLockConf, nil
 }
 
-func (GitSync) singleLineCommitTitle(in string) string {
+func (Sync) singleLineCommitTitle(in string) string {
 	pieces := strings.SplitN(in, "\n", 2)
 	if len(pieces) > 1 {
 		return pieces[0] + "..."

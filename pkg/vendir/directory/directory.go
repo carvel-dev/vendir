@@ -7,6 +7,12 @@ import (
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
+	ctlgit "github.com/k14s/vendir/pkg/vendir/fetch/git"
+	ctlghr "github.com/k14s/vendir/pkg/vendir/fetch/githubrelease"
+	ctlhelmc "github.com/k14s/vendir/pkg/vendir/fetch/helmchart"
+	ctlhttp "github.com/k14s/vendir/pkg/vendir/fetch/http"
+	ctlimg "github.com/k14s/vendir/pkg/vendir/fetch/image"
 	dircopy "github.com/otiai10/copy"
 )
 
@@ -19,14 +25,8 @@ func NewDirectory(opts ctlconf.Directory, ui ui.UI) *Directory {
 	return &Directory{opts, ui}
 }
 
-var (
-	tmpDir         = ".vendir-tmp"
-	stagingTmpDir  = filepath.Join(tmpDir, "staging")
-	incomingTmpDir = filepath.Join(tmpDir, "incoming")
-)
-
 type SyncOpts struct {
-	RefFetcher     RefFetcher
+	RefFetcher     ctlfetch.RefFetcher
 	GithubAPIToken string
 	HelmBinary     string
 }
@@ -34,30 +34,19 @@ type SyncOpts struct {
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	lockConfig := ctlconf.LockDirectory{Path: d.opts.Path}
 
-	err := d.cleanUpTmpDir()
+	stagingDir := NewStagingDir()
+
+	err := stagingDir.Prepare()
 	if err != nil {
 		return lockConfig, err
 	}
 
-	defer d.cleanUpTmpDir()
-
-	err = os.MkdirAll(stagingTmpDir, 0700)
-	if err != nil {
-		return lockConfig, fmt.Errorf("Creating staging dir '%s': %s", stagingTmpDir, err)
-	}
-
-	err = os.MkdirAll(incomingTmpDir, 0700)
-	if err != nil {
-		return lockConfig, fmt.Errorf("Creating incoming dir '%s': %s", incomingTmpDir, err)
-	}
+	defer stagingDir.CleanUp()
 
 	for _, contents := range d.opts.Contents {
-		stagingDstPath := filepath.Join(stagingTmpDir, contents.Path)
-		stagingDstPathParent := filepath.Dir(stagingDstPath)
-
-		err := os.MkdirAll(stagingDstPathParent, 0700)
+		stagingDstPath, err := stagingDir.NewChild(contents.Path)
 		if err != nil {
-			return lockConfig, fmt.Errorf("Creating directory '%s': %s", stagingDstPathParent, err)
+			return lockConfig, err
 		}
 
 		switch {
@@ -65,7 +54,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			d.ui.PrintLinef("%s + %s (git from %s@%s)",
 				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
 
-			gitLockConf, err := GitSync{*contents.Git, d.ui}.Sync(stagingDstPath)
+			gitLockConf, err := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui)).Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
 			}
@@ -83,7 +72,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.HTTP != nil:
 			d.ui.PrintLinef("%s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
 
-			httpLockConf, err := (&HTTPSync{*contents.HTTP, syncOpts.RefFetcher}).Sync(stagingDstPath)
+			httpLockConf, err := ctlhttp.NewSync(*contents.HTTP, syncOpts.RefFetcher).Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with HTTP contents: %s", contents.Path, err)
 			}
@@ -101,7 +90,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.Image != nil:
 			d.ui.PrintLinef("%s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
 
-			imageLockConf, err := NewImageSync(*contents.Image, syncOpts.RefFetcher).Sync(stagingDstPath)
+			imageLockConf, err := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with image contents: %s", contents.Path, err)
 			}
@@ -117,12 +106,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			})
 
 		case contents.GithubRelease != nil:
-			sync := GithubReleaseSync{*contents.GithubRelease, syncOpts.GithubAPIToken, d.ui}
+			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken)
 
 			desc, _, _ := sync.DescAndURL()
 			d.ui.PrintLinef("%s + %s (github release %s)", d.opts.Path, contents.Path, desc)
 
-			lockConf, err := sync.Sync(stagingDstPath)
+			lockConf, err := sync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with github release contents: %s", contents.Path, err)
 			}
@@ -138,12 +127,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			})
 
 		case contents.HelmChart != nil:
-			helmChartSync := NewHelmChart(*contents.HelmChart, syncOpts.HelmBinary, syncOpts.RefFetcher)
+			helmChartSync := ctlhelmc.NewSync(*contents.HelmChart, syncOpts.HelmBinary, syncOpts.RefFetcher)
 
 			d.ui.PrintLinef("%s + %s (helm chart from %s)",
 				d.opts.Path, contents.Path, helmChartSync.Desc())
 
-			chartLockConf, err := helmChartSync.Sync(stagingDstPath)
+			chartLockConf, err := helmChartSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
 			}
@@ -196,31 +185,10 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 	}
 
-	err = os.RemoveAll(d.opts.Path)
+	err = stagingDir.Replace(d.opts.Path)
 	if err != nil {
-		return lockConfig, fmt.Errorf("Deleting dir %s: %s", d.opts.Path, err)
-	}
-
-	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
-	parentPath := filepath.Dir(filepath.Clean(d.opts.Path))
-
-	err = os.MkdirAll(parentPath, 0700)
-	if err != nil {
-		return lockConfig, fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
-	}
-
-	err = os.Rename(stagingTmpDir, d.opts.Path)
-	if err != nil {
-		return lockConfig, fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", stagingTmpDir, d.opts.Path, err)
+		return lockConfig, err
 	}
 
 	return lockConfig, nil
-}
-
-func (d *Directory) cleanUpTmpDir() error {
-	err := os.RemoveAll(tmpDir)
-	if err != nil {
-		return fmt.Errorf("Deleting tmp dir '%s': %s", tmpDir, err)
-	}
-	return nil
 }

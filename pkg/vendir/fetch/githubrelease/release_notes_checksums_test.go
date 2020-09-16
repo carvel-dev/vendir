@@ -1,10 +1,10 @@
-package directory_test
+package githubrelease_test
 
 import (
 	"reflect"
 	"testing"
 
-	. "github.com/k14s/vendir/pkg/vendir/directory"
+	. "github.com/k14s/vendir/pkg/vendir/fetch/githubrelease"
 )
 
 func TestReleaseNotesChecksums(t *testing.T) {

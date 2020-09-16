@@ -1,4 +1,4 @@
-package directory
+package fetch
 
 import (
 	"fmt"

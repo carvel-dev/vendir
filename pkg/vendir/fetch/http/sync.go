@@ -1,7 +1,7 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package directory
+package http
 
 import (
 	"crypto/sha256"
@@ -12,25 +12,26 @@ import (
 	"os"
 
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
 
-type HTTPSync struct {
+type Sync struct {
 	opts       ctlconf.DirectoryContentsHTTP
-	refFetcher RefFetcher
+	refFetcher ctlfetch.RefFetcher
 }
 
-func NewHTTPSync(opts ctlconf.DirectoryContentsHTTP, refFetcher RefFetcher) *HTTPSync {
-	return &HTTPSync{opts, refFetcher}
+func NewSync(opts ctlconf.DirectoryContentsHTTP, refFetcher ctlfetch.RefFetcher) *Sync {
+	return &Sync{opts, refFetcher}
 }
 
-func (t *HTTPSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsHTTP, error) {
+func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsHTTP, error) {
 	lockConf := ctlconf.LockDirectoryContentsHTTP{}
 
 	if len(t.opts.URL) == 0 {
 		return lockConf, fmt.Errorf("Expected non-empty URL")
 	}
 
-	tmpFile, err := TempFile("vendir-http")
+	tmpFile, err := tempArea.NewTempFile("vendir-http")
 	if err != nil {
 		return lockConf, err
 	}
@@ -42,19 +43,19 @@ func (t *HTTPSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsHTTP, erro
 		return lockConf, fmt.Errorf("Downloading URL: %s", err)
 	}
 
-	incomingTmpPath, err := TempDir("http")
+	incomingTmpPath, err := tempArea.NewTempDir("http")
 	if err != nil {
 		return lockConf, err
 	}
 
 	defer os.RemoveAll(incomingTmpPath)
 
-	_, err = Archive{tmpFile.Name(), true, t.opts.URL}.Unpack(incomingTmpPath)
+	_, err = ctlfetch.NewArchive(tmpFile.Name(), true, t.opts.URL).Unpack(incomingTmpPath)
 	if err != nil {
 		return lockConf, fmt.Errorf("Unpacking archive: %s", err)
 	}
 
-	err = MoveDir(incomingTmpPath, dstPath)
+	err = ctlfetch.MoveDir(incomingTmpPath, dstPath)
 	if err != nil {
 		return lockConf, err
 	}
@@ -62,7 +63,7 @@ func (t *HTTPSync) Sync(dstPath string) (ctlconf.LockDirectoryContentsHTTP, erro
 	return lockConf, nil
 }
 
-func (t *HTTPSync) downloadFile(dst io.Writer) error {
+func (t *Sync) downloadFile(dst io.Writer) error {
 	req, err := http.NewRequest("GET", t.opts.URL, nil)
 	if err != nil {
 		return fmt.Errorf("Building request: %s", err)
@@ -92,7 +93,7 @@ func (t *HTTPSync) downloadFile(dst io.Writer) error {
 	return nil
 }
 
-func (t *HTTPSync) downloadFileAndChecksum(dst io.Writer) error {
+func (t *Sync) downloadFileAndChecksum(dst io.Writer) error {
 	var digestName, expectedDigestVal string
 	var digestDst hash.Hash
 
@@ -121,7 +122,7 @@ func (t *HTTPSync) downloadFileAndChecksum(dst io.Writer) error {
 	return nil
 }
 
-func (t *HTTPSync) addAuth(req *http.Request) error {
+func (t *Sync) addAuth(req *http.Request) error {
 	if t.opts.SecretRef == nil {
 		return nil
 	}
