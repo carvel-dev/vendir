@@ -80,11 +80,11 @@ func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 
 		for name, val := range secret.Data {
 			switch name {
-			case "username":
+			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 				authArgs = append(authArgs, []string{"--registry-username", string(val)}...)
-			case "password":
+			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
 				authArgs = append(authArgs, []string{"--registry-password", string(val)}...)
-			case "token":
+			case ctlconf.SecretToken:
 				authArgs = append(authArgs, []string{"--registry-token", string(val)}...)
 			default:
 				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)

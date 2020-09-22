@@ -6,6 +6,8 @@ const (
 
 	SecretK8sCoreV1SSHAuthPrivateKey = "ssh-privatekey"
 	SecretSSHAuthKnownHosts          = "ssh-knownhosts" // not part of k8s
+
+	SecretToken = "token"
 )
 
 type Secret struct {
