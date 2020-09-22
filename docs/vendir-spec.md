@@ -22,6 +22,14 @@ directories:
       url: https://github.com/cloudfoundry/cf-k8s-networking
       # branch, tag, commit; origin is the name of the remote (required)
       ref: origin/master
+      # skip downloading lfs files (optional)
+      lfsSkipSmudge: false
+      # specifies name of a secret with auth details;
+      # secret may include 'ssh-privatekey', 'ssh-knownhosts',
+      # 'username', 'password' keys (optional)
+      secretRef:
+        # (required)
+        name: my-git-auth
 
     # fetches asset over HTTP (optional)
     http:
