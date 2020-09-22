@@ -54,7 +54,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			d.ui.PrintLinef("%s + %s (git from %s@%s)",
 				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
 
-			gitLockConf, err := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui)).Sync(stagingDstPath, stagingDir.TempArea())
+			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
+
+			gitLockConf, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
 			}

@@ -11,12 +11,15 @@ import (
 )
 
 type Sync struct {
-	opts ctlconf.DirectoryContentsGit
-	log  io.Writer
+	opts       ctlconf.DirectoryContentsGit
+	log        io.Writer
+	refFetcher ctlfetch.RefFetcher
 }
 
-func NewSync(opts ctlconf.DirectoryContentsGit, log io.Writer) Sync {
-	return Sync{opts, log}
+func NewSync(opts ctlconf.DirectoryContentsGit,
+	log io.Writer, refFetcher ctlfetch.RefFetcher) Sync {
+
+	return Sync{opts, log, refFetcher}
 }
 
 func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGit, error) {
@@ -29,9 +32,9 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	defer os.RemoveAll(incomingTmpPath)
 
-	git := NewGit(d.opts, d.log)
+	git := NewGit(d.opts, d.log, d.refFetcher)
 
-	info, err := git.Retrieve(incomingTmpPath)
+	info, err := git.Retrieve(incomingTmpPath, tempArea)
 	if err != nil {
 		return gitLockConf, fmt.Errorf("Fetching git repository: %s", err)
 	}
