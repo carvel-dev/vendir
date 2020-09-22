@@ -82,6 +82,10 @@ type DirectoryContentsGithubRelease struct {
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
 
 	UnpackArchive *DirectoryContentsUnpackArchive `json:"unpackArchive,omitempty"`
+
+	// Secret may include one key: token
+	// +optional
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 }
 
 type DirectoryContentsHelmChart struct {

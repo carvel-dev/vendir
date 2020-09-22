@@ -15,12 +15,15 @@ import (
 )
 
 type Sync struct {
-	opts     ctlconf.DirectoryContentsGithubRelease
-	apiToken string
+	opts            ctlconf.DirectoryContentsGithubRelease
+	defaultApiToken string
+	refFetcher      ctlfetch.RefFetcher
 }
 
-func NewSync(opts ctlconf.DirectoryContentsGithubRelease, apiToken string) Sync {
-	return Sync{opts, apiToken}
+func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
+	defaultApiToken string, refFetcher ctlfetch.RefFetcher) Sync {
+
+	return Sync{opts, defaultApiToken, refFetcher}
 }
 
 func (d Sync) DescAndURL() (string, string, error) {
@@ -53,7 +56,12 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	defer os.RemoveAll(incomingTmpPath)
 
-	releaseAPI, err := d.downloadRelease()
+	authToken, err := d.authToken()
+	if err != nil {
+		return lockConf, err
+	}
+
+	releaseAPI, err := d.downloadRelease(authToken)
 	if err != nil {
 		return lockConf, fmt.Errorf("Downloading release info: %s", err)
 	}
@@ -74,7 +82,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	for _, asset := range releaseAPI.Assets {
 		path := filepath.Join(incomingTmpPath, asset.Name)
 
-		err := d.downloadFile(asset.URL, path)
+		err := d.downloadFile(asset.URL, path, authToken)
 		if err != nil {
 			return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
 		}
@@ -126,7 +134,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	return lockConf, nil
 }
 
-func (d Sync) downloadRelease() (GithubReleaseAPI, error) {
+func (d Sync) downloadRelease(authToken string) (GithubReleaseAPI, error) {
 	releaseAPI := GithubReleaseAPI{}
 
 	_, url, err := d.DescAndURL()
@@ -139,8 +147,8 @@ func (d Sync) downloadRelease() (GithubReleaseAPI, error) {
 		return releaseAPI, err
 	}
 
-	if len(d.apiToken) > 0 {
-		req.Header.Add("Authorization", "token "+d.apiToken)
+	if len(authToken) > 0 {
+		req.Header.Add("Authorization", "token "+authToken)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -176,7 +184,7 @@ func (d Sync) downloadRelease() (GithubReleaseAPI, error) {
 	return releaseAPI, nil
 }
 
-func (d Sync) downloadFile(url string, dstPath string) error {
+func (d Sync) downloadFile(url, dstPath, authToken string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -185,8 +193,8 @@ func (d Sync) downloadFile(url string, dstPath string) error {
 	// Forces Github to redirect to asset contents
 	req.Header.Add("Accept", "application/octet-stream")
 
-	if len(d.apiToken) > 0 {
-		req.Header.Add("Authorization", "token "+d.apiToken)
+	if len(authToken) > 0 {
+		req.Header.Add("Authorization", "token "+authToken)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -250,6 +258,32 @@ func (d Sync) checkFileChecksum(path string, expectedChecksum string) error {
 			expectedChecksum, actualChecksum)
 	}
 	return nil
+}
+
+func (d Sync) authToken() (string, error) {
+	token := ""
+
+	if len(d.defaultApiToken) > 0 {
+		token = d.defaultApiToken
+	}
+
+	if d.opts.SecretRef != nil {
+		secret, err := d.refFetcher.GetSecret(d.opts.SecretRef.Name)
+		if err != nil {
+			return "", err
+		}
+
+		for name, val := range secret.Data {
+			switch name {
+			case "token":
+				token = val
+			default:
+				return "", fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+			}
+		}
+	}
+
+	return token, nil
 }
 
 type GithubReleaseAPI struct {

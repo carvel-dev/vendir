@@ -68,6 +68,11 @@ directories:
       unpackArchive:
         # (required)
         path: release.tgz
+      # specifies name of a secret with github auth details;
+      # secret may include 'token' key (optional)
+      secretRef:
+        # (required)
+        name: my-gh-auth
 
     # fetch Helm chart contents (optional)
     helmChart:
