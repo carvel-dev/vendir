@@ -15,6 +15,7 @@ type LockDirectoryContents struct {
 	HelmChart     *LockDirectoryContentsHelmChart     `json:"helmChart,omitempty"`
 	Manual        *LockDirectoryContentsManual        `json:"manual,omitempty"`
 	Directory     *LockDirectoryContentsDirectory     `json:"directory,omitempty"`
+	Inline        *LockDirectoryContentsInline        `json:"inline,omitempty"`
 }
 
 type LockDirectoryContentsGit struct {
@@ -40,3 +41,5 @@ type LockDirectoryContentsHelmChart struct {
 type LockDirectoryContentsManual struct{}
 
 type LockDirectoryContentsDirectory struct{}
+
+type LockDirectoryContentsInline struct{}

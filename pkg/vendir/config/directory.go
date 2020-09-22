@@ -34,6 +34,7 @@ type DirectoryContents struct {
 	HelmChart     *DirectoryContentsHelmChart     `json:"helmChart,omitempty"`
 	Manual        *DirectoryContentsManual        `json:"manual,omitempty"`
 	Directory     *DirectoryContentsDirectory     `json:"directory,omitempty"`
+	Inline        *DirectoryContentsInline        `json:"inline,omitempty"`
 
 	IncludePaths []string `json:"includePaths,omitempty"`
 	ExcludePaths []string `json:"excludePaths,omitempty"`
@@ -111,6 +112,21 @@ type DirectoryContentsDirectory struct {
 	Path string `json:"path"`
 }
 
+type DirectoryContentsInline struct {
+	Paths     map[string]string               `json:"paths,omitempty"`
+	PathsFrom []DirectoryContentsInlineSource `json:"pathsFrom,omitempty"`
+}
+
+type DirectoryContentsInlineSource struct {
+	SecretRef    *DirectoryContentsInlineSourceRef `json:"secretRef,omitempty"`
+	ConfigMapRef *DirectoryContentsInlineSourceRef `json:"configMapRef,omitempty"`
+}
+
+type DirectoryContentsInlineSourceRef struct {
+	DirectoryPath             string `json:"directoryPath,omitempty"`
+	DirectoryContentsLocalRef `json:",inline"`
+}
+
 type DirectoryContentsUnpackArchive struct {
 	Path string `json:"path"`
 }
@@ -171,6 +187,9 @@ func (c DirectoryContents) Validate() error {
 	if c.Directory != nil {
 		srcTypes = append(srcTypes, "directory")
 	}
+	if c.Inline != nil {
+		srcTypes = append(srcTypes, "inline")
+	}
 
 	if len(srcTypes) == 0 {
 		return fmt.Errorf("Expected directory contents type to be specified (one of git, manual, etc.)")
@@ -226,6 +245,8 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 	case c.Directory != nil:
 		return nil // nothing to lock
 	case c.Manual != nil:
+		return nil // nothing to lock
+	case c.Inline != nil:
 		return nil // nothing to lock
 	default:
 		panic("Unknown contents type")

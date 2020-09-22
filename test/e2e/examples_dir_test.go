@@ -14,6 +14,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "github-release"},
 		{Name: "entire-dir"},
+		{Name: "inline"},
 		{Name: "locked", OnlyLocked: true, Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 	}
 

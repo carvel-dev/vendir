@@ -10,14 +10,24 @@ const (
 	SecretToken = "token"
 )
 
+// There structs have minimal used set of fields from their K8s representations.
+
+type GenericMetadata struct {
+	Name string
+}
+
 type Secret struct {
 	APIVersion string
 	Kind       string
 
-	Metadata SecretMetadata
+	Metadata GenericMetadata
 	Data     map[string]string
 }
 
-type SecretMetadata struct {
-	Name string
+type ConfigMap struct {
+	APIVersion string
+	Kind       string
+
+	Metadata GenericMetadata
+	Data     map[string]string
 }

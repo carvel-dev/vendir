@@ -1,0 +1,43 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: inline-paths-only
+    inline:
+      paths:
+        dir1/file1.ext: |
+          dir1file1
+        dir2/file1.ext: |
+          dir2file1
+        dir2/file2.ext: |
+          dir2file2
+  - path: inline-pathsfrom
+    inline:
+      pathsFrom:
+      - secretRef:
+          name: secret1
+      - secretRef:
+          name: secret1
+          directoryPath: secret1
+      - configMapRef:
+          name: config1
+      - configMapRef:
+          name: config1
+          directoryPath: config1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret1
+data:
+  file1.ext: "secret1-file1"
+  file3.ext: "secret1-file3"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config1
+data:
+  file1.ext: "config1-file1"
+  file2.ext: "config1-file2"

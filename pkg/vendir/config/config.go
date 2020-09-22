@@ -24,9 +24,10 @@ type Config struct {
 	Directories []Directory `json:"directories,omitempty"`
 }
 
-func NewConfigFromFiles(paths []string) (Config, []Secret, error) {
+func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 	var configs []Config
 	var secrets []Secret
+	var configMaps []ConfigMap
 
 	err := parseResources(paths, func(docBytes []byte) error {
 		var res resource
@@ -46,6 +47,15 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, error) {
 			}
 			secrets = append(secrets, secret)
 
+		case res.APIVersion == "v1" && res.Kind == "ConfigMap":
+			var cm ConfigMap
+
+			err := yaml.Unmarshal(docBytes, &cm)
+			if err != nil {
+				return fmt.Errorf("Unmarshaling config map: %s", err)
+			}
+			configMaps = append(configMaps, cm)
+
 		case res.APIVersion == knownAPIVersion && res.Kind == knownKind:
 			config, err := NewConfigFromBytes(docBytes)
 			if err != nil {
@@ -60,17 +70,17 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, error) {
 		return nil
 	})
 	if err != nil {
-		return Config{}, nil, err
+		return Config{}, nil, nil, err
 	}
 
 	if len(configs) == 0 {
-		return Config{}, nil, fmt.Errorf("Expected to find at least one config, but found none")
+		return Config{}, nil, nil, fmt.Errorf("Expected to find at least one config, but found none")
 	}
 	if len(configs) > 1 {
-		return Config{}, nil, fmt.Errorf("Expected to find exactly one config, but found multiple")
+		return Config{}, nil, nil, fmt.Errorf("Expected to find exactly one config, but found multiple")
 	}
 
-	return configs[0], secrets, nil
+	return configs[0], secrets, configMaps, nil
 }
 
 func NewConfigFromBytes(bs []byte) (Config, error) {

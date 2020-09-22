@@ -110,6 +110,24 @@ directories:
     # is managed by hand; nothing to do for vendir (optional)
     manual: {}
 
+    # specify contents inline within this file (optional)
+    inline:
+      # specifies mapping of paths to their content (optional)
+      paths:
+        dir/file.ext: file-content
+      # specifies content via secrets and config maps (optional)
+      pathsFrom:
+      - secretRef:
+          # (required)
+          name: secret-name
+          # specifies where to place files found in secret (optional)
+          directoryPath: dir
+      - configMapRef:
+          # (required)
+          name: cfgmap-name
+          # specifies where to place files found in config map (optional)
+          directoryPath: dir
+
     # includes paths specify what should be included. by default
     # all paths are included (optional)
     includePaths:

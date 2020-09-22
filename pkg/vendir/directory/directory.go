@@ -13,6 +13,7 @@ import (
 	ctlhelmc "github.com/k14s/vendir/pkg/vendir/fetch/helmchart"
 	ctlhttp "github.com/k14s/vendir/pkg/vendir/fetch/http"
 	ctlimg "github.com/k14s/vendir/pkg/vendir/fetch/image"
+	ctlinl "github.com/k14s/vendir/pkg/vendir/fetch/inline"
 	dircopy "github.com/otiai10/copy"
 )
 
@@ -182,8 +183,26 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 				Directory: &ctlconf.LockDirectoryContentsDirectory{},
 			})
 
+		case contents.Inline != nil:
+			d.ui.PrintLinef("%s + %s (inline)", d.opts.Path, contents.Path)
+
+			inlineLockConf, err := ctlinl.NewSync(*contents.Inline, syncOpts.RefFetcher).Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with inline contents: %s", contents.Path, err)
+			}
+
+			err = FileFilter{contents}.Apply(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, ctlconf.LockDirectoryContents{
+				Path:   contents.Path,
+				Inline: &inlineLockConf,
+			})
+
 		default:
-			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s' (known: git, manual)", contents.Path)
+			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
 		}
 	}
 

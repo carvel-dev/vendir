@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - inline: {}
+    path: inline-paths-only
+  - inline: {}
+    path: inline-pathsfrom
+  path: vendor
+kind: LockConfig
