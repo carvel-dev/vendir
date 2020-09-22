@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -17,9 +18,19 @@ type resource struct {
 
 func parseResources(paths []string, resourceFunc func([]byte) error) error {
 	for _, path := range paths {
-		bs, err := ioutil.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("Reading config '%s': %s", path, err)
+		var bs []byte
+		var err error
+
+		if path == "-" {
+			bs, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				return fmt.Errorf("Reading config from stdin: %s", err)
+			}
+		} else {
+			bs, err = ioutil.ReadFile(path)
+			if err != nil {
+				return fmt.Errorf("Reading config '%s': %s", path, err)
+			}
 		}
 
 		reader := kyaml.NewYAMLReader(bufio.NewReaderSize(bytes.NewReader(bs), 4096))
