@@ -89,6 +89,9 @@ directories:
         secretRef:
           # (required)
           name: my-helm-auth
+      # specify helm binary version to use;
+      # '3' means binary 'helm3' needs to be on the path (optional)
+      helmVersion: "3"
 
     # copy contents from local directory (optional)
     directory:

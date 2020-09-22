@@ -28,6 +28,9 @@ func NewSync(opts ctlconf.DirectoryContentsHelmChart,
 
 	if helmBinary == "" {
 		helmBinary = "helm"
+		if opts.HelmVersion == "3" {
+			helmBinary = "helm3"
+		}
 	}
 	return &Sync{opts, helmBinary, refFetcher}
 }

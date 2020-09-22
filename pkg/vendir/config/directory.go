@@ -94,6 +94,9 @@ type DirectoryContentsHelmChart struct {
 	// +optional
 	Version    string                          `json:"version,omitempty"`
 	Repository *DirectoryContentsHelmChartRepo `json:"repository,omitempty"`
+
+	// +optional
+	HelmVersion string `json:"helmVersion,omitempty"`
 }
 
 type DirectoryContentsHelmChartRepo struct {
