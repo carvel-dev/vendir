@@ -141,4 +141,7 @@ directories:
     # legal reasons such as LICENSE file. Defaults to few 
     # LICENSE, NOTICE and COPYRIGHT variations (optional)
     legalPaths: []
+
+    # make subdirectory to be new root path within this asset (optional)
+    newRootPath: cfroutesync
 ```

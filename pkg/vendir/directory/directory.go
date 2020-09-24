@@ -51,7 +51,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 
 		lockDirContents := ctlconf.LockDirectoryContents{Path: contents.Path}
+
 		skipFileFilter := false
+		skipNewRootPath := false
 
 		switch {
 		case contents.Git != nil:
@@ -125,6 +127,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lockDirContents.Manual = &ctlconf.LockDirectoryContentsManual{}
 			skipFileFilter = true
+			skipNewRootPath = true
 
 		case contents.Directory != nil:
 			d.ui.PrintLinef("%s + %s (directory)", d.opts.Path, contents.Path)
@@ -154,6 +157,13 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			err = FileFilter{contents}.Apply(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+		}
+
+		if !skipNewRootPath && len(contents.NewRootPath) > 0 {
+			err = NewSubPath(contents.NewRootPath).Extract(stagingDstPath, stagingDstPath, stagingDir.TempArea())
+			if err != nil {
+				return lockConfig, fmt.Errorf("Changing to new root path '%s': %s", contents.Path, err)
 			}
 		}
 

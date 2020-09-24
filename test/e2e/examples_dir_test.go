@@ -16,6 +16,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "entire-dir"},
 		{Name: "inline"},
 		{Name: "locked", OnlyLocked: true, Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
+		{Name: "new-root-path"},
 	}
 
 	for _, test := range tests {

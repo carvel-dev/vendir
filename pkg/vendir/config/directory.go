@@ -41,6 +41,8 @@ type DirectoryContents struct {
 
 	// By default LICENSE/LICENCE/NOTICE/COPYRIGHT files are kept
 	LegalPaths []string `json:"legalPaths,omitempty"`
+
+	NewRootPath string `json:"newRootPath,omitempty"`
 }
 
 type DirectoryContentsGit struct {
