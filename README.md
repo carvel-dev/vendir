@@ -1,6 +1,6 @@
 # vendir
 
-- Slack: [#k14s in Kubernetes slack](https://slack.kubernetes.io)
+- Slack: [#carvel in Kubernetes slack](https://slack.kubernetes.io)
 - [Docs](docs/README.md) with example workflow and other details
 - Install: Grab prebuilt binaries from the [Releases page](https://github.com/k14s/vendir/releases) or [Homebrew k14s tap](https://github.com/k14s/homebrew-tap)
 
