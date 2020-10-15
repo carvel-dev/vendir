@@ -41,6 +41,10 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 	cmd.AddCommand(NewSyncCmd(NewSyncOptions(o.ui)))
 	cmd.AddCommand(NewVersionCmd(NewVersionOptions(o.ui)))
 
+	toolsCmd := NewToolsCmd()
+	toolsCmd.AddCommand(NewSortVersionsCmd(NewSortVersionsOptions(o.ui)))
+	cmd.AddCommand(toolsCmd)
+
 	// Last one runs first
 	cobrautil.VisitCommands(cmd, cobrautil.ReconfigureCmdWithSubcmd)
 	cobrautil.VisitCommands(cmd, cobrautil.ReconfigureLeafCmd)
