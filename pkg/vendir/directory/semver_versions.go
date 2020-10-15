@@ -7,11 +7,12 @@ import (
 	semver "github.com/hashicorp/go-version"
 )
 
-type Versions struct {
+// yeah yeah it's double version
+type SemverVersions struct {
 	versions []*semver.Version
 }
 
-func NewVersions(versions []string) Versions {
+func NewSemverVersions(versions []string) SemverVersions {
 	var parsedVersions []*semver.Version
 
 	for _, vStr := range versions {
@@ -22,10 +23,10 @@ func NewVersions(versions []string) Versions {
 		}
 	}
 
-	return Versions{parsedVersions}
+	return SemverVersions{parsedVersions}
 }
 
-func (v Versions) Sorted() Versions {
+func (v SemverVersions) Sorted() SemverVersions {
 	var versions []*semver.Version
 
 	for _, ver := range v.versions {
@@ -36,13 +37,13 @@ func (v Versions) Sorted() Versions {
 		return versions[i].LessThan(versions[j])
 	})
 
-	return Versions{versions}
+	return SemverVersions{versions}
 }
 
-func (v Versions) Filtered(constraintList string) (Versions, error) {
+func (v SemverVersions) Filtered(constraintList string) (SemverVersions, error) {
 	constraints, err := semver.NewConstraint(constraintList)
 	if err != nil {
-		return Versions{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
+		return SemverVersions{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
 	}
 
 	var matchingVersions []*semver.Version
@@ -53,10 +54,10 @@ func (v Versions) Filtered(constraintList string) (Versions, error) {
 		}
 	}
 
-	return Versions{matchingVersions}, nil
+	return SemverVersions{matchingVersions}, nil
 }
 
-func (v Versions) Highest() (string, bool) {
+func (v SemverVersions) Highest() (string, bool) {
 	v = v.Sorted()
 
 	if len(v.versions) == 0 {
@@ -66,7 +67,7 @@ func (v Versions) Highest() (string, bool) {
 	return v.versions[len(v.versions)-1].Original(), true
 }
 
-func (v Versions) All() []string {
+func (v SemverVersions) All() []string {
 	var verStrs []string
 	for _, ver := range v.versions {
 		verStrs = append(verStrs, ver.Original())

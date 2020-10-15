@@ -42,7 +42,7 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 	cmd.AddCommand(NewVersionCmd(NewVersionOptions(o.ui)))
 
 	toolsCmd := NewToolsCmd()
-	toolsCmd.AddCommand(NewSortVersionsCmd(NewSortVersionsOptions(o.ui)))
+	toolsCmd.AddCommand(NewSortSemverCmd(NewSortSemverOptions(o.ui)))
 	cmd.AddCommand(toolsCmd)
 
 	// Last one runs first

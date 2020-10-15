@@ -12,21 +12,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type SortVersionsOptions struct {
+type SortSemverOptions struct {
 	ui ui.UI
 
 	Constraints []string
 	Versions    []string
 }
 
-func NewSortVersionsOptions(ui ui.UI) *SortVersionsOptions {
-	return &SortVersionsOptions{ui: ui}
+func NewSortSemverOptions(ui ui.UI) *SortSemverOptions {
+	return &SortSemverOptions{ui: ui}
 }
 
-func NewSortVersionsCmd(o *SortVersionsOptions) *cobra.Command {
+func NewSortSemverCmd(o *SortSemverOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sort-versions",
-		Short: "Sort versions",
+		Use:   "sort-semver",
+		Short: "Sort semver versions",
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
 	cmd.Flags().StringSliceVarP(&o.Constraints, "constraint", "c", nil, "Constraints (e.g. '>=v1.0, <v2.0')")
@@ -34,8 +34,8 @@ func NewSortVersionsCmd(o *SortVersionsOptions) *cobra.Command {
 	return cmd
 }
 
-func (o *SortVersionsOptions) Run() error {
-	allVers := ctldir.NewVersions(o.versions()).Sorted()
+func (o *SortSemverOptions) Run() error {
+	allVers := ctldir.NewSemverVersions(o.versions()).Sorted()
 
 	if len(o.Constraints) > 0 {
 		var err error
@@ -71,7 +71,7 @@ func (o *SortVersionsOptions) Run() error {
 	return nil
 }
 
-func (o *SortVersionsOptions) versions() []string {
+func (o *SortSemverOptions) versions() []string {
 	var vers []string
 	for _, ver := range o.Versions {
 		vers = append(vers, strings.Fields(ver)...)
