@@ -1,6 +1,6 @@
 ## Versions
 
-Available in v0.10.0+.
+Available in v0.11.0+.
 
 ### Semver
 
