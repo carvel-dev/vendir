@@ -1,0 +1,18 @@
+#@ load("@ytt:library", "library")
+#@ load("@ytt:template", "template")
+
+#@ kpack = library.get("github.com/pivotal/kpack")
+--- #@ template.replace(kpack.eval())
+--- #! explanation: the blobstore's sidecar needs to accept plain text connections from kpack build init containers.
+    #! see https://github.com/cloudfoundry/capi-k8s-release/issues/12
+apiVersion: "authentication.istio.io/v1alpha1"
+kind: "Policy"
+metadata:
+  name: "cf-blobstore-allow-plaintext"
+  namespace: "cf-blobstore"
+spec:
+  targets:
+  - name: cf-blobstore-minio
+  peers:
+  - mtls:
+      mode: PERMISSIVE

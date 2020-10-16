@@ -1,0 +1,119 @@
+#@data/values
+---
+apiServer:
+  opi:
+    ca: |
+      -----BEGIN CERTIFICATE-----
+      MIIClDCCAXwCCQCU6a04MFuU6zANBgkqhkiG9w0BAQUFADAMMQowCAYDVQQDDAEq
+      MB4XDTE5MTIwOTIzMjYzM1oXDTIwMTIwODIzMjYzM1owDDEKMAgGA1UEAwwBKjCC
+      ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANGvyO+mnn2tpnILxu2DNlgw
+      KKQ+8iwqC07gAvwbGmkEGjifxlRO5sbK1Cel79LUO3McCm4rfy4Kkk7VyFUFxduL
+      kvHg25/DXlf2gzFx5hzQ4LzOFcX7/Qr+KXdCT2TWjn+ppKhOyt6QMfYvTuRZMQ+0
+      TTDOUm+fd06S2pvJonW0h7sIwIuT1BVooH/WQIHkmbu+iW/V1AHJtPwBnd/YOEwP
+      yijAs9mdfi6s7h0ysJJ3NWGIxSSR9H0fIdx3OKX+6Vzw+9Na/dlzVNZgJ+6tR4TU
+      RGcSojbzei8YdX9VQy0fjns0mavxrq/aezrQeX5sj3lH0iiMiKmXoEoE1ZvnF1sC
+      AwEAATANBgkqhkiG9w0BAQUFAAOCAQEAXeQ1dAnHXklorPBkc/TMwjZ7fRCG3twJ
+      giViAvsGrGrXtKGwAfWENlM+8kG99VGpQ5RZ+wWGXayObqATMKMmrUZ5LSlBGfQz
+      AgKiDYURoKe+IHC3dBw/7nNFIXfuVexWhULQj6kyg0XlwNLSk/3DaJrsvOjirymY
+      j0ubnTrEwgl+2Yam97VW4a1Q3VXbay6VhNrEetMUUHokFPz6Go1bxDs07/fYfVfJ
+      Qv9xehvYLNuXDjluVRXneVpnRmC6XDAMAgT90qfZvktKj3KwLIZCdBczH9Kflhsr
+      2Xru1Dw19HiJCfX+ZotYMNOhx92qTiL0ELlJjqeu8c0bdAo0tuYYew==
+      -----END CERTIFICATE-----
+    client_cert: |
+      -----BEGIN CERTIFICATE-----
+      MIIClDCCAXwCCQCU6a04MFuU6zANBgkqhkiG9w0BAQUFADAMMQowCAYDVQQDDAEq
+      MB4XDTE5MTIwOTIzMjYzM1oXDTIwMTIwODIzMjYzM1owDDEKMAgGA1UEAwwBKjCC
+      ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANGvyO+mnn2tpnILxu2DNlgw
+      KKQ+8iwqC07gAvwbGmkEGjifxlRO5sbK1Cel79LUO3McCm4rfy4Kkk7VyFUFxduL
+      kvHg25/DXlf2gzFx5hzQ4LzOFcX7/Qr+KXdCT2TWjn+ppKhOyt6QMfYvTuRZMQ+0
+      TTDOUm+fd06S2pvJonW0h7sIwIuT1BVooH/WQIHkmbu+iW/V1AHJtPwBnd/YOEwP
+      yijAs9mdfi6s7h0ysJJ3NWGIxSSR9H0fIdx3OKX+6Vzw+9Na/dlzVNZgJ+6tR4TU
+      RGcSojbzei8YdX9VQy0fjns0mavxrq/aezrQeX5sj3lH0iiMiKmXoEoE1ZvnF1sC
+      AwEAATANBgkqhkiG9w0BAQUFAAOCAQEAXeQ1dAnHXklorPBkc/TMwjZ7fRCG3twJ
+      giViAvsGrGrXtKGwAfWENlM+8kG99VGpQ5RZ+wWGXayObqATMKMmrUZ5LSlBGfQz
+      AgKiDYURoKe+IHC3dBw/7nNFIXfuVexWhULQj6kyg0XlwNLSk/3DaJrsvOjirymY
+      j0ubnTrEwgl+2Yam97VW4a1Q3VXbay6VhNrEetMUUHokFPz6Go1bxDs07/fYfVfJ
+      Qv9xehvYLNuXDjluVRXneVpnRmC6XDAMAgT90qfZvktKj3KwLIZCdBczH9Kflhsr
+      2Xru1Dw19HiJCfX+ZotYMNOhx92qTiL0ELlJjqeu8c0bdAo0tuYYew==
+      -----END CERTIFICATE-----
+    client_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIEpQIBAAKCAQEA0a/I76aefa2mcgvG7YM2WDAopD7yLCoLTuAC/BsaaQQaOJ/G
+      VE7mxsrUJ6Xv0tQ7cxwKbit/LgqSTtXIVQXF24uS8eDbn8NeV/aDMXHmHNDgvM4V
+      xfv9Cv4pd0JPZNaOf6mkqE7K3pAx9i9O5FkxD7RNMM5Sb593TpLam8midbSHuwjA
+      i5PUFWigf9ZAgeSZu76Jb9XUAcm0/AGd39g4TA/KKMCz2Z1+LqzuHTKwknc1YYjF
+      JJH0fR8h3Hc4pf7pXPD701r92XNU1mAn7q1HhNREZxKiNvN6Lxh1f1VDLR+OezSZ
+      q/Gur9p7OtB5fmyPeUfSKIyIqZegSgTVm+cXWwIDAQABAoIBAQCutncIJ557PUso
+      T2PK1r9bL5VNdR03azjM2Z3jDXot8jse3xHTgYKMNMgc2QhAdJGsUbrnHNr1M93A
+      TiSDozG+wkcHvsGAFrrvM/kQI8UGUYxQBK7jrhijJi7KrbeVX6iP+nu1uSET3LWk
+      WLq1TROx8Bs5BVBurUItd/MqRxFUXDt6+1LPr59TvikYwchxhzSwokS4GCJ++uUR
+      J423+gLHWaDHBE06P6X1PbtcckEYHBMN56jo8de78UQNdxRUw2LXq2cIGTdx0KTs
+      pc35mu6jzkudaLYuBNrcs0dcIAaQw0rnpRlfVI8dmH3+uShbSdJej19zFugCZaOy
+      HzRkVG2xAoGBAOf1p77bogik4sV9/k9UwwkwpRmTDUT3sj15aNjRvUilgkOpP5B9
+      JkWG6BBenBdg/8iSy4sBah2pEj/oSUe53CYd9USJWcAafLpGWw0F0aud038zu+yJ
+      KcxvAjud/IDy3IuM395ohv0b/gMkuQLKaQxHl3A4boftp6KAo3iPvw0dAoGBAOdr
+      L1dtrjJM0gsEyvzj9d7HlMQUCwidu6xMWikOG0LBYFv+Ecs9k4IuB3QcV+H9IdLe
+      RbRAOlXZeXgXqc1stFJSon9he1mxFgUnu9hxrmx0fILzBBtVNJeRdUETHAG15dTt
+      OX0bKjE5qdbWSkmN7TBv/G7wzzMbThdPWBaDFyTXAoGAIfTqW5xXeiB5OiQZqI9m
+      BeBjKv1GAgSoySsO2D7MEOh5y2HpdkN76M25BzxyaVG/4CLtPSo12KW5kDV3FNL2
+      kXXtQ90/kEnQXIyUI7HoYdE29vYh2pyxy8WsdAHKxy3Gb39t/mca686/PsKPewMa
+      obuRRdJdC/UUh0uBotKYS1kCgYEAtgvwkwNaLIGYHkjn8ibWDSnN0q29vEpxD2qE
+      5pUNRudeiR+GGe7XsmnJPULqs4Fw8TQfe1unSE+rKZjb4BjqhXQyFqi142nWW7nV
+      IMDVKMY+CLlpeqL9m1o29jk1J/dS1LzFI7CR8WVeQP4UNGastxTxbMiNBrQtK1Mk
+      hZkcRMMCgYEAhvImIwfWMBb7vyZ2qUYz3d7JJRDF11ufGp3/5WN4TS0nHAJN43Tf
+      G+IH4ZZUCENYiFbGfygd+xLAQ1CmhUzaOjZVONbKugbMqHSISaH90Yzfd2qpKawD
+      0NvW20ZPCnvqegG8wOIGlqWwNBSARitdfWIHpGl/Rogp6+mYRw1It4I=
+      -----END RSA PRIVATE KEY-----
+app_domains: []
+blobstore:
+  access_key_id: AKIAIOSFODNN7EXAMPLE
+  buildpack_directory_key: cc-buildpacks
+  droplet_directory_key: cc-droplets
+  endpoint: http://capi-blobstore-minio.default:9000
+  package_directory_key: cc-packages
+  region: ""
+  resource_directory_key: cc-resources
+  secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+ccdb:
+  adapter: postgres
+  database: cloud_controller
+  host: capi-database-postgresql
+  password: cloud_controller
+  port: 5432
+  user: cloud_controller
+eirini:
+  serverCerts:
+    secretName: null
+imagePullSecrets: null
+kpack:
+  registry:
+    hostname: ""
+    password: ""
+    repository: ""
+    username: ""
+metric_proxy:
+  ca:
+    secret_name: null
+  cert:
+    secret_name: null
+replicaCount: 1
+staging_namespace: cf-workloads-staging
+system_domain: cf-system.svc.cluster.local
+system_namespace: cf-system
+uaa:
+  clients:
+    capi_kpack_watcher:
+      secret: supers3cret
+    cloud_controller_username_lookup:
+      secret: supers3cret
+  serverCerts:
+    secretName: null
+workloads_namespace: cf-workloads
+images:
+  capi_kpack_watcher:
+  ccng:
+  cf_autodetect_builder:
+  nginx:
+  statsd_exporter:
+kbld:
+  destination:

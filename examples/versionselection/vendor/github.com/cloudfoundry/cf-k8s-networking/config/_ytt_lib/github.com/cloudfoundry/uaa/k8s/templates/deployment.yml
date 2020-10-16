@@ -1,0 +1,83 @@
+#@ load("@ytt:data", "data")
+#@ load("deployment.star", "java_opts", "config_dir")
+
+#@ secrets_dir = "/etc/secrets"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uaa
+spec:
+  selector:
+    matchLabels:
+      app: uaa-deployment
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: uaa-deployment
+    spec: #! pod spec
+      serviceAccountName: uaa
+      containers:
+      - name: uaa
+        image: #@ data.values.image
+        resources:
+          requests:
+            memory: #@ data.values.resources.requests.memory
+            cpu: #@ data.values.resources.requests.cpu
+        ports:
+        - name: http-uaa
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: BPL_TOMCAT_ACCESS_LOGGING
+          value: #@ data.values.tomcat.accessLoggingEnabled
+        - name: JAVA_OPTS
+          value: #@ java_opts()
+        - name: spring_profiles
+          value: #@ data.values.database.scheme or "hsqldb"
+        - name: CLOUDFOUNDRY_CONFIG_PATH
+          value: #@ config_dir
+        - name: SECRETS_DIR
+          value: #@ secrets_dir
+        volumeMounts:
+        - name: uaa-config
+          mountPath: #@ config_dir
+        - name: smtp-credentials-file
+          mountPath: #@ "{}/smtp_credentials.yml".format(secrets_dir)
+          subPath: smtp_credentials.yml
+          readOnly: true
+        - name: database-credentials-file
+          mountPath: #@ "{}/database_credentials.yml".format(secrets_dir)
+          subPath: database_credentials.yml
+          readOnly: true
+        - name: admin-client-credentials-file
+          mountPath: #@ "{}/admin_client_credentials.yml".format(secrets_dir)
+          subPath: admin_client_credentials.yml
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-uaa
+          failureThreshold: 25
+          initialDelaySeconds: 60
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http-uaa
+      volumes:
+      - name: uaa-config
+        configMap:
+          name: uaa-config
+      - name: smtp-credentials-file
+        secret:
+          optional: true
+          secretName: uaa-smtp-credentials
+      - name: database-credentials-file
+        secret:
+          optional: true
+          secretName: uaa-database-credentials
+      - name: admin-client-credentials-file
+        secret:
+          secretName: uaa-admin-client-credentials

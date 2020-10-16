@@ -1,0 +1,18 @@
+#@data/values
+---
+system_domain: ""
+system_namespace: ""
+
+images:
+  metric_proxy: "oratos/metric-proxy@sha256:0e933b4f7208d3d6453ee28044126392a92055a565288434f2c522bf18a44fe1"
+
+metric_proxy:
+  ca:
+    secret_name: "metric-proxy-ca"
+    crt: "" #! Base64-encoded ca for the metric-proxy-ca
+    key: "" #! Base64-encoded private key for the cert above
+  cert:
+    secret_name: "metric-proxy-cert"
+    crt: "" #! Base64-encoded cert for the metric-proxy server requires CN of metric-proxy
+    key: "" #! Base64-encoded private key for the cert above
+

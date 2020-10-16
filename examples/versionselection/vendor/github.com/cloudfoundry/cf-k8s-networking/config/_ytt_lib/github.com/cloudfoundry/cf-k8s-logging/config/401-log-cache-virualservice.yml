@@ -1,0 +1,18 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: log-cache-external-virtual-service
+  namespace: #@ data.values.system_namespace
+spec:
+  gateways:
+  - cf-system/istio-ingressgateway
+  hosts:
+  - #@ "log-cache.{}".format(data.values.system_domain)
+  http:
+  - route:
+    - destination:
+        host: #@ "log-cache.{}.svc.cluster.local".format(data.values.system_namespace)
+        port:
+          number: 8083

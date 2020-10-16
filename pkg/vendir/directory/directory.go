@@ -55,9 +55,14 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		skipFileFilter := false
 		skipNewRootPath := false
 
+		contents, err = d.applyVersionSelection(contents, stagingDir, syncOpts)
+		if err != nil {
+			return lockConfig, fmt.Errorf("Selecting versions for directory '%s': %s", contents.Path, err)
+		}
+
 		switch {
 		case contents.Git != nil:
-			d.ui.PrintLinef("%s + %s (git from %s@%s)",
+			d.ui.PrintLinef("Fetching: %s + %s (git from %s@%s)",
 				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
 
 			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
@@ -70,7 +75,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.Git = &lock
 
 		case contents.HTTP != nil:
-			d.ui.PrintLinef("%s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
+			d.ui.PrintLinef("Fetching: %s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
 
 			lock, err := ctlhttp.NewSync(*contents.HTTP, syncOpts.RefFetcher).Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
@@ -80,7 +85,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.HTTP = &lock
 
 		case contents.Image != nil:
-			d.ui.PrintLinef("%s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
+			d.ui.PrintLinef("Fetching: %s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
 
 			lock, err := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
@@ -93,7 +98,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
 
 			desc, _, _ := sync.DescAndURL()
-			d.ui.PrintLinef("%s + %s (github release %s)", d.opts.Path, contents.Path, desc)
+			d.ui.PrintLinef("Fetching: %s + %s (github release %s)", d.opts.Path, contents.Path, desc)
 
 			lock, err := sync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
@@ -105,7 +110,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.HelmChart != nil:
 			helmChartSync := ctlhelmc.NewSync(*contents.HelmChart, syncOpts.HelmBinary, syncOpts.RefFetcher)
 
-			d.ui.PrintLinef("%s + %s (helm chart from %s)",
+			d.ui.PrintLinef("Fetching: %s + %s (helm chart from %s)",
 				d.opts.Path, contents.Path, helmChartSync.Desc())
 
 			lock, err := helmChartSync.Sync(stagingDstPath, stagingDir.TempArea())
@@ -116,7 +121,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.HelmChart = &lock
 
 		case contents.Manual != nil:
-			d.ui.PrintLinef("%s + %s (manual)", d.opts.Path, contents.Path)
+			d.ui.PrintLinef("Fetching: %s + %s (manual)", d.opts.Path, contents.Path)
 
 			srcPath := filepath.Join(d.opts.Path, contents.Path)
 
@@ -130,7 +135,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			skipNewRootPath = true
 
 		case contents.Directory != nil:
-			d.ui.PrintLinef("%s + %s (directory)", d.opts.Path, contents.Path)
+			d.ui.PrintLinef("Fetching: %s + %s (directory)", d.opts.Path, contents.Path)
 
 			err := dircopy.Copy(contents.Directory.Path, stagingDstPath)
 			if err != nil {
@@ -140,7 +145,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.Directory = &ctlconf.LockDirectoryContentsDirectory{}
 
 		case contents.Inline != nil:
-			d.ui.PrintLinef("%s + %s (inline)", d.opts.Path, contents.Path)
+			d.ui.PrintLinef("Fetching: %s + %s (inline)", d.opts.Path, contents.Path)
 
 			lock, err := ctlinl.NewSync(*contents.Inline, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
@@ -176,4 +181,49 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	return lockConfig, nil
+}
+
+func (d *Directory) applyVersionSelection(contents ctlconf.DirectoryContents,
+	stagingDir StagingDir, syncOpts SyncOpts) (ctlconf.DirectoryContents, error) {
+
+	switch {
+	case contents.Git != nil:
+		if contents.Git.RefSelection == nil {
+			return contents, nil
+		}
+
+		switch {
+		case contents.Git.RefSelection.Semver != nil:
+			d.ui.PrintLinef("Resolving: %s + %s (git from %s)",
+				d.opts.Path, contents.Path, contents.Git.URL)
+
+			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
+
+			versions, err := gitSync.ListVersions(stagingDir.TempArea())
+			if err != nil {
+				return contents, fmt.Errorf("Listing version: %s", err)
+			}
+
+			matchedVers := NewSemverVersions(versions)
+
+			if len(contents.Git.RefSelection.Semver.Constraints) > 0 {
+				matchedVers, err = matchedVers.Filtered(contents.Git.RefSelection.Semver.Constraints)
+				if err != nil {
+					return contents, fmt.Errorf("Selecting versions: %s", err)
+				}
+			}
+
+			highestVersion, found := matchedVers.Highest()
+			if !found {
+				return contents, fmt.Errorf("Expected to find at least one version, but did not")
+			}
+
+			contents.Git.Ref = highestVersion
+
+		default:
+			return ctlconf.DirectoryContents{}, fmt.Errorf("Unknown ref selection strategy")
+		}
+	}
+
+	return contents, nil
 }

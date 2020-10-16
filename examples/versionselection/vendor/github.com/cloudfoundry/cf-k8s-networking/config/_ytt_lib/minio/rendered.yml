@@ -1,0 +1,302 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: minio-update-prometheus-secret
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio-update-prometheus-secret
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cf-blobstore-minio
+  namespace: cf-blobstore
+---
+apiVersion: v1
+data:
+  accesskey: null
+  secretkey: null
+kind: Secret
+metadata:
+  labels:
+    app: minio
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio
+type: Opaque
+---
+apiVersion: v1
+data:
+  initialize: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --config-dir ${MC_CONFIG_DIR}"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for Minio service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/accesskey) ; SECRET=$(cat /config/secretkey) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to Minio server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} config host add myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # checkBucketExists ($bucket)
+    # Check if the bucket exists, by using the exit code of `mc ls`
+    checkBucketExists() {
+      BUCKET=$1
+      CMD=$(${MC} ls myminio/$BUCKET > /dev/null 2>&1)
+      return $?
+    }
+
+    # createBucket ($bucket, $policy, $purge)
+    # Ensure bucket exists, purging if asked to
+    createBucket() {
+      BUCKET=$1
+      POLICY=$2
+      PURGE=$3
+
+      # Purge the bucket, if set & exists
+      # Since PURGE is user input, check explicitly for `true`
+      if [ $PURGE = true ]; then
+        if checkBucketExists $BUCKET ; then
+          echo "Purging bucket '$BUCKET'."
+          set +e ; # don't exit if this fails
+          ${MC} rm -r --force myminio/$BUCKET
+          set -e ; # reset `e` as active
+        else
+          echo "Bucket '$BUCKET' does not exist, skipping purge."
+        fi
+      fi
+
+      # Create the bucket if it does not exist
+      if ! checkBucketExists $BUCKET ; then
+        echo "Creating bucket '$BUCKET'"
+        ${MC} mb myminio/$BUCKET
+      else
+        echo "Bucket '$BUCKET' already exists."
+      fi
+
+      # At this point, the bucket should exist, skip checking for existence
+      # Set policy on the bucket
+      echo "Setting policy of bucket '$BUCKET' to '$POLICY'."
+      ${MC} policy set $POLICY myminio/$BUCKET
+    }
+
+    # Try connecting to Minio instance
+    scheme=http
+    connectToMinio $scheme
+kind: ConfigMap
+metadata:
+  labels:
+    app: minio
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: minio
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: minio-update-prometheus-secret
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio-update-prometheus-secret
+rules:
+- apiGroups:
+  - ""
+  resourceNames:
+  - cf-blobstore-minio-prometheus
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - monitoring.coreos.com
+  resourceNames:
+  - cf-blobstore-minio
+  resources:
+  - servicemonitors
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: minio-update-prometheus-secret
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio-update-prometheus-secret
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cf-blobstore-minio-update-prometheus-secret
+subjects:
+- kind: ServiceAccount
+  name: cf-blobstore-minio-update-prometheus-secret
+  namespace: cf-blobstore
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio
+spec:
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: minio
+    release: cf-blobstore
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kbld.k14s.io/images: |
+      - Metas:
+        - Type: preresolved
+          URL: index.docker.io/relintdockerhubpushbot/cf-for-k8s-minio@sha256:106fea82bf6b97d27b73d924e1e4be2308b2e2895779ac0439dde5e57e3a7659
+        URL: index.docker.io/relintdockerhubpushbot/cf-for-k8s-minio@sha256:106fea82bf6b97d27b73d924e1e4be2308b2e2895779ac0439dde5e57e3a7659
+  labels:
+    app: minio
+    chart: minio-5.0.22
+    heritage: Helm
+    release: cf-blobstore
+  name: cf-blobstore-minio
+spec:
+  selector:
+    matchLabels:
+      app: minio
+      release: cf-blobstore
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 5d754ff6661141c802675a9180286885b3e839450ebe2e1260dd07aeb2343383
+        checksum/secrets: be465545d935bfa4b2d7bba629da94c60c0ef6e4cbe78a6d842373897d74d952
+        rollme: rWG3N
+      labels:
+        app: minio
+        release: cf-blobstore
+      name: cf-blobstore-minio
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -ce
+        - /usr/bin/docker-entrypoint.sh minio -S /etc/minio/certs/ server /export
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: cf-blobstore-minio
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: cf-blobstore-minio
+        image: index.docker.io/relintdockerhubpushbot/cf-for-k8s-minio@sha256:106fea82bf6b97d27b73d924e1e4be2308b2e2895779ac0439dde5e57e3a7659
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minio/health/live
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: minio
+        ports:
+        - containerPort: 9000
+          name: http
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minio/health/ready
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /export
+          name: export
+      serviceAccountName: cf-blobstore-minio
+      volumes:
+      - name: export
+        persistentVolumeClaim:
+          claimName: cf-blobstore-minio
+      - name: minio-user
+        secret:
+          secretName: cf-blobstore-minio

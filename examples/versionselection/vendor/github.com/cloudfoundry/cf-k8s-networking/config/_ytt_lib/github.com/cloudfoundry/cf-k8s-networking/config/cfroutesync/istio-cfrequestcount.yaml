@@ -1,0 +1,92 @@
+#! handler, instance, and rule to add custom cfrequestcount metric
+#! this custom metric adds the "source_name" label_name so requests can be
+#! counted by ingressgateway pod
+apiVersion: config.istio.io/v1alpha2
+kind: handler
+metadata:
+  name: cf-prometheus
+  namespace: istio-system
+spec:
+  compiledAdapter: prometheus
+  params:
+    metrics:
+      - instance_name: cfrequestcount.instance.istio-system
+        kind: COUNTER
+        label_names:
+          - reporter
+          - source_app
+          - source_principal
+          - source_workload
+          - source_name
+          - source_workload_namespace
+          - source_version
+          - destination_app
+          - destination_principal
+          - destination_workload
+          - destination_workload_namespace
+          - destination_version
+          - destination_service
+          - destination_service_name
+          - destination_service_namespace
+          - request_protocol
+          - response_code
+          - response_flags
+          - permissive_response_code
+          - permissive_response_policyid
+          - connection_security_policy
+        name: cf_requests_total
+---
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: cfrequestcount
+  namespace: istio-system
+spec:
+  compiledTemplate: metric
+  params:
+    dimensions:
+      connection_security_policy: conditional((context.reporter.kind | "inbound")
+        == "outbound", "unknown", conditional(connection.mtls | false, "mutual_tls",
+        "none"))
+      destination_app: destination.labels["app"] | "unknown"
+      destination_principal: destination.principal | "unknown"
+      destination_service: destination.service.host | conditional((destination.service.name
+        | "unknown") == "unknown", "unknown", request.host)
+      destination_service_name: destination.service.name | "unknown"
+      destination_service_namespace: destination.service.namespace | "unknown"
+      destination_version: destination.labels["version"] | "unknown"
+      destination_workload: destination.workload.name | "unknown"
+      destination_workload_namespace: destination.workload.namespace | "unknown"
+      permissive_response_code: rbac.permissive.response_code | "none"
+      permissive_response_policyid: rbac.permissive.effective_policy_id | "none"
+      reporter: conditional((context.reporter.kind | "inbound") == "outbound", "source",
+        "destination")
+      request_protocol: api.protocol | context.protocol | "unknown"
+      response_code: response.code | 200
+      response_flags: context.proxy_error_code | "-"
+      source_app: source.labels["app"] | "unknown"
+      source_name: source.name | "unknown"
+      source_principal: source.principal | "unknown"
+      source_version: source.labels["version"] | "unknown"
+      source_workload: source.workload.name | "unknown"
+      source_workload_namespace: source.workload.namespace | "unknown"
+    monitored_resource_type: '"UNSPECIFIED"'
+    value: "1"
+
+---
+apiVersion: config.istio.io/v1alpha2
+kind: rule
+metadata:
+  name: cf-promhttp
+  namespace: istio-system
+spec:
+  actions:
+    - handler: cf-prometheus
+      instances:
+        - cfrequestcount
+  match: (context.protocol == "http" || context.protocol == "grpc") && (match((request.useragent
+    | "-"), "kube-probe*") == false) && (match((request.useragent | "-"), "Prometheus*")
+    == false)
+
+
+

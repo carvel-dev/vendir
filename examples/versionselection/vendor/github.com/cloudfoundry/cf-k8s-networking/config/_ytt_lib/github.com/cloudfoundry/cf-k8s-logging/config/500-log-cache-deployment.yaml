@@ -1,0 +1,106 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-cache
+  namespace: #@ data.values.system_namespace
+  labels:
+    app: log-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-cache
+  template:
+    metadata:
+      labels:
+        app: log-cache
+    spec:
+      containers:
+      - name: cf-auth-proxy
+        image: #@ data.values.images.cf_auth_proxy
+        ports:
+          - containerPort: 8083
+        env:
+        - name: LOG_CACHE_GATEWAY_ADDR
+          value: https://localhost:8081
+        - name: CAPI_ADDR
+          value: #@ "http://capi.{}.svc.cluster.local:80".format(data.values.system_namespace)
+        - name: UAA_ADDR
+          value: #@ "http://uaa.{}.svc.cluster.local:8080".format(data.values.system_namespace)
+        volumeMounts:
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+        - mountPath: /metrics-certs
+          name: metrics-certs
+          readOnly: true
+      - name: syslog-server
+        image: #@ data.values.images.syslog_server
+        ports:
+        - containerPort: 8082
+        env:
+        - name: LOG_CACHE_ADDR
+          value: localhost:8080
+        volumeMounts:
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+        - mountPath: /log-cache-certs
+          name: log-cache-certs
+          readOnly: true
+        - mountPath: /syslog-server-certs
+          name: syslog-server-certs
+          readOnly: true
+        - mountPath: /metrics-certs
+          name: metrics-certs
+          readOnly: true
+      - name: log-cache
+        image: #@ data.values.images.log_cache
+        volumeMounts:
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+        - mountPath: /log-cache-certs
+          name: log-cache-certs
+          readOnly: true
+        - mountPath: /metrics-certs
+          name: metrics-certs
+          readOnly: true
+      - name: gateway
+        image: #@ data.values.images.log_cache_gateway
+        ports:
+        - containerPort: 8081
+        env:
+        - name: LOG_CACHE_ADDR
+          value: localhost:8080
+        volumeMounts:
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+        - mountPath: /log-cache-certs
+          name: log-cache-certs
+          readOnly: true
+        - mountPath: /gateway-certs
+          name: gateway-certs
+          readOnly: true
+        - mountPath: /metrics-certs
+          name: metrics-certs
+          readOnly: true
+      volumes:
+      - name: ca
+        secret:
+          secretName: log-cache-ca
+      - name: log-cache-certs
+        secret:
+          secretName: log-cache
+      - name: syslog-server-certs
+        secret:
+          secretName: log-cache-syslog
+      - name: gateway-certs
+        secret:
+          secretName: log-cache-gateway
+      - name: metrics-certs
+        secret:
+          secretName: log-cache-metrics

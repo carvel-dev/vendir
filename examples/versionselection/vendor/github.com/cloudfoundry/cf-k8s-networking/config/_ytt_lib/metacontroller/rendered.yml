@@ -1,0 +1,159 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metacontroller
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metacontroller
+  namespace: metacontroller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metacontroller
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metacontroller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metacontroller
+subjects:
+- kind: ServiceAccount
+  name: metacontroller
+  namespace: metacontroller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: aggregate-metacontroller-view
+rules:
+- apiGroups:
+  - metacontroller.k8s.io
+  resources:
+  - compositecontrollers
+  - controllerrevisions
+  - decoratorcontrollers
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: aggregate-metacontroller-edit
+rules:
+- apiGroups:
+  - metacontroller.k8s.io
+  resources:
+  - controllerrevisions
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: compositecontrollers.metacontroller.k8s.io
+spec:
+  group: metacontroller.k8s.io
+  names:
+    kind: CompositeController
+    plural: compositecontrollers
+    shortNames:
+    - cc
+    - cctl
+    singular: compositecontroller
+  scope: Cluster
+  version: v1alpha1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: decoratorcontrollers.metacontroller.k8s.io
+spec:
+  group: metacontroller.k8s.io
+  names:
+    kind: DecoratorController
+    plural: decoratorcontrollers
+    shortNames:
+    - dec
+    - decorators
+    singular: decoratorcontroller
+  scope: Cluster
+  version: v1alpha1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: controllerrevisions.metacontroller.k8s.io
+spec:
+  group: metacontroller.k8s.io
+  names:
+    kind: ControllerRevision
+    plural: controllerrevisions
+    singular: controllerrevision
+  scope: Namespaced
+  version: v1alpha1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kbld.k14s.io/images: |
+      - Metas:
+        - Type: preresolved
+          URL: index.docker.io/relintdockerhubpushbot/cf-for-k8s-metacontroller@sha256:731da6e0c4d544e0529126d74b32ccbf7d334db96d60745163d72b1334d93fe3
+        URL: index.docker.io/relintdockerhubpushbot/cf-for-k8s-metacontroller@sha256:731da6e0c4d544e0529126d74b32ccbf7d334db96d60745163d72b1334d93fe3
+  labels:
+    app.kubernetes.io/name: metacontroller
+  name: metacontroller
+  namespace: metacontroller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metacontroller
+  serviceName: ""
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metacontroller
+    spec:
+      containers:
+      - args:
+        - --logtostderr
+        - -v=4
+        - --discovery-interval=20s
+        command:
+        - /usr/bin/metacontroller
+        image: index.docker.io/relintdockerhubpushbot/cf-for-k8s-metacontroller@sha256:731da6e0c4d544e0529126d74b32ccbf7d334db96d60745163d72b1334d93fe3
+        name: metacontroller
+      serviceAccountName: metacontroller
+  volumeClaimTemplates: []

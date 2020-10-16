@@ -1,0 +1,31 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ccdb-migrate
+  namespace: #@ data.values.system_namespace
+  annotations:
+    kapp.k14s.io/update-strategy: fallback-on-replace
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      containers:
+      - name: run-migrations
+        image: #@ data.values.images.ccng
+        imagePullPolicy: Always
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          bundle exec rake db:wait_for_istio && \
+          bundle exec rake db:setup_database && \
+          bundle exec rake db:terminate_istio
+        volumeMounts:
+        - name: cloud-controller-ng-yaml
+          mountPath: /config
+      restartPolicy: OnFailure
+      volumes:
+      - name: cloud-controller-ng-yaml
+        configMap:
+          name: cloud-controller-ng-yaml

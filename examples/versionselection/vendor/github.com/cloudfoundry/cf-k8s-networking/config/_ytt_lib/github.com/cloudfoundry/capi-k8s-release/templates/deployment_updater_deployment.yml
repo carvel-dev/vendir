@@ -1,0 +1,48 @@
+#@ load("@ytt:data","data")
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cf-api-deployment-updater
+  namespace: #@ data.values.system_namespace
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cf-api-deployment-updater
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cf-api-deployment-updater
+    spec:
+      #@ if/end data.values.imagePullSecrets:
+      imagePullSecrets: #@ data.values.imagePullSecrets
+      containers:
+        - name: cf-api-deployment-updater
+          workingDir: "/cloud_controller_ng"
+          command: ["/usr/local/bin/bundle"]
+          args: ["exec", "rake", "deployment_updater:start"]
+          image: #@ data.values.images.ccng
+          imagePullPolicy: Always
+          readinessProbe:
+            tcpSocket:
+              port: 4445
+            periodSeconds: 3
+          volumeMounts:
+          - name: cloud-controller-ng-yaml
+            mountPath: /config
+          #@ if/end data.values.eirini.serverCerts.secretName:
+          - name: eirini-certs
+            mountPath: /config/eirini/certs
+      volumes:
+      - name: cloud-controller-ng-yaml
+        configMap:
+          name: cloud-controller-ng-yaml
+      #@ if/end data.values.eirini.serverCerts.secretName:
+      - name: eirini-certs
+        secret:
+          secretName: #@ data.values.eirini.serverCerts.secretName

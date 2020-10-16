@@ -1,0 +1,119 @@
+#@ load("@ytt:data", "data")
+
+#@ def labels():
+app: cfroutesync
+#@ end
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: cfroutesync
+spec:
+  resyncPeriodSeconds: 1
+  parentResource:
+    apiVersion: apps.cloudfoundry.org/v1alpha1
+    resource: routebulksyncs
+  childResources:
+    - apiVersion: v1
+      resource: services
+      updateStrategy:
+        method: InPlace
+    - apiVersion: networking.istio.io/v1alpha3
+      resource: virtualservices
+      updateStrategy:
+        method: InPlace
+  hooks:
+    sync:
+      webhook:
+        url: #@ "http://cfroutesync.{}/sync".format(data.values.systemNamespace)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cfroutesync
+  namespace: #@ data.values.systemNamespace
+  annotations:
+    kapp.k14s.io/update-strategy: fallback-on-replace
+spec:
+  selector:
+    matchLabels: #@ labels()
+  replicas: 1
+  template:
+    metadata:
+      labels: #@ labels()
+    spec:
+      containers:
+        - name: cfroutesync
+          image: #@ data.values.cfroutesync.image
+          args: [ "-c", "/etc/cfroutesync-config"]
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: cfroutesync-config
+          volumeMounts:
+            - name: cfroutesync-credentials
+              mountPath: /etc/cfroutesync-config
+              readOnly: true
+      volumes:
+        - name: cfroutesync-credentials
+          secret:
+            secretName: cfroutesync
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cfroutesync
+  namespace: #@ data.values.systemNamespace
+spec:
+  selector: #@ labels()
+  ports:
+    - port: #@ data.values.service.externalPort
+      name: http
+      targetPort: 8080
+---
+apiVersion: "apps.cloudfoundry.org/v1alpha1"
+kind: RouteBulkSync
+metadata:
+  name: route-bulk-sync
+  namespace: #@ data.values.workloadsNamespace
+spec:
+  selector:
+    matchLabels:
+      cloudfoundry.org/route-bulk-sync: "true"
+  template:
+    metadata:
+      labels:
+        cloudfoundry.org/route-bulk-sync: "true"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: cfroutesync-auth-metacontroller
+  namespace: #@ data.values.systemNamespace
+spec:
+  selector:
+    matchLabels: #@ labels()
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/metacontroller/sa/metacontroller"
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+            paths: ["/sync"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: cfroutesync-auth-prometheus
+  namespace: #@ data.values.systemNamespace
+spec:
+  selector:
+    matchLabels: #@ labels()
+  rules:
+    - to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/metrics"]

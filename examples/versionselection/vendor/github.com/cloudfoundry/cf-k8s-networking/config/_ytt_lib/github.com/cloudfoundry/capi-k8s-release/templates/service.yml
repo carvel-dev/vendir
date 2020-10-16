@@ -1,0 +1,15 @@
+#@ load("@ytt:data", "data")
+apiVersion: v1
+kind: Service
+metadata:
+  name: capi
+  namespace: #@ data.values.system_namespace
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: cf-api-server

@@ -56,6 +56,22 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	return gitLockConf, nil
 }
 
+func (d Sync) ListVersions(tempArea ctlfetch.TempArea) ([]string, error) {
+	incomingTmpPath, err := tempArea.NewTempDir("git")
+	if err != nil {
+		return nil, err
+	}
+
+	defer os.RemoveAll(incomingTmpPath)
+
+	tags, err := NewGit(d.opts, d.log, d.refFetcher).Tags(incomingTmpPath, tempArea)
+	if err != nil {
+		return nil, fmt.Errorf("Fetching git tags: %s", err)
+	}
+
+	return tags, nil
+}
+
 func (Sync) singleLineCommitTitle(in string) string {
 	pieces := strings.SplitN(in, "\n", 2)
 	if len(pieces) > 1 {

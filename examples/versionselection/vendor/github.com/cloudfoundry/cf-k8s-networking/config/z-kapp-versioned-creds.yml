@@ -1,0 +1,8 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@overlay/match by=overlay.subset({"kind":"ConfigMap"}), expects="1+"
+#@overlay/match-child-defaults missing_ok=True
+---
+metadata:
+  annotations:
+    kapp.k14s.io/versioned: ""

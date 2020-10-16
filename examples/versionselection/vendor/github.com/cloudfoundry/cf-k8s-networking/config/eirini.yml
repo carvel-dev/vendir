@@ -1,0 +1,54 @@
+#@ load("@ytt:base64", "base64")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:json", "json")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:template", "template")
+
+#@ eirini = library.get("eirini")
+--- #@ template.replace(eirini.eval())
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eirini-internal-tls-certs
+  namespace: #@ data.values.system_namespace
+data:
+  tls.crt: #@ data.values.internal_certificate.crt
+  tls.key: #@ data.values.internal_certificate.key
+  tls.ca: #@ data.values.internal_certificate.ca
+
+#! Allow app traffic from the istio-ingressgateway
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-ingress-from-ingressgateway
+  namespace: #@ data.values.workloads_namespace
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/istio-system-ns: ""
+      podSelector:
+        matchLabels:
+          istio: ingressgateway
+
+#! Add Secret to allow K8s to download app images from the provided registry
+#! https://github.com/cloudfoundry/cf-for-k8s/issues/74
+#! may want to keep this in sync with https://github.com/cloudfoundry-incubator/eirini-release/blob/master/helm/cf/templates/registry-secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-registry-credentials
+  namespace: #@ data.values.workloads_namespace
+type: kubernetes.io/dockerconfigjson
+data:
+  #@ docker_auth = base64.encode("{}:{}".format(data.values.app_registry.username, data.values.app_registry.password))
+  #@ docker_creds = {"username": data.values.app_registry.username, "password": data.values.app_registry.password, "auth": docker_auth}
+  .dockerconfigjson: #@ base64.encode(json.encode({"auths": {data.values.app_registry.hostname: docker_creds}}))

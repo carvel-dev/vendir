@@ -1,0 +1,41 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@overlay/match by=overlay.subset({"kind": "StatefulSet", "metadata":{"name": "cf-db-postgresql"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group.cf-db-postgresql: cf-for-k8s.cloudfoundry.org/cf-db-postgresql
+
+#@overlay/match by=overlay.subset({"kind":"Job", "metadata":{"name": "ccdb-migrate"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.cf-db-postgresql: "upsert after upserting cf-for-k8s.cloudfoundry.org/cf-db-postgresql"
+
+#@overlay/match by=overlay.subset({"kind":"Deployment", "metadata":{"name": "cf-api-server"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.cf-db-postgresql: "upsert after upserting cf-for-k8s.cloudfoundry.org/cf-db-postgresql"
+
+#@overlay/match by=overlay.subset({"kind":"Deployment", "metadata":{"name": "cf-api-clock"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.cf-db-postgresql: "upsert after upserting cf-for-k8s.cloudfoundry.org/cf-db-postgresql"
+
+#@overlay/match by=overlay.subset({"kind":"Deployment", "metadata":{"name": "cf-api-worker"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.cf-db-postgresql: "upsert after upserting cf-for-k8s.cloudfoundry.org/cf-db-postgresql"

@@ -1,0 +1,49 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+#! this secret contains the certificate/key combo used for the external system domain
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: istio-ingressgateway-certs
+  namespace: istio-system
+  annotations:
+    kapp.k14s.io/change-rule.istio-ingressgateway: "upsert before upserting istio.io/ingressgateway"
+data:
+  tls.key: #@ data.values.system_certificate.key
+  tls.crt: #@ data.values.system_certificate.crt
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cf-workloads-cert
+  namespace: istio-system
+  annotations:
+    kapp.k14s.io/change-rule.istio-ingressgateway: "upsert before upserting istio.io/ingressgateway"
+data:
+  tls.key: #@ data.values.workloads_certificate.key
+  tls.crt: #@ data.values.workloads_certificate.crt
+
+#! the following overlay ensures the above Secret is created before the ingressgateway Deployment since we're not using SDS
+#@overlay/match by=overlay.subset({"kind":"DaemonSet","metadata":{"name":"istio-ingressgateway"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group: istio.io/ingressgateway
+
+#! this gateway is used to expose CF services in the cluster, externally
+#@ load("gateway.lib.yml", "gateway")
+--- #@ gateway(data.values.system_domain, data.values.app_domains, data.values.system_namespace, data.values.workloads_namespace)
+
+#! This will set overlay a static IP for the istio load balancer.
+#@overlay/match by=overlay.subset({"kind": "Service", "metadata":{"name": "istio-ingressgateway"}})
+---
+#@ if data.values.istio_static_ip:
+spec:
+  #@overlay/match missing_ok=True
+  loadBalancerIP: #@ data.values.istio_static_ip
+#@ end

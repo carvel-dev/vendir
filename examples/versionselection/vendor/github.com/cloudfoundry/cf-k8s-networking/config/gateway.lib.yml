@@ -1,0 +1,39 @@
+#@ def gateway(system_domain, app_domains, system_namespace, workloads_namespace):
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-ingressgateway
+  namespace: #@ system_namespace
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - hosts:
+    #! TODO: restrict this
+    - '*'
+    port:
+      name: http
+      number: 80
+      protocol: HTTP
+  - hosts:
+    - #@ ('' if system_domain in app_domains else system_namespace + '/') + '*.' + system_domain
+    port:
+      name: https-system
+      number: 443
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: istio-ingressgateway-certs
+  #@ non_system_domain_app_domains = [d for d in app_domains if d != system_domain]
+  #@ if/end len(non_system_domain_app_domains) > 0:
+  - hosts:
+    #@ for/end app_domain in non_system_domain_app_domains:
+    - #@ workloads_namespace + '/*.' + app_domain
+    port:
+      name: https-workloads
+      number: 443
+      protocol: HTTPS
+    tls:
+      credentialName: cf-workloads-cert
+      mode: SIMPLE
+#@ end

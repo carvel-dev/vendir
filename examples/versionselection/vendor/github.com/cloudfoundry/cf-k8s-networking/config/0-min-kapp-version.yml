@@ -1,0 +1,7 @@
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+metadata:
+  name: kapp-version
+
+minimumRequiredVersion: 0.26.0

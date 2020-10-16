@@ -41,7 +41,7 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 		return GitInfo{}, fmt.Errorf("Expected non-empty ref (could be branch, tag, commit)")
 	}
 
-	err := t.fetch(dstPath, tempArea)
+	err := t.fetch(dstPath, false, tempArea)
 	if err != nil {
 		return GitInfo{}, fmt.Errorf("Cloning: %s", err)
 	}
@@ -70,7 +70,26 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 	return info, nil
 }
 
-func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
+func (t *Git) Tags(dstPath string, tempArea ctlfetch.TempArea) ([]string, error) {
+	if len(t.opts.URL) == 0 {
+		return nil, fmt.Errorf("Expected non-empty URL")
+	}
+	// Not caring about any ref at this point
+
+	err := t.fetch(dstPath, true, tempArea)
+	if err != nil {
+		return nil, fmt.Errorf("Cloning: %s", err)
+	}
+
+	out, _, err := t.run([]string{"tag", "-l"}, nil, dstPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(out, "\n"), nil
+}
+
+func (t *Git) fetch(dstPath string, skeleton bool, tempArea ctlfetch.TempArea) error {
 	authOpts, err := t.getAuthOpts()
 	if err != nil {
 		return err
@@ -146,11 +165,16 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		{"config", "credential.helper", "store --file " + gitCredsPath},
 		{"remote", "add", "origin", gitUrl},
 		{"fetch", "origin"},
-		// TODO following causes rev-parse HEAD to fail:
-		// {"checkout", t.opts.Ref, "--recurse-submodules", "."},
-		{"-c", "advice.detachedHead=false", "checkout", t.opts.Ref},
-		{"submodule", "update", "--init", "--recursive"},
-		// TODO shallow clones?
+	}
+
+	if !skeleton {
+		argss = append(argss, [][]string{
+			// TODO following causes rev-parse HEAD to fail:
+			// {"checkout", t.opts.Ref, "--recurse-submodules", "."},
+			{"-c", "advice.detachedHead=false", "checkout", t.opts.Ref},
+			{"submodule", "update", "--init", "--recursive"},
+			// TODO shallow clones?
+		}...)
 	}
 
 	for _, args := range argss {

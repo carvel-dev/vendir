@@ -1,0 +1,398 @@
+#@ load("@ytt:data","data")
+#@ def ccng_config():
+---
+local_route: 0.0.0.0
+
+external_port: 9022
+tls_port: 9023
+readiness_port:
+  cloud_controller_worker: 4444
+  deployment_updater: 4445
+  clock: 4446
+
+internal_service_hostname: #@ "capi.{}.svc.cluster.local".format(data.values.system_namespace)
+
+pid_filename: /cloud_controller_ng/cloud_controller_ng.pid
+newrelic_enabled: false
+development_mode: false
+
+external_protocol: https
+external_domain: #@ "api.{}".format(data.values.system_domain)
+temporary_disable_deployments: false
+temporary_use_logcache: true
+
+system_domain_organization: system
+system_domain: #@ data.values.system_domain
+app_domains: #@ data.values.app_domains
+
+reserved_private_domains: "/dev/null"
+disable_private_domain_cross_space_context_path_route_sharing: false
+
+jobs:
+  global:
+    timeout_in_seconds: 14400
+
+default_app_memory: 1024
+default_app_disk_in_mb: 1024
+maximum_app_disk_in_mb: 2048
+
+instance_file_descriptor_limit: 16384
+
+request_timeout_in_seconds: 900
+
+bulk_api:
+  auth_user: TODO
+  auth_password: TODO
+
+internal_api:
+  auth_user: TODO
+  auth_password: TODO
+
+nginx:
+  use_nginx: true
+  instance_socket: "/data/cloud_controller_ng/cloud_controller.sock"
+
+index: 0
+name: ""
+route_services_enabled: true
+volume_services_enabled: true
+
+info:
+  name: ""
+  build: ""
+  version: 0
+  support_address: ""
+  description: ""
+  app_ssh_endpoint: TODO.TODO
+  app_ssh_host_key_fingerprint: "placeholder"
+  app_ssh_oauth_client: "placeholder"
+  min_cli_version: ""
+  min_recommended_cli_version: ""
+
+
+directories:
+  tmpdir: /tmp/
+  diagnostics: /cloud_controller_ng/diagnostics/
+
+logging:
+  file: /dev/stdout
+  syslog: vcap.cloud_controller_ng
+  level: "debug"
+  max_retries: 1
+
+logcache:
+  host: metric-proxy
+  port: 8080
+  temporary_ignore_server_unavailable_errors: true
+
+logcache_tls:
+  #@ if data.values.metric_proxy.cert.secret_name:
+  ca_file: "/config/metric_proxy/ca/tls.crt"
+  cert_file: "/config/metric_proxy/certs/tls.crt"
+  key_file: "/config/metric_proxy/certs/tls.key"
+  #@ else:
+  ca_file: "/dev/null"
+  cert_file: "/dev/null"
+  key_file: "/dev/null"
+  #@ end
+  subject_name: metric-proxy
+
+loggregator:
+  router: 127.0.0.1:3457
+  internal_url: #@ "https://log-api.{}.svc.cluster.local:8081".format(data.values.system_namespace)
+log_stream:
+  url: #@ "https://log-stream.{}".format(data.values.system_domain)
+
+doppler:
+  url: #@ "wss://doppler.{}:443".format(data.values.system_domain)
+
+db: &db
+  database:
+    adapter: #@ data.values.ccdb.adapter
+    host: #@ data.values.ccdb.host
+    port: #@ data.values.ccdb.port
+    user: #@ data.values.ccdb.user
+    password: #@ data.values.ccdb.password
+    database: #@ data.values.ccdb.database
+  max_connections: 25
+  pool_timeout: 10
+  log_level: "debug2"
+  log_db_queries: false
+  ssl_verify_hostname: false
+  read_timeout: 3600
+  connection_validation_timeout: 3600
+  #! TODO: secure db connection?
+  #! ca_cert_path: "/dev/null"
+
+telemetry_log_path: "/dev/null"
+log_cache:
+  url: #@ "https://log-cache.{}".format(data.values.system_domain)
+threadpool_size: 20
+internal_route_vip_range: ""
+
+login:
+  url: #@ "https://login.{}".format(data.values.system_domain)
+#! TODO: change the UAA's Kube DNS name when the service is named correctly later
+uaa:
+  url: #@ "https://uaa.{}".format(data.values.system_domain)
+  internal_url: #@ "http://uaa.{}.svc.cluster.local:8080".format(data.values.system_namespace)
+  resource_id: cloud_controller,cloud_controller_service_permissions
+  client_timeout: 60
+  ca_file: /config/uaa/certs/uaa.crt
+
+routing_api:
+  url: #@ "https://api.{}/routing".format(data.values.system_domain)
+  routing_client_name: "TODO"
+  routing_client_secret: "TODO"
+
+credential_references:
+  interpolate_service_bindings: true
+
+#! App staging parameters
+staging:
+  timeout_in_seconds: 900
+  minimum_staging_memory_mb: 1024
+  minimum_staging_disk_mb: 4096
+  minimum_staging_file_descriptor_limit: 16384
+  auth:
+    user: TODO
+    password: TODO
+
+default_health_check_timeout: 60
+maximum_health_check_timeout: 180
+
+runtimes_file: "/dev/null"
+stacks_file: "/cloud_controller_ng/config/stacks.yml"
+
+shared_isolation_segment_name: shared
+
+quota_definitions: {"default":{"memory_limit":102400,"non_basic_services_allowed":true,"total_routes":1000,"total_services":-1,"total_reserved_route_ports":100}}
+default_quota_definition: default
+
+resource_pool:
+  resource_directory_key: #@ data.values.blobstore.resource_directory_key
+  blobstore_type: fog
+  fog_connection:
+    provider: AWS
+    endpoint: #@ data.values.blobstore.endpoint
+    aws_access_key_id: #@ data.values.blobstore.access_key_id
+    aws_secret_access_key: #@ data.values.blobstore.secret_access_key
+    aws_signature_version: '2'
+    region: #@ data.values.blobstore.region
+    path_style: true
+  minimum_size: 65536
+  maximum_size: 536870912
+
+  cdn:
+    uri:
+    key_pair_id:
+    private_key: ""
+
+  fog_aws_storage_options: {}
+
+packages:
+  app_package_directory_key: #@ data.values.blobstore.package_directory_key
+  blobstore_type: fog
+  fog_connection:
+    provider: AWS
+    endpoint: #@ data.values.blobstore.endpoint
+    aws_access_key_id: #@ data.values.blobstore.access_key_id
+    aws_secret_access_key: #@ data.values.blobstore.secret_access_key
+    aws_signature_version: '2'
+    region: #@ data.values.blobstore.region
+    path_style: true
+  max_valid_packages_stored: 5
+  max_package_size: 1073741824
+
+  cdn:
+    uri:
+    key_pair_id:
+    private_key: ""
+
+  fog_aws_storage_options: {}
+
+droplets:
+  droplet_directory_key: #@ data.values.blobstore.droplet_directory_key
+  blobstore_type: fog
+  fog_connection:
+    provider: AWS
+    endpoint: #@ data.values.blobstore.endpoint
+    aws_access_key_id: #@ data.values.blobstore.access_key_id
+    aws_secret_access_key: #@ data.values.blobstore.secret_access_key
+    aws_signature_version: '2'
+    region: #@ data.values.blobstore.region
+    path_style: true
+
+  cdn:
+    uri:
+    key_pair_id:
+    private_key: ""
+
+  fog_aws_storage_options: {}
+  max_staged_droplets_stored: 5
+
+buildpacks:
+  buildpack_directory_key: #@ data.values.blobstore.buildpack_directory_key
+  blobstore_type: fog
+  fog_connection:
+    provider: AWS
+    endpoint: #@ data.values.blobstore.endpoint
+    aws_access_key_id: #@ data.values.blobstore.access_key_id
+    aws_secret_access_key: #@ data.values.blobstore.secret_access_key
+    aws_signature_version: '2'
+    region: #@ data.values.blobstore.region
+    path_style: true
+
+  cdn:
+    uri:
+    key_pair_id:
+    private_key: ""
+
+  fog_aws_storage_options: {}
+
+db_encryption_key: TODO
+
+database_encryption:
+  keys: {"encryption_key_0":"TODO"}
+  current_key_label: "encryption_key_0"
+  pbkdf2_hmac_iterations: 2048
+
+disable_custom_buildpacks: false
+
+broker_client_timeout_seconds: 60
+broker_client_default_async_poll_interval_seconds: 60
+broker_client_max_async_poll_duration_minutes: 10080
+renderer:
+  max_results_per_page: 100
+  default_results_per_page: 50
+  max_inline_relations_depth: 2
+
+uaa_client_name: "cc-service-dashboards"
+uaa_client_secret: TODO
+uaa_client_scope: openid,cloud_controller_service_permissions.read
+
+cloud_controller_username_lookup_client_name: "cloud_controller_username_lookup"
+cloud_controller_username_lookup_client_secret: #@ data.values.uaa.clients.cloud_controller_username_lookup.secret
+
+cc_service_key_client_name: "cc_service_key_client"
+cc_service_key_client_secret: TODO
+
+allow_app_ssh_access: true
+default_app_ssh_access: true
+
+skip_cert_verify: true
+
+install_buildpacks: []
+
+app_bits_upload_grace_period_in_seconds: 1200
+
+security_group_definitions: [{"name":"public_networks","rules":[{"destination":"0.0.0.0-9.255.255.255","protocol":"all"},{"destination":"11.0.0.0-169.253.255.255","protocol":"all"},{"destination":"169.255.0.0-172.15.255.255","protocol":"all"},{"destination":"172.32.0.0-192.167.255.255","protocol":"all"},{"destination":"192.169.0.0-255.255.255.255","protocol":"all"}]},{"name":"dns","rules":[{"destination":"0.0.0.0/0","ports":"53","protocol":"tcp"},{"destination":"0.0.0.0/0","ports":"53","protocol":"udp"}]}]
+default_running_security_groups: ["public_networks","dns"]
+default_staging_security_groups: ["public_networks","dns"]
+
+allowed_cors_domains: []
+
+statsd_host: 127.0.0.1
+statsd_port: 9125
+
+security_event_logging:
+  enabled: false
+  file: "/dev/null"
+
+system_hostnames: ["api", "uaa", "login", "doppler", "loggregator", "hm9000", "credhub"]
+
+bits_service:
+  enabled: false
+  public_endpoint: #@ "https://bits.{}".format(data.values.system_domain)
+  private_endpoint: https://TODO.TODO
+  username: TODO
+  password: TODO
+
+  ca_cert_path: "/dev/null"
+
+rate_limiter:
+  enabled: false
+  general_limit: 2000
+  unauthenticated_limit: 100
+  reset_interval_in_minutes: 60
+
+diego:
+  bbs:
+    url: https://TODO.TODO
+    key_file: "/dev/null"
+    cert_file: "/dev/null"
+    ca_file: "/dev/null"
+    connect_timeout: 10
+    send_timeout: 10
+    receive_timeout: 10
+  cc_uploader_url: https://TODO.TODO
+  docker_staging_stack: cflinuxfs3
+  file_server_url: https://TODO.TODO
+  insecure_docker_registry_list: []
+  lifecycle_bundles: {"buildpack/cflinuxfs3":"buildpack_app_lifecycle/buildpack_app_lifecycle.tgz","buildpack/windows":"buildpack_app_lifecycle/buildpack_app_lifecycle.tgz","buildpack/windows2012R2":"windows_app_lifecycle/windows_app_lifecycle.tgz","buildpack/windows2016":"buildpack_app_lifecycle/buildpack_app_lifecycle.tgz","docker":"docker_app_lifecycle/docker_app_lifecycle.tgz"}
+  droplet_destinations: {"cflinuxfs3":"/home/vcap","windows":"/Users/vcap","windows2012R2":"/","windows2016":"/Users/vcap"}
+  pid_limit: 1024
+  temporary_oci_buildpack_mode:
+  enable_declarative_asset_downloads: false
+  use_privileged_containers_for_running: false
+  use_privileged_containers_for_staging: false
+
+opi:
+  url: #@ "https://eirini.{}.svc.cluster.local:8085".format(data.values.system_namespace)
+  opi_staging: true
+  enabled: true
+  cc_uploader_url: "https://TODO.TODO"
+  ca_file: /config/eirini/certs/tls.ca
+  client_cert_file: /config/eirini/certs/tls.crt
+  client_key_file: /config/eirini/certs/tls.key
+
+perm:
+  enabled: false
+
+max_labels_per_resource: 50
+max_annotations_per_resource: 200
+
+default_app_lifecycle: kpack
+
+#! kpack stager properties
+kubernetes:
+  host_url: https://kubernetes.default
+  service_account:
+    token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  workloads_namespace: cf-workloads
+  kpack:
+    builder_namespace: #@ data.values.staging_namespace
+    registry_service_account_name: cc-kpack-registry-service-account
+    registry_tag_base: #@ data.values.kpack.registry.repository
+
+#! worker property
+perform_blob_cleanup: true
+
+#! clock properties
+app_usage_events:
+  cutoff_age_in_days: 31
+audit_events:
+  cutoff_age_in_days: 31
+failed_jobs:
+  cutoff_age_in_days: 31
+completed_tasks:
+  cutoff_age_in_days: 31
+service_usage_events:
+  cutoff_age_in_days: 31
+max_retained_deployments_per_app: 100
+max_retained_builds_per_app: 100
+max_retained_revisions_per_app: 100
+diego_sync:
+  frequency_in_seconds: 15
+pending_builds:
+  frequency_in_seconds: 300
+  expiration_in_seconds: 42
+pending_droplets:
+  frequency_in_seconds: 300
+  expiration_in_seconds: 42
+
+#! deployment updater properties
+deployment_updater:
+  update_frequency_in_seconds: 1
+#@ end

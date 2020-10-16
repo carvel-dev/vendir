@@ -1,0 +1,111 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cf-api-server
+  namespace: #@ data.values.system_namespace
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cf-api-server
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9102'
+        prometheus.io/path: 'metrics'
+      labels:
+        app.kubernetes.io/name: cf-api-server
+    spec:
+      #@ if/end data.values.imagePullSecrets:
+      imagePullSecrets: #@ data.values.imagePullSecrets
+      containers:
+        - name: cf-api-server
+          image: #@ data.values.images.ccng
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: server-sock
+            mountPath: /data/cloud_controller_ng
+          - name: cloud-controller-ng-yaml
+            mountPath: /config/
+          #@ if/end data.values.uaa.serverCerts.secretName:
+          - name: uaa-certs
+            mountPath: /config/uaa/certs
+          #@ if/end data.values.eirini.serverCerts.secretName:
+          - name: eirini-certs
+            mountPath: /config/eirini/certs
+          #@ if/end data.values.metric_proxy.cert.secret_name:
+          - name: metric-proxy-certs
+            mountPath: /config/metric_proxy/certs
+          #@ if/end data.values.metric_proxy.ca.secret_name:
+          - name: metric-proxy-ca
+            mountPath: /config/metric_proxy/ca
+        - name: cf-api-local-worker
+          image: #@ data.values.images.ccng
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/bundle"]
+          args: ["exec", "rake", "jobs:local"]
+          volumeMounts:
+          - name: cloud-controller-ng-yaml
+            mountPath: /config/
+          - name: nginx-uploads
+            mountPath: /tmp/uploads
+        - name: nginx
+          image: #@ data.values.images.nginx
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 80
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: "/healthz"
+          volumeMounts:
+          - name: nginx
+            mountPath: /etc/nginx
+            readOnly: true
+          - name: server-sock
+            mountPath: /data/cloud_controller_ng
+          - name: nginx-logs
+            mountPath: /cloud_controller_ng
+          - name: nginx-uploads
+            mountPath: /tmp/uploads
+        - name: statsd-exporter
+          image: #@ data.values.images.statsd_exporter
+          imagePullPolicy: Always
+      serviceAccountName: cc-api-service-account
+      volumes:
+      - name: server-sock
+        emptyDir: {}
+      - name: cloud-controller-ng-yaml
+        configMap:
+          name: cloud-controller-ng-yaml
+      - name: nginx
+        configMap:
+          name: nginx
+      - name: nginx-logs
+        emptyDir: {}
+      #@ if/end data.values.uaa.serverCerts.secretName:
+      - name: uaa-certs
+        secret:
+          secretName: #@ data.values.uaa.serverCerts.secretName
+      #@ if/end data.values.eirini.serverCerts.secretName:
+      - name: eirini-certs
+        secret:
+          secretName: #@ data.values.eirini.serverCerts.secretName
+      #@ if/end data.values.metric_proxy.cert.secret_name:
+      - name: metric-proxy-certs
+        secret:
+          secretName: #@ data.values.metric_proxy.cert.secret_name
+      #@ if/end data.values.metric_proxy.ca.secret_name:
+      - name: metric-proxy-ca
+        secret:
+          secretName: #@ data.values.metric_proxy.ca.secret_name
+      - name: nginx-uploads
+        emptyDir: {}
+

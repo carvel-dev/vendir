@@ -1,0 +1,250 @@
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+#@ load("@ytt:yaml", "yaml")
+
+#@ def uaa_db_host():
+#@   if len(data.values.uaa.database.host) > 0:
+#@     return data.values.uaa.database.host
+#@   elif data.values.cf_db.enabled == True:
+#@     return "cf-db-postgresql.cf-db.svc.cluster.local"
+#@   else:
+#@     assert.fail("When cf_db.enabled is false, expected a uaa.database.host to be provided, but was not.")
+#@   end
+#@ end
+
+#@ def uaa_values():
+admin:
+  client_secret: #@ data.values.uaa.admin_client_secret
+
+database:
+  scheme: #@ data.values.uaa.database.adapter
+  address: #@ uaa_db_host()
+  port: #@ data.values.uaa.database.port
+  name: #@ data.values.uaa.database.name
+  username: #@ data.values.uaa.database.user
+  password: #@ data.values.uaa.database.password
+
+namespace: #@ data.values.system_namespace
+
+jwt:
+  policy:
+    activeKeyId: #@ data.values.uaa.jwt_policy.key_id
+    #@overlay/replace
+    keys:
+    - keyId: #@ data.values.uaa.jwt_policy.key_id
+      signingKey: #@ data.values.uaa.jwt_policy.signing_key
+#@ end
+
+#@ def uaa_config():
+#@overlay/match missing_ok=True
+encryption:
+  active_key_label: #@ data.values.uaa.encryption_key.label
+  #@overlay/replace
+  encryption_keys:
+  - label: #@ data.values.uaa.encryption_key.label
+    passphrase: #@ data.values.uaa.encryption_key.passphrase
+
+LOGIN_SECRET: #@ data.values.uaa.login_secret_name
+
+#@overlay/match missing_ok=True
+scim:
+  userids_enabled: true
+  user:
+    override: true
+  users:
+  - #@ "admin|" + data.values.cf_admin_password + "|admin@admin.tld|first|last|clients.read,cloud_controller.admin,doppler.firehose,network.admin,openid,routing.router_groups.read,routing.router_groups.write,scim.read,scim.write|uaa"
+  groups:
+    zones.read: Read identity zones
+    zones.write: Create and update identity zones
+    idps.read: Retrieve identity providers
+    idps.write: Create and update identity providers
+    clients.admin: Create, modify and delete OAuth clients
+    clients.write: Create and modify OAuth clients
+    clients.read: Read information about OAuth clients
+    clients.secret: Change the password of an OAuth client
+    scim.write: Create, modify and delete SCIM entities, i.e. users and groups
+    scim.read: Read all SCIM entities, i.e. users and groups
+    scim.create: Create users
+    scim.userids: Read user IDs and retrieve users by ID
+    scim.zones: Control a user's ability to manage a zone
+    scim.invite: Send invitations to users
+    password.write: Change your password
+    oauth.approval: Manage approved scopes
+    oauth.login: Authenticate users outside of the UAA
+    openid: Access profile information, i.e. email, first and last name, and phone number
+    groups.update: Update group information and memberships
+    uaa.user: Act as a user in the UAA
+    uaa.resource: Serve resources protected by the UAA
+    uaa.admin: Act as an administrator throughout the UAA
+    uaa.none: Forbid acting as a user
+    uaa.offline_token: Allow offline access
+
+#@overlay/match missing_ok=True
+oauth:
+  client:
+    override: true
+  #@overlay/match-child-defaults missing_ok=True
+  clients:
+    cf:
+      id: cf
+      override: true
+      authorized-grant-types: password,refresh_token
+      scope: cloud_controller.read,cloud_controller.write,openid,password.write,cloud_controller.admin,scim.read,scim.write,doppler.firehose,uaa.user,routing.router_groups.read,routing.router_groups.write
+      authorities: uaa.none
+      access-token-validity: 600
+      refresh-token-validity: 2592000
+      secret: ""
+    admin:
+      authorized-grant-types: client_credentials
+      authorities: clients.read,clients.write,clients.secret,uaa.admin,scim.read,scim.write,password.write,openid
+      autoapprove:
+      - openid
+      id: admin
+    #! TODO: each client should use different secrets!
+    cf-k8s-networking:
+      authorities: uaa.resource,cloud_controller.admin_read_only
+      authorized-grant-types: client_credentials
+      secret: #@ data.values.uaa.admin_client_secret
+    cloud_controller_username_lookup:
+      authorities: scim.userids
+      authorized-grant-types: client_credentials
+      secret: #@ data.values.uaa.admin_client_secret
+    capi_kpack_watcher:
+      authorities: cloud_controller.write,cloud_controller.update_build_state
+      authorized-grant-types: client_credentials
+      secret: #@ data.values.uaa.admin_client_secret
+
+issuer:
+  uri: #@ "https://uaa." + data.values.system_domain
+
+#@overlay/match missing_ok=True
+zones:
+  internal:
+    hostnames:
+    - #@ "uaa." + data.values.system_namespace + ".svc.cluster.local"
+
+#@overlay/match missing_ok=True
+#@overlay/match-child-defaults missing_ok=True
+login:
+  url: #@ "https://login." + data.values.system_domain
+  entityBaseURL: #@ "https://uaa." + data.values.system_domain
+  entityID: cloudfoundry-saml-login
+  serviceProviderKey: #@ data.values.uaa.login.service_provider.key
+  serviceProviderKeyPassword: #@ data.values.uaa.login.service_provider.key_password
+  serviceProviderCertificate: #@ data.values.uaa.login.service_provider.certificate
+
+#@overlay/match missing_ok=True
+uaa:
+  url: #@ "https://uaa." + data.values.system_domain
+  token:
+    url: #@ "https://uaa." + data.values.system_domain + "/oauth/token"
+  approvals:
+    url: #@ "https://uaa." + data.values.system_domain + "/approvals"
+  login:
+    url: #@ "https://uaa." + data.values.system_domain + "/authenticate"
+  limitedFunctionality:
+    enabled: false
+    whitelist:
+      endpoints:
+        - /oauth/authorize/**
+        - /oauth/token/**
+        - /check_token/**
+        - /login/**
+        - /login.do
+        - /logout/**
+        - /logout.do
+        - /saml/**
+        - /autologin/**
+        - /authenticate/**
+        - /idp_discovery/**
+      methods:
+        - GET
+        - HEAD
+        - OPTIONS
+
+#@overlay/match missing_ok=True
+logging:
+  config: /etc/config/logging-config.settings
+#@ end
+
+#@ def overlay_uaa_config(old, new):
+#@   return yaml.encode(overlay.apply(yaml.decode(old), uaa_config()))
+#@ end
+
+#@ uaa = library.get("github.com/cloudfoundry/uaa")
+--- #@ template.replace(uaa.with_data_values(uaa_values()).eval())
+
+#! overlay CF-specific UAA configuration given there is no equivalent data values.
+#@overlay/match by=overlay.subset({"kind":"ConfigMap", "metadata":{"name":"uaa-config"}})
+---
+data:
+  #@overlay/replace via=overlay_uaa_config
+  uaa.yml:
+  #@overlay/match missing_ok=True
+  logging-config.settings: |
+    status = error
+    dest = err
+    name = UaaLog
+
+    property.log_pattern=[%d{yyyy-MM-dd HH:mm:ss.SSS}] uaa%X{context} - %pid [%t] .... %5p --- %c{1}: %replace{%m}{(?<=password=|client_secret=)([^&]*)}{<redacted>}%n
+
+    appender.uaaDefaultAppender.type = File
+    appender.uaaDefaultAppender.name = UaaDefaultAppender
+    appender.uaaDefaultAppender.fileName = logs/uaa.log
+    appender.uaaDefaultAppender.layout.type = PatternLayout
+    appender.uaaDefaultAppender.layout.pattern = ${log_pattern}
+
+    appender.uaaAuditAppender.type = File
+    appender.uaaAuditAppender.name = UaaAuditAppender
+    appender.uaaAuditAppender.fileName = logs/uaa_events.log
+    appender.uaaAuditAppender.layout.type = PatternLayout
+    appender.uaaAuditAppender.layout.pattern = ${log_pattern}
+
+    rootLogger.level = debug
+    rootLogger.appenderRef.uaaDefaultAppender.ref = UaaDefaultAppender
+
+    logger.UAAAudit.name = UAA.Audit
+    logger.UAAAudit.level = debug
+    logger.UAAAudit.additivity = true
+    logger.UAAAudit.appenderRef.auditEventLog.ref = UaaAuditAppender
+
+    logger.cfIdentity.name = org.cloudfoundry.identity
+    logger.cfIdentity.level = debug
+    logger.cfIdentity.additivity = false
+    logger.cfIdentity.appenderRef.uaaDefaultAppender.ref = UaaDefaultAppender
+
+#! expose UAA under the system domain
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: uaa-external-virtual-service
+  namespace: #@ data.values.system_namespace
+spec:
+  hosts:
+  - #@ "uaa." + data.values.system_domain
+  - #@ "*.uaa." + data.values.system_domain
+  - #@ "login." + data.values.system_domain
+  - #@ "*.login." + data.values.system_domain
+  gateways:
+  - #@ data.values.system_namespace + "/istio-ingressgateway"
+  http:
+  - route:
+    - destination:
+        host: #@ "uaa." + data.values.system_namespace + ".svc.cluster.local"
+        port:
+          number: 8080
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: uaa-certs
+  namespace: #@ data.values.system_namespace
+type: Opaque
+data:
+  uaa.key: #@ data.values.internal_certificate.key
+  uaa.crt: #@ data.values.internal_certificate.crt

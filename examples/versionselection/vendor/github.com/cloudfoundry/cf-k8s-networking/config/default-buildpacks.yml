@@ -1,0 +1,51 @@
+#@ load("@ytt:data", "data")
+
+---
+apiVersion: experimental.kpack.pivotal.io/v1alpha1
+kind: Store
+metadata:
+  name: cf-buildpack-store
+spec:
+  sources:
+  - image: "gcr.io/paketo-buildpacks/builder@sha256:d89cb0170bb37b1905d008cab8845b5442a773afdc89d964ace8acd5561439c9"
+
+---
+apiVersion: experimental.kpack.pivotal.io/v1alpha1
+kind: Stack
+metadata:
+  name: cflinuxfs3-stack
+spec:
+  id: "org.cloudfoundry.stacks.cflinuxfs3"
+  buildImage:
+    image: "gcr.io/paketo-buildpacks/build@sha256:84f7b60192e69036cb363b2fc7d9834cff69dcbcf7aaf8c058d986fdee6941c3"
+  runImage:
+    image: "gcr.io/paketo-buildpacks/run@sha256:84f7b60192e69036cb363b2fc7d9834cff69dcbcf7aaf8c058d986fdee6941c3"
+
+---
+apiVersion: experimental.kpack.pivotal.io/v1alpha1
+kind: CustomBuilder
+metadata:
+  name: cf-default-builder
+  namespace: #@ data.values.staging_namespace
+spec:
+  tag: #@ "{}/cf-default-builder".format(data.values.app_registry.repository)
+  serviceAccount: cc-kpack-registry-service-account
+  stack: cflinuxfs3-stack
+  store: cf-buildpack-store
+  order:
+  - group:
+    - id: paketo-buildpacks/java
+  - group:
+    - id: paketo-buildpacks/nodejs
+  - group:
+    - id: paketo-buildpacks/go
+  - group:
+    - id: paketo-buildpacks/dotnet-core
+  - group:
+    - id: paketo-buildpacks/php
+  - group:
+    - id: paketo-buildpacks/httpd
+  - group:
+    - id: paketo-buildpacks/nginx
+  - group:
+    - id: paketo-buildpacks/procfile

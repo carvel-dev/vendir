@@ -1,0 +1,46 @@
+#@ load("@ytt:data","data")
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cf-api-worker
+  namespace: #@ data.values.system_namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cf-api-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cf-api-worker
+    spec:
+      #@ if/end data.values.imagePullSecrets:
+      imagePullSecrets: #@ data.values.imagePullSecrets
+      containers:
+        - name: cf-api-worker
+          workingDir: "/cloud_controller_ng"
+          command: ["/usr/local/bin/bundle"]
+          args: ["exec", "rake", "jobs:generic"]
+          image: #@ data.values.images.ccng
+          imagePullPolicy: Always
+          readinessProbe:
+            tcpSocket:
+              port: 4444
+            periodSeconds: 3
+          volumeMounts:
+          - name: cloud-controller-ng-yaml
+            mountPath: /config
+          #@ if/end data.values.eirini.serverCerts.secretName:
+          - name: eirini-certs
+            mountPath: /config/eirini/certs
+      serviceAccountName: cc-worker-service-account
+      volumes:
+      - name: cloud-controller-ng-yaml
+        configMap:
+          name: cloud-controller-ng-yaml
+      #@ if/end data.values.eirini.serverCerts.secretName:
+      - name: eirini-certs
+        secret:
+          secretName: #@ data.values.eirini.serverCerts.secretName
+

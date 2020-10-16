@@ -1,0 +1,14 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: #@ data.values.staging_namespace
+---
+apiVersion: build.pivotal.io/v1alpha1
+kind: Builder
+metadata:
+  name: cf-autodetect-builder
+  namespace: #@ data.values.staging_namespace
+spec:
+  image: #@ data.values.images.cf_autodetect_builder
