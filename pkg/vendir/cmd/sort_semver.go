@@ -8,7 +8,7 @@ import (
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	uitable "github.com/cppforlife/go-cli-ui/ui/table"
-	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
+	ctlver "github.com/k14s/vendir/pkg/vendir/versions"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +35,7 @@ func NewSortSemverCmd(o *SortSemverOptions) *cobra.Command {
 }
 
 func (o *SortSemverOptions) Run() error {
-	allVers := ctldir.NewSemverVersions(o.versions()).Sorted()
+	allVers := ctlver.NewSemvers(o.versions()).Sorted()
 
 	if len(o.Constraints) > 0 {
 		var err error

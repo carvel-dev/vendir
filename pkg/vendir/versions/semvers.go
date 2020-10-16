@@ -1,4 +1,4 @@
-package directory
+package versions
 
 import (
 	"fmt"
@@ -7,12 +7,11 @@ import (
 	semver "github.com/hashicorp/go-version"
 )
 
-// yeah yeah it's double version
-type SemverVersions struct {
+type Semvers struct {
 	versions []*semver.Version
 }
 
-func NewSemverVersions(versions []string) SemverVersions {
+func NewSemvers(versions []string) Semvers {
 	var parsedVersions []*semver.Version
 
 	for _, vStr := range versions {
@@ -23,10 +22,10 @@ func NewSemverVersions(versions []string) SemverVersions {
 		}
 	}
 
-	return SemverVersions{parsedVersions}
+	return Semvers{parsedVersions}
 }
 
-func (v SemverVersions) Sorted() SemverVersions {
+func (v Semvers) Sorted() Semvers {
 	var versions []*semver.Version
 
 	for _, ver := range v.versions {
@@ -37,13 +36,13 @@ func (v SemverVersions) Sorted() SemverVersions {
 		return versions[i].LessThan(versions[j])
 	})
 
-	return SemverVersions{versions}
+	return Semvers{versions}
 }
 
-func (v SemverVersions) Filtered(constraintList string) (SemverVersions, error) {
+func (v Semvers) Filtered(constraintList string) (Semvers, error) {
 	constraints, err := semver.NewConstraint(constraintList)
 	if err != nil {
-		return SemverVersions{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
+		return Semvers{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
 	}
 
 	var matchingVersions []*semver.Version
@@ -54,10 +53,10 @@ func (v SemverVersions) Filtered(constraintList string) (SemverVersions, error) 
 		}
 	}
 
-	return SemverVersions{matchingVersions}, nil
+	return Semvers{matchingVersions}, nil
 }
 
-func (v SemverVersions) Highest() (string, bool) {
+func (v Semvers) Highest() (string, bool) {
 	v = v.Sorted()
 
 	if len(v.versions) == 0 {
@@ -67,7 +66,7 @@ func (v SemverVersions) Highest() (string, bool) {
 	return v.versions[len(v.versions)-1].Original(), true
 }
 
-func (v SemverVersions) All() []string {
+func (v Semvers) All() []string {
 	var verStrs []string
 	for _, ver := range v.versions {
 		verStrs = append(verStrs, ver.Original())

@@ -14,6 +14,7 @@ import (
 	ctlhttp "github.com/k14s/vendir/pkg/vendir/fetch/http"
 	ctlimg "github.com/k14s/vendir/pkg/vendir/fetch/image"
 	ctlinl "github.com/k14s/vendir/pkg/vendir/fetch/inline"
+	ctlver "github.com/k14s/vendir/pkg/vendir/versions"
 	dircopy "github.com/otiai10/copy"
 )
 
@@ -204,7 +205,7 @@ func (d *Directory) applyVersionSelection(contents ctlconf.DirectoryContents,
 				return contents, fmt.Errorf("Listing version: %s", err)
 			}
 
-			matchedVers := NewSemverVersions(versions)
+			matchedVers := ctlver.NewSemvers(versions)
 
 			if len(contents.Git.RefSelection.Semver.Constraints) > 0 {
 				matchedVers, err = matchedVers.Filtered(contents.Git.RefSelection.Semver.Constraints)
