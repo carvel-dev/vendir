@@ -22,6 +22,20 @@ func NewSync(opts ctlconf.DirectoryContentsGit,
 	return Sync{opts, log, refFetcher}
 }
 
+func (d Sync) Desc() string {
+	ref := "?"
+	switch {
+	case len(d.opts.Ref) > 0:
+		ref = d.opts.Ref
+	case d.opts.RefSelection != nil:
+		switch {
+		case d.opts.RefSelection.Semver != nil:
+			ref = fmt.Sprintf("[%s]", d.opts.RefSelection.Semver.Constraints)
+		}
+	}
+	return fmt.Sprintf("%s@%s", d.opts.URL, ref)
+}
+
 func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGit, error) {
 	gitLockConf := ctlconf.LockDirectoryContentsGit{}
 

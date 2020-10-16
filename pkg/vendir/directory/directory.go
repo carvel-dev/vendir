@@ -57,10 +57,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		switch {
 		case contents.Git != nil:
-			d.ui.PrintLinef("Fetching: %s + %s (git from %s@%s)",
-				d.opts.Path, contents.Path, contents.Git.URL, contents.Git.Ref)
-
 			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
+
+			d.ui.PrintLinef("Fetching: %s + %s (git from %s)", d.opts.Path, contents.Path, gitSync.Desc())
 
 			lock, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
