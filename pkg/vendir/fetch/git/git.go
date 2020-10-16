@@ -13,6 +13,7 @@ import (
 
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
+	ctlver "github.com/k14s/vendir/pkg/vendir/versions"
 )
 
 type Git struct {
@@ -37,11 +38,8 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 	if len(t.opts.URL) == 0 {
 		return GitInfo{}, fmt.Errorf("Expected non-empty URL")
 	}
-	if len(t.opts.Ref) == 0 {
-		return GitInfo{}, fmt.Errorf("Expected non-empty ref (could be branch, tag, commit)")
-	}
 
-	err := t.fetch(dstPath, false, tempArea)
+	err := t.fetch(dstPath, tempArea)
 	if err != nil {
 		return GitInfo{}, fmt.Errorf("Cloning: %s", err)
 	}
@@ -70,26 +68,7 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 	return info, nil
 }
 
-func (t *Git) Tags(dstPath string, tempArea ctlfetch.TempArea) ([]string, error) {
-	if len(t.opts.URL) == 0 {
-		return nil, fmt.Errorf("Expected non-empty URL")
-	}
-	// Not caring about any ref at this point
-
-	err := t.fetch(dstPath, true, tempArea)
-	if err != nil {
-		return nil, fmt.Errorf("Cloning: %s", err)
-	}
-
-	out, _, err := t.run([]string{"tag", "-l"}, nil, dstPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return strings.Split(out, "\n"), nil
-}
-
-func (t *Git) fetch(dstPath string, skeleton bool, tempArea ctlfetch.TempArea) error {
+func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	authOpts, err := t.getAuthOpts()
 	if err != nil {
 		return err
@@ -167,23 +146,83 @@ func (t *Git) fetch(dstPath string, skeleton bool, tempArea ctlfetch.TempArea) e
 		{"fetch", "origin"},
 	}
 
-	if !skeleton {
-		argss = append(argss, [][]string{
-			// TODO following causes rev-parse HEAD to fail:
-			// {"checkout", t.opts.Ref, "--recurse-submodules", "."},
-			{"-c", "advice.detachedHead=false", "checkout", t.opts.Ref},
-			{"submodule", "update", "--init", "--recursive"},
-			// TODO shallow clones?
-		}...)
+	err = t.runMultiple(argss, env, dstPath)
+	if err != nil {
+		return err
 	}
 
+	ref, err := t.resolveRef(dstPath)
+	if err != nil {
+		return err
+	}
+
+	argss = [][]string{
+		// TODO following causes rev-parse HEAD to fail:
+		// {"checkout", t.opts.Ref, "--recurse-submodules", "."},
+		{"-c", "advice.detachedHead=false", "checkout", ref},
+		{"submodule", "update", "--init", "--recursive"},
+		// TODO shallow clones?
+	}
+
+	return t.runMultiple(argss, env, dstPath)
+}
+
+func (t *Git) resolveRef(dstPath string) (string, error) {
+	switch {
+	case len(t.opts.Ref) > 0:
+		return t.opts.Ref, nil
+
+	case t.opts.RefSelection != nil:
+		refSel := t.opts.RefSelection
+
+		switch {
+		case refSel.Semver != nil:
+			tags, err := t.tags(dstPath)
+			if err != nil {
+				return "", err
+			}
+
+			matchedVers := ctlver.NewSemvers(tags)
+
+			if len(refSel.Semver.Constraints) > 0 {
+				matchedVers, err = matchedVers.Filtered(refSel.Semver.Constraints)
+				if err != nil {
+					return "", fmt.Errorf("Selecting versions: %s", err)
+				}
+			}
+
+			highestVersion, found := matchedVers.Highest()
+			if !found {
+				return "", fmt.Errorf("Expected to find at least one version, but did not")
+			}
+
+			return highestVersion, nil
+
+		default:
+			return "", fmt.Errorf("Unknown ref selection strategy")
+		}
+
+	default:
+		return "", fmt.Errorf("Expected either ref or ref selection to be specified")
+	}
+}
+
+func (t *Git) tags(dstPath string) ([]string, error) {
+	out, _, err := t.run([]string{"tag", "-l"}, nil, dstPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(out, "\n"), nil
+}
+
+func (t *Git) runMultiple(argss [][]string, env []string, dstPath string) error {
 	for _, args := range argss {
 		_, _, err := t.run(args, env, dstPath)
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 

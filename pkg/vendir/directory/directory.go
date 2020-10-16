@@ -14,7 +14,6 @@ import (
 	ctlhttp "github.com/k14s/vendir/pkg/vendir/fetch/http"
 	ctlimg "github.com/k14s/vendir/pkg/vendir/fetch/image"
 	ctlinl "github.com/k14s/vendir/pkg/vendir/fetch/inline"
-	ctlver "github.com/k14s/vendir/pkg/vendir/versions"
 	dircopy "github.com/otiai10/copy"
 )
 
@@ -55,11 +54,6 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		skipFileFilter := false
 		skipNewRootPath := false
-
-		contents, err = d.applyVersionSelection(contents, stagingDir, syncOpts)
-		if err != nil {
-			return lockConfig, fmt.Errorf("Selecting versions for directory '%s': %s", contents.Path, err)
-		}
 
 		switch {
 		case contents.Git != nil:
@@ -182,49 +176,4 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	return lockConfig, nil
-}
-
-func (d *Directory) applyVersionSelection(contents ctlconf.DirectoryContents,
-	stagingDir StagingDir, syncOpts SyncOpts) (ctlconf.DirectoryContents, error) {
-
-	switch {
-	case contents.Git != nil:
-		if contents.Git.RefSelection == nil {
-			return contents, nil
-		}
-
-		switch {
-		case contents.Git.RefSelection.Semver != nil:
-			d.ui.PrintLinef("Resolving: %s + %s (git from %s)",
-				d.opts.Path, contents.Path, contents.Git.URL)
-
-			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
-
-			versions, err := gitSync.ListVersions(stagingDir.TempArea())
-			if err != nil {
-				return contents, fmt.Errorf("Listing version: %s", err)
-			}
-
-			matchedVers := ctlver.NewSemvers(versions)
-
-			if len(contents.Git.RefSelection.Semver.Constraints) > 0 {
-				matchedVers, err = matchedVers.Filtered(contents.Git.RefSelection.Semver.Constraints)
-				if err != nil {
-					return contents, fmt.Errorf("Selecting versions: %s", err)
-				}
-			}
-
-			highestVersion, found := matchedVers.Highest()
-			if !found {
-				return contents, fmt.Errorf("Expected to find at least one version, but did not")
-			}
-
-			contents.Git.Ref = highestVersion
-
-		default:
-			return ctlconf.DirectoryContents{}, fmt.Errorf("Unknown ref selection strategy")
-		}
-	}
-
-	return contents, nil
 }
