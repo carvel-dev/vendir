@@ -29,6 +29,7 @@ func NewGit(opts ctlconf.DirectoryContentsGit,
 
 type GitInfo struct {
 	SHA         string
+	Tags        []string
 	CommitTitle string
 }
 
@@ -53,6 +54,11 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 	}
 
 	info.SHA = strings.TrimSpace(out)
+
+	out, _, err = t.run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
+	if err == nil {
+		info.Tags = strings.Split(strings.TrimSpace(out), "\n")
+	}
 
 	out, _, err = t.run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath)
 	if err != nil {

@@ -19,8 +19,9 @@ type LockDirectoryContents struct {
 }
 
 type LockDirectoryContentsGit struct {
-	SHA         string `json:"sha"`
-	CommitTitle string `json:"commitTitle"`
+	SHA         string   `json:"sha"`
+	Tags        []string `json:"tags,omitempty"`
+	CommitTitle string   `json:"commitTitle"`
 }
 
 type LockDirectoryContentsHTTP struct{}

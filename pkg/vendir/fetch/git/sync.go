@@ -40,6 +40,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	}
 
 	gitLockConf.SHA = info.SHA
+	gitLockConf.Tags = info.Tags
 	gitLockConf.CommitTitle = d.singleLineCommitTitle(info.CommitTitle)
 
 	err = os.RemoveAll(dstPath)
