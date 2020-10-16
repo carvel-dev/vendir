@@ -20,6 +20,9 @@ directories:
       sha: 2b009b61fa8afb330a4302c694ee61b11104c54c
       # resolved checked out commit title
       commitTitle: 'feat: add /metrics prometheus scrapable endpoint...'
+      # resolved to a set of tags pointing to sha
+      tags:
+      - "4.0.0"
 
     # present if this was sources from github release assets
     githubRelease:

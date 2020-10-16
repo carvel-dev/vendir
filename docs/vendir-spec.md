@@ -21,7 +21,13 @@ directories:
       # http or ssh urls are supported (required)
       url: https://github.com/cloudfoundry/cf-k8s-networking
       # branch, tag, commit; origin is the name of the remote (required)
+      # optional if refSelection is specified (available in v0.11.0+)
       ref: origin/master
+      # specifies a strategy to resolve to an explicit ref (optional)
+      refSelection:
+        semver:
+          # list of semver constraints (see versions.md for details) (required)
+          constraints: ">0.4.0"
       # skip downloading lfs files (optional)
       lfsSkipSmudge: false
       # specifies name of a secret with auth details;

@@ -2,11 +2,15 @@
 
 Available in v0.11.0+.
 
+Version selection is available for:
+
+- git source type for selection of `ref` based on Git tags
+
 ### Semver
 
-Vendir relies on [hashicorp/go-version](https://github.com/hashicorp/go-version) for parsing "semver" versions. 
+Vendir relies on [hashicorp/go-version](https://github.com/hashicorp/go-version) for parsing "semver" versions.
 
-`vendir tools sort-semver` command is included to showcase this behaviour.
+`vendir tools sort-semver` command is included to showcase how vendir parses versions.
 
 - `--version` (`-v`) specifies one or more versions
 - `--constraint` (`-c`) specified zero or more constraints
