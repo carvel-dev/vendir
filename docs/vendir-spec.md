@@ -23,7 +23,7 @@ directories:
       # branch, tag, commit; origin is the name of the remote (required)
       # optional if refSelection is specified (available in v0.11.0+)
       ref: origin/master
-      # specifies a strategy to resolve to an explicit ref (optional)
+      # specifies a strategy to resolve to an explicit ref (optional; v0.11.0+)
       refSelection:
         semver:
           # list of semver constraints (see versions.md for details) (required)
@@ -49,7 +49,7 @@ directories:
         # (required)
         name: my-http-auth
 
-    # fetches asset from an image registry (optional)
+    # fetches asset from an image registry (optional; v0.11.0+)
     image:
       # image URL; could be plain, tagged or digest reference (required)
       url: gcr.io/repo/image:v1.0.0
@@ -59,7 +59,7 @@ directories:
         # (required)
         name: my-image-auth
 
-    # fetches assets from a github release
+    # fetches assets from a github release (optional)
     githubRelease:
       # slug for repository (org/repo) (required)
       slug: k14s/kapp-controller
@@ -88,7 +88,7 @@ directories:
         # (required)
         name: my-gh-auth
 
-    # fetch Helm chart contents (optional)
+    # fetch Helm chart contents (optional; v0.11.0+)
     helmChart:
       # chart name (required)
       name: stable/redis
@@ -116,7 +116,7 @@ directories:
     # is managed by hand; nothing to do for vendir (optional)
     manual: {}
 
-    # specify contents inline within this file (optional)
+    # specify contents inline within this file (optional; v0.11.0+)
     inline:
       # specifies mapping of paths to their content (optional)
       paths:
@@ -148,6 +148,6 @@ directories:
     # LICENSE, NOTICE and COPYRIGHT variations (optional)
     legalPaths: []
 
-    # make subdirectory to be new root path within this asset (optional)
+    # make subdirectory to be new root path within this asset (optional; v0.11.0+)
     newRootPath: cfroutesync
 ```
