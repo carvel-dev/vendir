@@ -3,23 +3,35 @@ package versions
 import (
 	"fmt"
 	"sort"
+	"strings"
 
-	semver "github.com/hashicorp/go-version"
-	// "github.com/blang/semver/v4"
+	semver "github.com/blang/semver/v4"
+	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 )
 
 type Semvers struct {
-	versions []*semver.Version
+	versions []semverWrap
+}
+
+type semverWrap struct {
+	semver.Version
+	Original string
 }
 
 func NewSemvers(versions []string) Semvers {
-	var parsedVersions []*semver.Version
+	var parsedVersions []semverWrap
 
 	for _, vStr := range versions {
-		ver, err := semver.NewVersion(vStr)
+		ver, err := semver.Parse(vStr)
 		if err == nil {
+			parsedVersions = append(parsedVersions, semverWrap{Version: ver, Original: vStr})
+		} else if strings.HasPrefix(vStr, "v") {
+			ver, err := semver.Parse(strings.TrimPrefix(vStr, "v"))
+			if err == nil {
+				parsedVersions = append(parsedVersions, semverWrap{Version: ver, Original: vStr})
+			}
+		} else {
 			// Ignore non-parseable versions
-			parsedVersions = append(parsedVersions, ver)
 		}
 	}
 
@@ -27,34 +39,71 @@ func NewSemvers(versions []string) Semvers {
 }
 
 func (v Semvers) Sorted() Semvers {
-	var versions []*semver.Version
+	var versions []semverWrap
 
 	for _, ver := range v.versions {
 		versions = append(versions, ver)
 	}
 
 	sort.SliceStable(versions, func(i, j int) bool {
-		return versions[i].LessThan(versions[j])
+		return versions[i].Version.LT(versions[j].Version)
 	})
 
 	return Semvers{versions}
 }
 
-func (v Semvers) Filtered(constraintList string) (Semvers, error) {
-	constraints, err := semver.NewConstraint(constraintList)
+func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
+	constraints, err := semver.ParseRange(constraintList)
 	if err != nil {
 		return Semvers{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
 	}
 
-	var matchingVersions []*semver.Version
+	var matchingVersions []semverWrap
 
 	for _, ver := range v.versions {
-		if constraints.Check(ver) {
+		if constraints(ver.Version) {
 			matchingVersions = append(matchingVersions, ver)
 		}
 	}
 
 	return Semvers{matchingVersions}, nil
+}
+
+func (v Semvers) FilterPrereleases(prereleases *ctlconf.VersionSelectionSemverPrereleases) Semvers {
+	if prereleases == nil {
+		// Exclude all prereleases
+		var result []semverWrap
+		for _, ver := range v.versions {
+			if len(ver.Version.Pre) == 0 {
+				result = append(result, ver)
+			}
+		}
+		return Semvers{result}
+	}
+
+	preIdentifiersAsMap := prereleases.IdentifiersAsMap()
+
+	var result []semverWrap
+	for _, ver := range v.versions {
+		if len(ver.Version.Pre) == 0 || v.shouldKeepPrerelease(ver.Version, preIdentifiersAsMap) {
+			result = append(result, ver)
+		}
+	}
+	return Semvers{result}
+}
+
+func (Semvers) shouldKeepPrerelease(ver semver.Version, preIdentifiersAsMap map[string]struct{}) bool {
+	if len(preIdentifiersAsMap) == 0 {
+		return true
+	}
+	for _, prePart := range ver.Pre {
+		if len(prePart.VersionStr) > 0 {
+			if _, found := preIdentifiersAsMap[prePart.VersionStr]; found {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (v Semvers) Highest() (string, bool) {
@@ -64,13 +113,13 @@ func (v Semvers) Highest() (string, bool) {
 		return "", false
 	}
 
-	return v.versions[len(v.versions)-1].Original(), true
+	return v.versions[len(v.versions)-1].Original, true
 }
 
 func (v Semvers) All() []string {
 	var verStrs []string
 	for _, ver := range v.versions {
-		verStrs = append(verStrs, ver.Original())
+		verStrs = append(verStrs, ver.Original)
 	}
 	return verStrs
 }

@@ -182,10 +182,10 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 				return "", err
 			}
 
-			matchedVers := ctlver.NewSemvers(tags)
+			matchedVers := ctlver.NewSemvers(tags).FilterPrereleases(refSel.Semver.Prereleases)
 
 			if len(refSel.Semver.Constraints) > 0 {
-				matchedVers, err = matchedVers.Filtered(refSel.Semver.Constraints)
+				matchedVers, err = matchedVers.FilterConstraints(refSel.Semver.Constraints)
 				if err != nil {
 					return "", fmt.Errorf("Selecting versions: %s", err)
 				}

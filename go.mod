@@ -3,6 +3,7 @@ module github.com/k14s/vendir
 go 1.13
 
 require (
+	github.com/blang/semver/v4 v4.0.0
 	github.com/bmatcuk/doublestar v1.2.1
 	github.com/cppforlife/cobrautil v0.0.0-20180924214100-a39a1714c920
 	github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506

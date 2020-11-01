@@ -1,3 +1,5 @@
+# github.com/blang/semver/v4 v4.0.0
+github.com/blang/semver/v4
 # github.com/bmatcuk/doublestar v1.2.1
 github.com/bmatcuk/doublestar
 # github.com/cppforlife/cobrautil v0.0.0-20180924214100-a39a1714c920

@@ -9,6 +9,6 @@ directories:
       url: https://github.com/cloudfoundry/cf-k8s-networking
       refSelection:
         semver:
-          constraints: ">0.2.0, <0.4.0"
+          constraints: ">0.2.0 <0.4.0"
     includePaths:
     - config/**/*

@@ -28,6 +28,10 @@ directories:
         semver:
           # list of semver constraints (see versions.md for details) (required)
           constraints: ">0.4.0"
+          # by default prerelease versions are not included (optional; v0.12.0+)
+          prereleases:
+            # select prerelease versions that include given identifiers (optional; v0.12.0+)
+            identifiers: [beta, rc]
       # skip downloading lfs files (optional)
       lfsSkipSmudge: false
       # specifies name of a secret with auth details;
