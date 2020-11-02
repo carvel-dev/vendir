@@ -1,0 +1,62 @@
+#@ load("@ytt:base64", "base64")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:json", "json")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+
+#@ load("/minio/minio.star", "minio_enabled")
+
+#@ kpack = library.get("kpack")
+--- #@ template.replace(kpack.eval())
+#@ if minio_enabled():
+--- #! explanation: the blobstore's sidecar needs to accept plain text connections from kpack build init containers.
+    #! see https://github.com/cloudfoundry/capi-k8s-release/issues/12
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cf-blobstore-allow-plaintext
+  namespace: cf-blobstore
+spec:
+  selector:
+    matchLabels:
+      app: minio
+  mtls:
+    mode: PERMISSIVE
+#@ end
+---
+#! apiServer fails to validate certs provided by istio endpoints.
+#! traffic from apiServer to kpack-webhook is TLS even without istio
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "kpack-webhook-allow-plaintext"
+  namespace: "kpack"
+spec:
+  selector:
+    matchLabels:
+      app: kpack-webhook
+  mtls:
+    mode: PERMISSIVE
+
+---
+#! add dockerconfigjson version of secret to use as imagePullSecret
+#@overlay/match by=overlay.subset({"kind": "Secret", "metadata":{"name": "cc-kpack-registry-auth-secret"}})
+---
+metadata:
+  annotations:
+    #@overlay/remove
+    kpack.io/docker:
+type: kubernetes.io/dockerconfigjson
+#@overlay/match missing_ok=True
+data:
+  #@ registry_auth = base64.encode("{}:{}".format(data.values.app_registry.username, data.values.app_registry.password))
+  #@ registry_creds = {"username": data.values.app_registry.username, "password": data.values.app_registry.password, "auth": registry_auth}
+  .dockerconfigjson: #@ base64.encode(json.encode({"auths": {data.values.app_registry.hostname: registry_creds}}))
+#@overlay/remove
+stringData:
+#@overlay/match by=overlay.subset({"kind": "ServiceAccount", "metadata":{"name": "cc-kpack-registry-service-account"}})
+---
+#@overlay/match missing_ok=True
+imagePullSecrets:
+- name: cc-kpack-registry-auth-secret

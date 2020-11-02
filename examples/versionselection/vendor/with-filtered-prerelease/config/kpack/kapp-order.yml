@@ -1,0 +1,25 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@overlay/match by=overlay.subset({"kind":"ClusterStore"})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group.kpack-resources: "cf-for-k8s.cloudfoundry.org/kpack-resources"
+
+#@overlay/match by=overlay.subset({"kind":"ClusterStack"})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group.kpack-resources: "cf-for-k8s.cloudfoundry.org/kpack-resources"
+
+#@overlay/match by=overlay.subset({"kind":"Builder"})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.kpack-resources: "upsert after upserting cf-for-k8s.cloudfoundry.org/kpack-resources"

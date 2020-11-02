@@ -12,3 +12,23 @@ directories:
           constraints: ">0.2.0 <0.4.0"
     includePaths:
     - config/**/*
+
+  - path: without-prereleases
+    git:
+      url: https://github.com/cloudfoundry/cf-for-k8s
+      refSelection:
+        semver:
+          constraints: "<1.0.0"
+    includePaths:
+    - config/kpack/**/*
+
+  - path: with-filtered-prerelease
+    git:
+      url: https://github.com/cloudfoundry/cf-for-k8s
+      refSelection:
+        semver:
+          constraints: "<1.0.0"
+          prereleases:
+            identifiers: [rc]
+    includePaths:
+    - config/kpack/**/*

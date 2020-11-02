@@ -1,0 +1,26 @@
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+metadata:
+  name: "kapp-wait-rule-config"
+waitRules:
+- supportsObservedGeneration: true
+  conditionMatchers:
+  - type: Ready
+    status: "True"
+    success: true
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: kpack.io/v1alpha1, kind: ClusterStack}
+  - apiVersionKindMatcher: {apiVersion: kpack.io/v1alpha1, kind: ClusterStore}
+- supportsObservedGeneration: true
+  conditionMatchers:
+  - type: Ready
+    status: "True"
+    success: true
+  - type: Ready
+    status: "False"
+    failure: true
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: kpack.io/v1alpha1, kind: Builder}
+
+

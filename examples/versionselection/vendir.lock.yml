@@ -7,5 +7,17 @@ directories:
       tags:
       - v0.3.0
     path: github.com/cloudfoundry/cf-k8s-networking
+  - git:
+      commitTitle: Bump capi-k8s-release to 22aa4fe53c867056c53548cc7cd7a559afcfc620
+      sha: bbedae0530fdf105be4510172868542572548c2e
+      tags:
+      - v0.7.0
+    path: without-prereleases
+  - git:
+      commitTitle: 'FIX: update vendir lock/sync for vendir v0.11.0'
+      sha: 16c3c2db8919c1ff8101abd9b7a4b5517db9acd6
+      tags:
+      - v1.0.0-rc.2
+    path: with-filtered-prerelease
   path: vendor
 kind: LockConfig

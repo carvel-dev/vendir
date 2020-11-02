@@ -1,0 +1,9 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@overlay/match by=overlay.subset({"kind": "Namespace", "metadata":{"name": "kpack"}}), expects=1
+---
+metadata:
+  #@overlay/match missing_ok=True
+  labels:
+    #@overlay/match missing_ok=True
+    cf-for-k8s.cloudfoundry.org/kpack-ns: ""

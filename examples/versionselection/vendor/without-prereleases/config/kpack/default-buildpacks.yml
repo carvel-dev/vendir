@@ -1,0 +1,81 @@
+#@ load("@ytt:data", "data")
+#@ load("/namespaces.star", "workloads_staging_namespace")
+
+---
+apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  name: cf-buildpack-store
+spec:
+  sources:
+  - image: gcr.io/paketo-community/ruby@sha256:b694786a773227f111ed1b1f7c84916f15bb3c526d7057287a929818fca7ef8f
+  - image: gcr.io/paketo-community/python@sha256:e6546f3072c49336ce99a2d8297716b748a69da9128c5afb1606c2b73a18a317
+  - image: gcr.io/paketo-buildpacks/java@sha256:bcfe1dc86d082a0f560d257d3a0431a346ea5d3947e270f3998bcad4fb1110c7
+  - image: gcr.io/paketo-buildpacks/nodejs@sha256:44d47eb2580c7cb25cb2287d05420b0f85e46632dd2c5594f18e595f4f4ff620
+  - image: gcr.io/paketo-buildpacks/go@sha256:faac0cdb26b5bbe884b864d663b868830efba17bc7095de490cc8bd8fd76550a
+  - image: gcr.io/paketo-buildpacks/dotnet-core@sha256:db7d464fbaf62dd199f782a6efbca1cbbb60874654048e6ab9966dbda695dd78
+  - image: gcr.io/paketo-buildpacks/php@sha256:b9f721e26071d5b216ef72154fa7b52b1821b752e83c1cac0609e7d91bd81a45
+  - image: gcr.io/paketo-buildpacks/procfile@sha256:861d9c93924dd1db3fbe6663754da603398931cdc4dee3da5c057ffa65cb383d
+
+---
+apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  name: cflinuxfs3-stack
+spec:
+  id: "org.cloudfoundry.stacks.cflinuxfs3"
+  buildImage:
+    image: "gcr.io/paketo-buildpacks/build@sha256:07f221b78d8704d918d9dd1248038cd6473d9fb32650bb7def145fc7c29bd612"
+  runImage:
+    image: "gcr.io/paketo-buildpacks/run@sha256:accd66b436c645b61db1614db7388c38e12733c0c2852c769694d73c7113eaf3"
+
+---
+apiVersion: kpack.io/v1alpha1
+kind: Builder
+metadata:
+  name: cf-default-builder
+  namespace: #@ workloads_staging_namespace()
+spec:
+  tag: #@ "{}/cf-default-builder".format(data.values.app_registry.repository_prefix)
+  serviceAccount: cc-kpack-registry-service-account
+  stack:
+    name: cflinuxfs3-stack
+    kind: ClusterStack
+  store:
+    name: cf-buildpack-store
+    kind: ClusterStore
+  order:
+  - group:
+    - id: paketo-community/ruby
+  - group:
+    - id: paketo-buildpacks/dotnet-core
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/nodejs
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/go
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-community/python
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/php
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/nginx
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/httpd
+    - id: paketo-buildpacks/procfile
+      optional: true
+  - group:
+    - id: paketo-buildpacks/java
+  - group:
+    - id: paketo-buildpacks/procfile
