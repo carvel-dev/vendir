@@ -19,6 +19,13 @@ directories:
     includePaths:
     - release-0.0.6.yaml
 
+  # checkum validation only for one asset
+  - path: specific-asset-checksum-checked
+    githubRelease:
+      slug: pivotal/kpack
+      tag: v0.0.7
+      assetNames: ["release-*.yaml"]
+
   # unpacks archive included in the release
   - path: github.com/cloudfoundry-incubator/eirini-release
     githubRelease:

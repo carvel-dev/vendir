@@ -85,6 +85,7 @@ type DirectoryContentsGithubRelease struct {
 	Checksums                     map[string]string `json:"checksums,omitempty"`
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`
 
+	AssetNames    []string                        `json:"assetNames,omitempty"`
 	UnpackArchive *DirectoryContentsUnpackArchive `json:"unpackArchive,omitempty"`
 
 	// Secret may include one key: token

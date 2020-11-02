@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bmatcuk/doublestar"
 	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
 	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
 )
@@ -67,22 +68,33 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	}
 
 	fileChecksums := map[string]string{}
+	matchedAssets := []GithubReleaseAssetAPI{}
+
+	for _, asset := range releaseAPI.Assets {
+		matched, err := d.matchesAssetName(asset.Name)
+		if err != nil {
+			return lockConf, fmt.Errorf("Matching asset name '%s': %s", asset.Name, err)
+		}
+		if matched {
+			matchedAssets = append(matchedAssets, asset)
+		}
+	}
 
 	if len(d.opts.Checksums) > 0 {
 		fileChecksums = d.opts.Checksums
 	} else {
 		if !d.opts.DisableAutoChecksumValidation {
-			fileChecksums, err = ReleaseNotesChecksums{}.Find(releaseAPI.AssetNames(), releaseAPI.Body)
+			fileChecksums, err = ReleaseNotesChecksums{}.Find(matchedAssets, releaseAPI.Body)
 			if err != nil {
 				return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
 			}
 		}
 	}
 
-	for _, asset := range releaseAPI.Assets {
+	for _, asset := range matchedAssets {
 		path := filepath.Join(incomingTmpPath, asset.Name)
 
-		err := d.downloadFile(asset.URL, path, authToken)
+		err = d.downloadFile(asset.URL, path, authToken)
 		if err != nil {
 			return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
 		}
@@ -132,6 +144,22 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	lockConf.URL = releaseAPI.URL
 
 	return lockConf, nil
+}
+
+func (d Sync) matchesAssetName(name string) (bool, error) {
+	if len(d.opts.AssetNames) == 0 {
+		return true, nil
+	}
+	for _, pattern := range d.opts.AssetNames {
+		ok, err := doublestar.PathMatch(pattern, name)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (d Sync) downloadRelease(authToken string) (GithubReleaseAPI, error) {

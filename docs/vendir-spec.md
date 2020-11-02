@@ -73,6 +73,8 @@ directories:
       latest: true
       # use exact release URL (optional)
       url: https://api.github.com/repos/k14s/kapp-controller/releases/21912613
+      # only download specific assets (optional; v0.12.0+)
+      assetNames: ["release*.yml"]
       # checksums for downloaded files (optional)
       # (if release text body contains checksums, it's not necessary
       # to manually specify them here)

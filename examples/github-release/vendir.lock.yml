@@ -8,6 +8,9 @@ directories:
       url: https://api.github.com/repos/pivotal/kpack/releases/22747441
     path: github.com/pivotal/kpack
   - githubRelease:
+      url: https://api.github.com/repos/pivotal/kpack/releases/24689610
+    path: specific-asset-checksum-checked
+  - githubRelease:
       url: https://api.github.com/repos/cloudfoundry-incubator/eirini-release/releases/23064766
     path: github.com/cloudfoundry-incubator/eirini-release
   path: vendor
