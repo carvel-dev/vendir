@@ -61,7 +61,7 @@ func (t *Sync) writeFromSecret(dstPath string, secretRef ctlconf.DirectoryConten
 	}
 
 	for name, val := range secret.Data {
-		err := t.writeFile(dstPath, filepath.Join(secretRef.DirectoryPath, name), val)
+		err := t.writeFile(dstPath, filepath.Join(secretRef.DirectoryPath, name), string(val))
 		if err != nil {
 			return err
 		}

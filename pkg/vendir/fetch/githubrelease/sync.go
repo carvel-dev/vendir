@@ -304,7 +304,7 @@ func (d Sync) authToken() (string, error) {
 		for name, val := range secret.Data {
 			switch name {
 			case ctlconf.SecretToken:
-				token = val
+				token = string(val)
 			default:
 				return "", fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 			}

@@ -21,7 +21,7 @@ type Secret struct {
 	Kind       string
 
 	Metadata GenericMetadata
-	Data     map[string]string
+	Data     map[string][]byte
 }
 
 type ConfigMap struct {

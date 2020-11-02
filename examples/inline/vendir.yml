@@ -31,8 +31,8 @@ kind: Secret
 metadata:
   name: secret1
 data:
-  file1.ext: "secret1-file1"
-  file3.ext: "secret1-file3"
+  file1.ext: "c2VjcmV0MS1maWxlMQ=="
+  file3.ext: "c2VjcmV0MS1maWxlMw=="
 ---
 apiVersion: v1
 kind: ConfigMap
