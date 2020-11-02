@@ -20,8 +20,12 @@ func TestReleaseNotesChecksums(t *testing.T) {
 +++
 `
 
-	files := []string{"release.yml", "with-slash.yml",
-		"with-period-slash.yml", "with-space-after-file.yml"}
+	files := []GithubReleaseAssetAPI{
+		{Name: "release.yml"},
+		{Name: "with-slash.yml"},
+		{Name: "with-period-slash.yml"},
+		{Name: "with-space-after-file.yml"},
+	}
 
 	results, err := ReleaseNotesChecksums{}.Find(files, body)
 	if err != nil {
