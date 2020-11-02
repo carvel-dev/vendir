@@ -19,5 +19,6 @@ require (
 	github.com/otiai10/copy v1.0.2
 	github.com/spf13/cobra v0.0.3
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	k8s.io/apimachinery v0.19.0
 )

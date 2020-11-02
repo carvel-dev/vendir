@@ -41,7 +41,7 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 
 	err := t.fetch(dstPath, tempArea)
 	if err != nil {
-		return GitInfo{}, fmt.Errorf("Cloning: %s", err)
+		return GitInfo{}, err
 	}
 
 	info := GitInfo{}
@@ -154,6 +154,13 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	ref, err := t.resolveRef(dstPath)
 	if err != nil {
 		return err
+	}
+
+	if t.opts.Verification != nil {
+		err := Verification{dstPath, *t.opts.Verification, t.refFetcher}.Verify(ref)
+		if err != nil {
+			return err
+		}
 	}
 
 	argss = [][]string{

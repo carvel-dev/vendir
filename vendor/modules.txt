@@ -31,6 +31,13 @@ github.com/spf13/pflag
 github.com/vito/go-interact/interact
 github.com/vito/go-interact/interact/terminal
 # golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+golang.org/x/crypto/cast5
+golang.org/x/crypto/openpgp
+golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/elgamal
+golang.org/x/crypto/openpgp/errors
+golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
 golang.org/x/sys/internal/unsafeheader

@@ -46,14 +46,19 @@ type DirectoryContents struct {
 }
 
 type DirectoryContentsGit struct {
-	URL          string            `json:"url,omitempty"`
-	Ref          string            `json:"ref,omitempty"`
-	RefSelection *VersionSelection `json:"refSelection,omitempty"`
+	URL          string                            `json:"url,omitempty"`
+	Ref          string                            `json:"ref,omitempty"`
+	RefSelection *VersionSelection                 `json:"refSelection,omitempty"`
+	Verification *DirectoryContentsGitVerification `json:"verification,omitempty"`
 	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 	// +optional
 	LFSSkipSmudge bool `json:"lfsSkipSmudge,omitempty"`
+}
+
+type DirectoryContentsGitVerification struct {
+	PublicKeysSecretRef *DirectoryContentsLocalRef `json:"publicKeysSecretRef,omitempty"`
 }
 
 type DirectoryContentsHTTP struct {

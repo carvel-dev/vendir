@@ -34,6 +34,10 @@ directories:
             identifiers: [beta, rc]
       # skip downloading lfs files (optional)
       lfsSkipSmudge: false
+      # verify gpg signatures on commits or tags (optional; v0.12.0+)
+      verification:
+        publicKeysSecretRef:
+          name: my-git-gpg-auth
       # specifies name of a secret with auth details;
       # secret may include 'ssh-privatekey', 'ssh-knownhosts',
       # 'username', 'password' keys (optional)

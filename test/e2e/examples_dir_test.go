@@ -7,6 +7,9 @@ import (
 func TestExamplesDir(t *testing.T) {
 	env := BuildEnv(t)
 
+	// Useful when commenting out examples
+	_ = env.Helm3Binary
+
 	tests := []example{
 		{Name: "http"},
 		{Name: "image"},
