@@ -1,0 +1,22 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:template", "template")
+
+#@ def metrics_values():
+system_domain: #@ data.values.system_domain
+system_namespace: #@ data.values.system_namespace
+
+metric_proxy:
+  ca:
+    secret_name: "metric-proxy-ca"
+    crt: #@ data.values.metric_proxy.ca.crt
+    key: #@ data.values.metric_proxy.ca.key
+  cert:
+    secret_name: "metric-proxy-cert"
+    crt: #@ data.values.metric_proxy.cert.crt
+    key: #@ data.values.metric_proxy.cert.key
+#@ end
+
+#@ metrics = library.get("github.com/cloudfoundry/metric-proxy")
+--- #@ template.replace(metrics.with_data_values(metrics_values()).eval())
+

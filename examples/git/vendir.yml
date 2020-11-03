@@ -1,0 +1,21 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: exact-sha
+    git:
+      url: https://github.com/cloudfoundry/cf-k8s-networking
+      ref: 2b009b61fa8afb330a4302c694ee61b11104c54c
+    includePaths:
+    - cfroutesync/crds/**/*
+    - install/ytt/networking/**/*
+
+  - path: tag
+    git:
+      url: https://github.com/cloudfoundry/cf-k8s-networking
+      ref: v0.4.0
+    includePaths:
+    - config/**/*
+
+  # see examples/versionselection/ for git+semver support

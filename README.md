@@ -13,21 +13,21 @@ $ vendir sync # from a directory that contains vendir.yml
 Features:
 
 - Various sources
-  - Pull Git repositories at particular revision
-  - Pull HTTP asset
-  - Pull Docker image contents
-  - Pull Github release at particular version
-  - Pull Helm chart contents
-- Keep only particular portions of pulled content
+  - pull Git repositories ([examples/git](examples/git), semver tag resolution in [examples/versionselection](examples/versionselection))
+    - including tag semver selection, GPG verification
+  - pull Github releases ([examples/github-release](examples/github-release))
+  - pull HTTP asset ([examples/http](examples/http))
+  - pull Docker image contents ([examples/image](examples/image))
+  - pull Helm chart contents ([examples/helm-chart](examples/helm-chart))
+  - ...let us know sources you'd like to see
+- Keep only particular portions of pulled content via includePaths/excludePaths or newRootPath
+- Override specific directory with a local directory source for quick development
 - State which directories are manually managed
+- Specify inline content for a directory
+- Generates lock file
 - Keep common legal files (LICENSE, etc.)
 
-Examples:
-
-- [examples/git-and-manual](examples/git-and-manual) to show how to pull Git repos
-- [examples/github-release](examples/github-release) to show how to pull Github releases
-- [examples/entire-dir](examples/entire-dir) to show how to once upstream for entire directory
-- [...others...](examples/)
+See [all examples](examples/).
 
 ## Development
 

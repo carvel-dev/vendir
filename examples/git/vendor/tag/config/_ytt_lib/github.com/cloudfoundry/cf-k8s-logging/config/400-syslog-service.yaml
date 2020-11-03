@@ -1,0 +1,13 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-cache-syslog
+  namespace: #@ data.values.system_namespace
+spec:
+  selector:
+    app: log-cache
+  ports:
+  - protocol: TCP
+    port: 8082

@@ -1,0 +1,23 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: #@ data.values.workloads_namespace
+  annotations:
+    kapp.k14s.io/change-rule.cf-workloads-namespace: "delete before deleting cf-k8s-networking/routecontroller"
+
+#! the following overlay ensures the cf-workloads namespace is deleted before the routecontroller
+#@ cr = overlay.subset({"kind":"ClusterRole","metadata":{"name":"routecontroller"}})
+#@ crb = overlay.subset({"kind":"ClusterRoleBinding","metadata":{"name":"routecontroller"}})
+#@ cm = overlay.subset({"kind":"ConfigMap","metadata":{"name":"routecontroller-config"}})
+#@ d = overlay.subset({"kind":"Deployment","metadata":{"name":"routecontroller"}})
+#@ sa = overlay.subset({"kind":"ServiceAccount","metadata":{"name":"routecontroller"}})
+#@overlay/match by=overlay.or_op(cr, crb, cm, d, sa), expects="1+"
+#@overlay/match-child-defaults missing_ok=True
+---
+metadata:
+  annotations:
+    kapp.k14s.io/change-group: cf-k8s-networking/routecontroller

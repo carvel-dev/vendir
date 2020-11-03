@@ -1,0 +1,35 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+#@ load("@ytt:base64", "base64")
+
+#@ def logging_values():
+system_domain: #@ data.values.system_domain
+system_namespace: #@ data.values.system_namespace
+
+log_cache_ca:
+  crt: #@ data.values.log_cache_ca.crt
+  key: #@ data.values.log_cache_ca.key
+
+log_cache:
+  crt: #@ data.values.log_cache.crt
+  key: #@ data.values.log_cache.key
+
+log_cache_metrics:
+  crt: #@ data.values.log_cache_metrics.crt
+  key: #@ data.values.log_cache_metrics.key
+
+log_cache_gateway:
+  crt: #@ data.values.log_cache_gateway.crt
+  key: #@ data.values.log_cache_gateway.key
+
+log_cache_syslog:
+  crt: #@ data.values.log_cache_syslog.crt
+  key: #@ data.values.log_cache_syslog.key
+
+#@ end
+
+#@ logging = library.get("github.com/cloudfoundry/cf-k8s-logging")
+--- #@ template.replace(logging.with_data_values(logging_values()).eval())
+

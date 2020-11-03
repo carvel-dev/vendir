@@ -1,0 +1,63 @@
+#@ load("@ytt:base64", "base64")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+
+#@ def networking_values():
+systemNamespace: #@ data.values.system_namespace
+workloadsNamespace: #@ data.values.workloads_namespace
+#@ end
+
+#@ networking = library.get("github.com/cloudfoundry/cf-k8s-networking")
+--- #@ template.replace(networking.with_data_values(networking_values()).eval())
+
+#! Istio Configurations
+
+#@overlay/match by=overlay.subset({"kind":"Namespace", "metadata":{"name": "istio-system"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  labels:
+    #@overlay/match missing_ok=True
+    cf-for-k8s.cloudfoundry.org/istio-system-ns: ""
+
+#@ kind_deployment = overlay.subset({"kind":"Deployment"})
+#@ kind_replica_set = overlay.subset({"kind":"ReplicaSet"})
+#@ kind_stateful_set = overlay.subset({"kind":"StatefulSet"})
+#@ kind_daemon_set = overlay.subset({"kind":"DaemonSet"})
+#@ kind_job = overlay.subset({"kind":"Job"})
+#@ contains_pod = overlay.or_op(kind_deployment, kind_replica_set, kind_stateful_set, kind_daemon_set, kind_job)
+
+#@ namespaced = lambda idx,old,new: "namespace" in old["metadata"]
+#@ not_inside_istio_ns = overlay.not_op(overlay.subset({"metadata":{"namespace":"istio-system"}}))
+
+#@overlay/match by=overlay.and_op(contains_pod, namespaced, not_inside_istio_ns), expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-rule.istio-sidecar-injector: "upsert after upserting cf-for-k8s.cloudfoundry.org/istio-sidecar-injector"
+
+#! Because the istio sidecar injector is a mutatingwebhook on pod create, we need to guarantee its creation before we start creating pods
+#! in cf namespaces.
+
+#@overlay/match by=overlay.subset({"kind": "MutatingWebhookConfiguration", "metadata":{"name": "istio-sidecar-injector"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group: cf-for-k8s.cloudfoundry.org/istio-sidecar-injector
+
+#@ is_ns = overlay.subset({"kind":"Namespace"})
+#@ not_istio_ns = overlay.not_op(overlay.subset({"metadata":{"name":"istio-system"}}))
+
+#@overlay/match by=overlay.and_op(is_ns, not_istio_ns), expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  labels:
+    #@overlay/match missing_ok=True
+    istio-injection: enabled

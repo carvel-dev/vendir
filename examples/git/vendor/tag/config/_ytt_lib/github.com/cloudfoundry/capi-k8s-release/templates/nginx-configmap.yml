@@ -1,0 +1,94 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx
+  namespace: #@ data.values.system_namespace
+  annotations:
+    kapp.k14s.io/versioned: ""
+data:
+  nginx.conf: |
+    error_log stderr info;
+
+    worker_processes auto;
+
+    events {}
+
+    http {
+      server_tokens off;
+
+      access_log  /cloud_controller_ng/nginx-access.log;
+
+      tcp_nopush           on;
+      tcp_nodelay          on;  #disable nagel's algorithm
+
+      upstream cloud_controller {
+        server unix:/data/cloud_controller_ng/cloud_controller.sock;
+      }
+
+      server {
+          # TODO: get TLS working
+          # include nginx_server_mtls.conf;
+
+          listen 80;
+
+          # TODO: move to a separate file and `include` like capi-release?
+          # proxy and log all CC traffic
+          location / {
+            access_log  /cloud_controller_ng/nginx-access.log;
+            proxy_buffering             off;
+            proxy_set_header            Host $host;
+            proxy_set_header            X-Real_IP $remote_addr;
+            proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_redirect              off;
+            proxy_connect_timeout       10;
+            proxy_pass                  http://cloud_controller;
+          }
+
+          location @cc_uploads {
+            proxy_pass http://cloud_controller;
+          }
+
+          location ~ /v3/packages/.*/upload {
+            if ($arg_bits_path) { return 422; }
+
+            include public_upload.conf;
+            upload_pass_form_field "^resources$";
+          }
+
+          location ~ /v2/apps/[^/]+/bits {
+            if ($arg_application_path) { return 422; }
+
+            include public_upload.conf;
+
+            upload_pass_args on;
+            upload_pass_form_field "^resources$";
+          }
+      }
+    }
+  public_upload.conf: |
+    # Pass altered request body to this location
+    upload_pass   @cc_uploads;
+
+    # Allow large uploads
+    client_max_body_size 1536M;
+
+    # Store files to this directory
+    upload_store /tmp/uploads;
+
+    # No limit for output body forwarded to CC
+    upload_max_output_body_len 0;
+
+    # Allow uploaded files to be read only by user
+    upload_store_access user:r;
+
+    # Set specified fields in request body
+    upload_set_form_field "${upload_field_name}_name" $upload_file_name;
+    upload_set_form_field "${upload_field_name}_path" $upload_tmp_path;
+
+    #forward the following fields from existing body
+    upload_pass_form_field "_method";
+
+    #on any error, delete uploaded files.
+    upload_cleanup 400-505;

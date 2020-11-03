@@ -1,0 +1,105 @@
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+#@ load("@ytt:yaml", "yaml")
+
+#@ def capi_host():
+#@   if len(data.values.capi.database.host) > 0:
+#@     return data.values.capi.database.host
+#@   elif data.values.cf_db.enabled == True:
+#@     return "cf-db-postgresql.cf-db.svc.cluster.local"
+#@   else:
+#@     assert.fail("When cf_db.enabled is false, expected a capi.database.host to be provided, but was not.")
+#@   end
+#@ end
+
+#@ def capi_values():
+images:
+#@ if/end data.values.images.capi:
+  ccng: #@ data.values.images.capi
+#@ if/end data.values.images.nginx:
+  nginx: #@ data.values.images.nginx
+
+system_namespace: #@ data.values.system_namespace
+workloads_namespace: #@ data.values.workloads_namespace
+staging_namespace: #@ data.values.staging_namespace
+system_domain: #@ data.values.system_domain
+app_domains:
+#@ for/end domain in data.values.app_domains:
+#@overlay/append
+- #@ domain
+
+blobstore:
+  endpoint: #@ data.values.capi.blobstore.endpoint
+  region: #@ data.values.capi.blobstore.region
+  access_key_id: #@ data.values.cf_blobstore.access_key
+  secret_access_key: #@ data.values.cf_blobstore.secret_key
+  package_directory_key: #@ data.values.capi.blobstore.package_directory_key
+  droplet_directory_key: #@ data.values.capi.blobstore.droplet_directory_key
+  resource_directory_key: #@ data.values.capi.blobstore.resource_directory_key
+  buildpack_directory_key: #@ data.values.capi.blobstore.buildpack_directory_key
+
+ccdb:
+  adapter: #@ data.values.capi.database.adapter
+  host: #@ capi_host()
+  port: #@ data.values.capi.database.port
+  user: #@ data.values.capi.database.user
+  password: #@ data.values.capi.database.password
+  database: #@ data.values.capi.database.name
+
+eirini:
+  serverCerts:
+    secretName: eirini-internal-tls-certs
+
+apiServer:
+  opi:
+    client_cert: #@ data.values.internal_certificate.crt
+    client_key: #@ data.values.internal_certificate.key
+    ca: #@ data.values.internal_certificate.ca
+
+metric_proxy:
+  ca:
+    secret_name: #@ data.values.metric_proxy.ca.secret_name
+  cert:
+    secret_name: #@ data.values.metric_proxy.cert.secret_name
+
+uaa:
+  serverCerts:
+    secretName: uaa-certs
+  clients:
+    cloud_controller_username_lookup:
+      secret: #@ data.values.uaa.admin_client_secret
+    capi_kpack_watcher:
+      secret: #@ data.values.uaa.admin_client_secret
+
+kpack:
+  registry:
+    hostname: #@ data.values.app_registry.hostname
+    repository: #@ data.values.app_registry.repository
+    username: #@ data.values.app_registry.username
+    password: #@ data.values.app_registry.password
+#@ end
+
+#@ capi = library.get("github.com/cloudfoundry/capi-k8s-release")
+--- #@ template.replace(capi.with_data_values(capi_values()).eval())
+
+#! expose CAPI under the system domain
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cf-api-external-virtual-service
+  namespace: #@ data.values.system_namespace
+spec:
+  hosts:
+  - #@ "api." + data.values.system_domain
+  gateways:
+  - #@ data.values.system_namespace + "/istio-ingressgateway"
+  http:
+  - route:
+    - destination:
+        host: #@ "capi." + data.values.system_namespace + ".svc.cluster.local"
+        port:
+          number: 80
