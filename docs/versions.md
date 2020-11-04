@@ -1,6 +1,6 @@
 ## Versions
 
-Available in v0.11.0+.
+Available in v0.12.0+.
 
 Version selection is available for:
 
