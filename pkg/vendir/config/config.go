@@ -2,12 +2,10 @@ package config
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
-
 	"github.com/ghodss/yaml"
 	semver "github.com/hashicorp/go-version"
 	"github.com/k14s/vendir/pkg/vendir/version"
+	"path/filepath"
 )
 
 const (
@@ -251,7 +249,7 @@ func (c Config) checkOverlappingPaths() error {
 
 	for i, path := range paths {
 		for i2, path2 := range paths {
-			if i != i2 && strings.Contains(path2, path) {
+			if i != i2 && path == path2 {
 				return fmt.Errorf("Expected to not "+
 					"manage overlapping paths: '%s' and '%s'", path2, path)
 			}
