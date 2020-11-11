@@ -251,7 +251,7 @@ func (c Config) checkOverlappingPaths() error {
 
 	for i, path := range paths {
 		for i2, path2 := range paths {
-			if i != i2 && strings.Contains(path2, path) {
+			if i != i2 && strings.HasPrefix(path2+string(filepath.Separator), path+string(filepath.Separator)) {
 				return fmt.Errorf("Expected to not "+
 					"manage overlapping paths: '%s' and '%s'", path2, path)
 			}

@@ -5,3 +5,5 @@
 /tmp
 .DS_Store
 /test/e2e/assets/simple-app/empty-dir
+.idea
+*.iml
