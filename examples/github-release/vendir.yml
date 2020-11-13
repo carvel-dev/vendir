@@ -5,9 +5,9 @@ directories:
   contents:
 
   # validates checksums automatically from release notes
-  - path: github.com/vmware-tanzu/carvel-kapp-controller
+  - path: github.com/k14s/kapp-controller
     githubRelease:
-      slug: vmware-tanzu/carvel-kapp-controller
+      slug: k14s/kapp-controller
       tag: v0.1.0
 
   # skips checkum validation

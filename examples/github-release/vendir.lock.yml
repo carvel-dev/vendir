@@ -3,7 +3,7 @@ directories:
 - contents:
   - githubRelease:
       url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
-    path: github.com/vmware-tanzu/carvel-kapp-controller
+    path: github.com/k14s/kapp-controller
   - githubRelease:
       url: https://api.github.com/repos/pivotal/kpack/releases/22747441
     path: github.com/pivotal/kpack
