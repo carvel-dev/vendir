@@ -2,10 +2,6 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - helmChart:
-      appVersion: 5.0.7
-      version: 10.5.7
-    path: default-repo
-  - helmChart:
       appVersion: 1.8.0
       version: 1.2.1
     path: custom-repo-custom-version

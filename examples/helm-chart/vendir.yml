@@ -3,9 +3,10 @@ kind: Config
 directories:
 - path: vendor
   contents:
-  - path: default-repo
-    helmChart:
-      name: stable/redis
+  ## Default repository has been deprecated
+  # - path: default-repo
+  #   helmChart:
+  #     name: stable/redis
 
   - path: custom-repo-custom-version
     helmChart:
