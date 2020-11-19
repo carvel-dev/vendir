@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	semver "github.com/blang/semver/v4"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 )
 
 type Semvers struct {
@@ -69,7 +68,7 @@ func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 	return Semvers{matchingVersions}, nil
 }
 
-func (v Semvers) FilterPrereleases(prereleases *ctlconf.VersionSelectionSemverPrereleases) Semvers {
+func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrereleases) Semvers {
 	if prereleases == nil {
 		// Exclude all prereleases
 		var result []semverWrap

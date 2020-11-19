@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
@@ -84,7 +83,7 @@ func TestSemverWithoutPrereleases(t *testing.T) {
 }
 
 func TestSemverWithPrereleases(t *testing.T) {
-	preConf := &ctlconf.VersionSelectionSemverPrereleases{}
+	preConf := &versions.VersionSelectionSemverPrereleases{}
 
 	result := versions.NewSemvers([]string{
 		"2.0.0-10+meta.10",
@@ -112,7 +111,7 @@ func TestSemverWithPrereleases(t *testing.T) {
 }
 
 func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
-	preConf := &ctlconf.VersionSelectionSemverPrereleases{Identifiers: []string{"alpha", "rc"}}
+	preConf := &versions.VersionSelectionSemverPrereleases{Identifiers: []string{"alpha", "rc"}}
 
 	result := versions.NewSemvers([]string{
 		"2.0.0-10+meta.10",

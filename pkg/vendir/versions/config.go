@@ -1,7 +1,7 @@
-package config
+package versions
 
 type VersionSelection struct {
-	Semver *VersionSelectionSemver `json:"semVer,omitempty"`
+	Semver *VersionSelectionSemver `json:"semver,omitempty"`
 }
 
 type VersionSelectionSemver struct {

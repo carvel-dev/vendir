@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"strings"
+
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
 const (
@@ -48,7 +50,7 @@ type DirectoryContents struct {
 type DirectoryContentsGit struct {
 	URL          string                            `json:"url,omitempty"`
 	Ref          string                            `json:"ref,omitempty"`
-	RefSelection *VersionSelection                 `json:"refSelection,omitempty"`
+	RefSelection *versions.VersionSelection        `json:"refSelection,omitempty"`
 	Verification *DirectoryContentsGitVerification `json:"verification,omitempty"`
 	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
 	// +optional
