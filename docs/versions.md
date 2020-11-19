@@ -2,16 +2,33 @@
 
 Available in v0.12.0+.
 
-Version selection is available for:
+Vendir uses version selection in following places:
 
 - git source type for selection of `ref` based on Git tags
 
 ---
+### VersionSelection type
+
+`VersionSelection` type may be used by other projects (such as kbld) for selection of versions in different contexts. All usage follows same spec:
+
+```yaml
+# interpret versions according to semantic version spec.
+# see semver section below for further details (required)
+semver:
+  # list of semver constraints (optional)
+  constraints: ">0.4.0"
+  # by default prerelease versions are not included (optional)
+  prereleases:
+    # select prerelease versions that include given identifiers (optional)
+    identifiers: [beta, rc]
+```
+
+---
 ### Semver
 
-Vendir relies on [github.com/blang/semver/v4 package](https://github.com/blang/semver) for parsing "semver" versions.
+[github.com/blang/semver/v4 package](https://github.com/blang/semver) is used for parsing "semver" versions.
 
-For valid semver syntax refer to <https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions>. (Vendir will ignore commonly-used `v` prefix during parsing)
+For valid semver syntax refer to <https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions>. (Commonly-used `v` prefix will be ignored during parsing)
 
 For constraints syntax refer to [blang/semver's Ranges section](https://github.com/blang/semver#ranges).
 
