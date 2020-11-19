@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	"github.com/k14s/vendir/pkg/vendir/versions"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
 func TestSemverOrder(t *testing.T) {

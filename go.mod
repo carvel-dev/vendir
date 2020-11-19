@@ -1,4 +1,4 @@
-module github.com/k14s/vendir
+module github.com/vmware-tanzu/carvel-vendir
 
 go 1.13
 

@@ -8,9 +8,9 @@ import (
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	uitable "github.com/cppforlife/go-cli-ui/ui/table"
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	ctlver "github.com/k14s/vendir/pkg/vendir/versions"
 	"github.com/spf13/cobra"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
 type SortSemverOptions struct {

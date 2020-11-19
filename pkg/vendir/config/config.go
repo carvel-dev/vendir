@@ -7,7 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	semver "github.com/hashicorp/go-version"
-	"github.com/k14s/vendir/pkg/vendir/version"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
 )
 
 const (

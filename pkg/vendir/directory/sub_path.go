@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
 type SubPath struct {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/cppforlife/go-cli-ui/ui"
-	"github.com/k14s/vendir/pkg/vendir/cmd"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/cmd"
 )
 
 func main() {

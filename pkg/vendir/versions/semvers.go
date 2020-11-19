@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	semver "github.com/blang/semver/v4"
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 )
 
 type Semvers struct {

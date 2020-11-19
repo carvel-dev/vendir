@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/cppforlife/go-cli-ui/ui"
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	ctldir "github.com/k14s/vendir/pkg/vendir/directory"
 	"github.com/spf13/cobra"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctldir "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/directory"
 )
 
 const (

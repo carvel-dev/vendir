@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/k14s/vendir/pkg/vendir/fetch/githubrelease"
+	. "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
 )
 
 func TestReleaseNotesChecksums(t *testing.T) {

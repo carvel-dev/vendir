@@ -6,15 +6,15 @@ import (
 	"path/filepath"
 
 	"github.com/cppforlife/go-cli-ui/ui"
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
-	ctlgit "github.com/k14s/vendir/pkg/vendir/fetch/git"
-	ctlghr "github.com/k14s/vendir/pkg/vendir/fetch/githubrelease"
-	ctlhelmc "github.com/k14s/vendir/pkg/vendir/fetch/helmchart"
-	ctlhttp "github.com/k14s/vendir/pkg/vendir/fetch/http"
-	ctlimg "github.com/k14s/vendir/pkg/vendir/fetch/image"
-	ctlinl "github.com/k14s/vendir/pkg/vendir/fetch/inline"
 	dircopy "github.com/otiai10/copy"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlgit "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/git"
+	ctlghr "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
+	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
+	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
+	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
+	ctlinl "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/inline"
 )
 
 type Directory struct {

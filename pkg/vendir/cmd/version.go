@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cppforlife/go-cli-ui/ui"
-	"github.com/k14s/vendir/pkg/vendir/version"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
 )
 
 type VersionOptions struct {

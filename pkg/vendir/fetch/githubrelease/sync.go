@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 
 	"github.com/bmatcuk/doublestar"
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
 type Sync struct {

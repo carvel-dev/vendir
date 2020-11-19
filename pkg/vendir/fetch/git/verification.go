@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"strings"
 
-	ctlconf "github.com/k14s/vendir/pkg/vendir/config"
-	ctlfetch "github.com/k14s/vendir/pkg/vendir/fetch"
-	oarmor "github.com/k14s/vendir/pkg/vendir/openpgparmor"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	oarmor "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/openpgparmor"
 	"golang.org/x/crypto/openpgp"
 )
 
