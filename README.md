@@ -2,7 +2,7 @@
 
 - Slack: [#carvel in Kubernetes slack](https://slack.kubernetes.io)
 - [Docs](docs/README.md) with example workflow and other details
-- Install: Grab prebuilt binaries from the [Releases page](https://github.com/vmware-tanzu/carvel-vendir/releases) or [Homebrew k14s tap](https://github.com/k14s/homebrew-tap)
+- Install: Grab prebuilt binaries from the [Releases page](https://github.com/vmware-tanzu/carvel-vendir/releases) or [Homebrew Carvel tap](https://github.com/vmware-tanzu/homebrew-carvel)
 
 `vendir` allows to declaratively state what should be in a directory. It's could be used for vendoring software.
 
