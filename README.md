@@ -1,7 +1,8 @@
 # vendir
 
+- Website: [https://carvel.dev/vendir](https://carvel.dev/vendir)
 - Slack: [#carvel in Kubernetes slack](https://slack.kubernetes.io)
-- [Docs](docs/README.md) with example workflow and other details
+- [Docs](https://carvel.dev/vendir/docs/latest/) with example workflow and other details
 - Install: Grab prebuilt binaries from the [Releases page](https://github.com/vmware-tanzu/carvel-vendir/releases) or [Homebrew Carvel tap](https://github.com/vmware-tanzu/homebrew-carvel)
 
 `vendir` allows to declaratively state what should be in a directory. It's could be used for vendoring software.
