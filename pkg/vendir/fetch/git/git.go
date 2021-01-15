@@ -13,7 +13,7 @@ import (
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
 type Git struct {
@@ -180,34 +180,11 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 		return t.opts.Ref, nil
 
 	case t.opts.RefSelection != nil:
-		refSel := t.opts.RefSelection
-
-		switch {
-		case refSel.Semver != nil:
-			tags, err := t.tags(dstPath)
-			if err != nil {
-				return "", err
-			}
-
-			matchedVers := ctlver.NewSemvers(tags).FilterPrereleases(refSel.Semver.Prereleases)
-
-			if len(refSel.Semver.Constraints) > 0 {
-				matchedVers, err = matchedVers.FilterConstraints(refSel.Semver.Constraints)
-				if err != nil {
-					return "", fmt.Errorf("Selecting versions: %s", err)
-				}
-			}
-
-			highestVersion, found := matchedVers.Highest()
-			if !found {
-				return "", fmt.Errorf("Expected to find at least one version, but did not")
-			}
-
-			return highestVersion, nil
-
-		default:
-			return "", fmt.Errorf("Unknown ref selection strategy")
+		tags, err := t.tags(dstPath)
+		if err != nil {
+			return "", err
 		}
+		return versions.HighestConstrainedVersion(tags, *t.opts.RefSelection)
 
 	default:
 		return "", fmt.Errorf("Expected either ref or ref selection to be specified")
