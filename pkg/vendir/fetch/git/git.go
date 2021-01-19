@@ -13,7 +13,7 @@ import (
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type Git struct {
@@ -184,7 +184,7 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return versions.HighestConstrainedVersion(tags, *t.opts.RefSelection)
+		return ctlver.HighestConstrainedVersion(tags, *t.opts.RefSelection)
 
 	default:
 		return "", fmt.Errorf("Expected either ref or ref selection to be specified")

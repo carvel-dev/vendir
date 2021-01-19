@@ -9,8 +9,7 @@ import (
 	"github.com/cppforlife/go-cli-ui/ui"
 	uitable "github.com/cppforlife/go-cli-ui/ui/table"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type SortSemverOptions struct {
@@ -86,9 +85,9 @@ func (o *SortSemverOptions) versions() []string {
 	return vers
 }
 
-func (o *SortSemverOptions) prereleaseConf() *versions.VersionSelectionSemverPrereleases {
+func (o *SortSemverOptions) prereleaseConf() *ctlver.VersionSelectionSemverPrereleases {
 	if o.Prerelease || len(o.PrereleaseIdentifiers) > 0 {
-		result := &versions.VersionSelectionSemverPrereleases{}
+		result := &ctlver.VersionSelectionSemverPrereleases{}
 		result.Identifiers = o.PrereleaseIdentifiers
 		return result
 	}
