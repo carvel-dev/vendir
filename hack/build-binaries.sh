@@ -6,7 +6,7 @@ set -e -x -u
 
 # makes builds reproducible
 export CGO_ENABLED=0
-repro_flags="-ldflags=-buildid= -trimpath"
+repro_flags="-ldflags=-buildid= -trimpath -mod=vendor"
 
 GOOS=darwin GOARCH=amd64 go build $repro_flags -o vendir-darwin-amd64 ./cmd/vendir/...
 GOOS=linux GOARCH=amd64 go build $repro_flags -o vendir-linux-amd64 ./cmd/vendir/...
