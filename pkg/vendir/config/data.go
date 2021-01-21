@@ -1,3 +1,6 @@
+// Copyright 2020 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package config
 
 const (
@@ -24,6 +27,7 @@ type Secret struct {
 	Data     map[string][]byte
 }
 
+// nolint:golint
 type ConfigMap struct {
 	APIVersion string
 	Kind       string

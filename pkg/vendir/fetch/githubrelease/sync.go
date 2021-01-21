@@ -1,3 +1,6 @@
+// Copyright 2020 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package githubrelease
 
 import (
@@ -17,14 +20,14 @@ import (
 
 type Sync struct {
 	opts            ctlconf.DirectoryContentsGithubRelease
-	defaultApiToken string
+	defaultAPIToken string
 	refFetcher      ctlfetch.RefFetcher
 }
 
 func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
-	defaultApiToken string, refFetcher ctlfetch.RefFetcher) Sync {
+	defaultAPIToken string, refFetcher ctlfetch.RefFetcher) Sync {
 
-	return Sync{opts, defaultApiToken, refFetcher}
+	return Sync{opts, defaultAPIToken, refFetcher}
 }
 
 func (d Sync) DescAndURL() (string, string, error) {
@@ -68,7 +71,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	}
 
 	fileChecksums := map[string]string{}
-	matchedAssets := []GithubReleaseAssetAPI{}
+	matchedAssets := []ReleaseAssetAPI{}
 
 	for _, asset := range releaseAPI.Assets {
 		matched, err := d.matchesAssetName(asset.Name)
@@ -162,8 +165,8 @@ func (d Sync) matchesAssetName(name string) (bool, error) {
 	return false, nil
 }
 
-func (d Sync) downloadRelease(authToken string) (GithubReleaseAPI, error) {
-	releaseAPI := GithubReleaseAPI{}
+func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
+	releaseAPI := ReleaseAPI{}
 
 	_, url, err := d.DescAndURL()
 	if err != nil {
@@ -291,8 +294,8 @@ func (d Sync) checkFileChecksum(path string, expectedChecksum string) error {
 func (d Sync) authToken() (string, error) {
 	token := ""
 
-	if len(d.defaultApiToken) > 0 {
-		token = d.defaultApiToken
+	if len(d.defaultAPIToken) > 0 {
+		token = d.defaultAPIToken
 	}
 
 	if d.opts.SecretRef != nil {
@@ -314,13 +317,13 @@ func (d Sync) authToken() (string, error) {
 	return token, nil
 }
 
-type GithubReleaseAPI struct {
+type ReleaseAPI struct {
 	URL    string `json:"url"`
 	Body   string
-	Assets []GithubReleaseAssetAPI
+	Assets []ReleaseAssetAPI
 }
 
-type GithubReleaseAssetAPI struct {
+type ReleaseAssetAPI struct {
 	URL  string
 	Name string
 	Size int64
@@ -328,7 +331,7 @@ type GithubReleaseAssetAPI struct {
 	// BrowserDownloadURL string `json:"browser_download_url"`
 }
 
-func (a GithubReleaseAPI) AssetNames() []string {
+func (a ReleaseAPI) AssetNames() []string {
 	var result []string
 	for _, asset := range a.Assets {
 		result = append(result, asset.Name)

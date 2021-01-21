@@ -132,7 +132,7 @@ func (t *Sync) addAuth(req *http.Request) error {
 		return err
 	}
 
-	for name, _ := range secret.Data {
+	for name := range secret.Data {
 		switch name {
 		case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 		case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:

@@ -1,3 +1,6 @@
+// Copyright 2020 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package githubrelease_test
 
 import (
@@ -20,7 +23,7 @@ func TestReleaseNotesChecksums(t *testing.T) {
 +++
 `
 
-	files := []GithubReleaseAssetAPI{
+	files := []ReleaseAssetAPI{
 		{Name: "release.yml"},
 		{Name: "with-slash.yml"},
 		{Name: "with-period-slash.yml"},

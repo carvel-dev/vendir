@@ -1,3 +1,6 @@
+// Copyright 2020 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package githubrelease
 
 import (
@@ -8,7 +11,7 @@ import (
 
 type ReleaseNotesChecksums struct{}
 
-func (ReleaseNotesChecksums) Find(assets []GithubReleaseAssetAPI, body string) (map[string]string, error) {
+func (ReleaseNotesChecksums) Find(assets []ReleaseAssetAPI, body string) (map[string]string, error) {
 	lines := strings.Split(body, "\n")
 	results := map[string]string{}
 

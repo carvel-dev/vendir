@@ -1,3 +1,6 @@
+// Copyright 2020 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package git
 
 import (
@@ -28,6 +31,7 @@ func NewGit(opts ctlconf.DirectoryContentsGit,
 	return &Git{opts, infoLog, refFetcher}
 }
 
+// nolint:golint
 type GitInfo struct {
 	SHA         string
 	Tags        []string
@@ -117,23 +121,23 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		env = append(env, "GIT_LFS_SKIP_SMUDGE=1")
 	}
 
-	gitUrl := t.opts.URL
+	gitURL := t.opts.URL
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
 
 	if authOpts.Username != nil && authOpts.Password != nil {
-		if !strings.HasPrefix(gitUrl, "https://") {
+		if !strings.HasPrefix(gitURL, "https://") {
 			return fmt.Errorf("Username/password authentication is only supported for https remotes")
 		}
 
-		gitCredsUrl, err := url.Parse(gitUrl)
+		gitCredsURL, err := url.Parse(gitURL)
 		if err != nil {
 			return fmt.Errorf("Parsing git remote url: %s", err)
 		}
 
-		gitCredsUrl.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
-		gitCredsUrl.Path = ""
+		gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
+		gitCredsURL.Path = ""
 
-		err = ioutil.WriteFile(gitCredsPath, []byte(gitCredsUrl.String()+"\n"), 0600)
+		err = ioutil.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
 		if err != nil {
 			return fmt.Errorf("Writing %s: %s", gitCredsPath, err)
 		}
@@ -142,7 +146,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	argss := [][]string{
 		{"init"},
 		{"config", "credential.helper", "store --file " + gitCredsPath},
-		{"remote", "add", "origin", gitUrl},
+		{"remote", "add", "origin", gitURL},
 		{"fetch", "origin"},
 	}
 
