@@ -9,6 +9,7 @@ import (
 	dircopy "github.com/otiai10/copy"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlbundle "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/bundle"
 	ctlgit "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/git"
 	ctlghr "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
 	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
@@ -87,6 +88,16 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 
 			lockDirContents.Image = &lock
+
+		case contents.Bundle != nil:
+			d.ui.PrintLinef("Fetching: %s + %s (bundle from %s)", d.opts.Path, contents.Path, contents.Bundle.URL)
+
+			lock, err := ctlbundle.NewSync(*contents.Bundle, syncOpts.RefFetcher).Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with bundle contents: %s", contents.Path, err)
+			}
+
+			lockDirContents.Bundle = &lock
 
 		case contents.GithubRelease != nil:
 			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
