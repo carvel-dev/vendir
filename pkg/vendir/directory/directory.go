@@ -17,6 +17,7 @@ import (
 	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
 	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
+	ctlimgpkgbundle "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/imgpkgbundle"
 	ctlinl "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/inline"
 )
 
@@ -90,6 +91,16 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 
 			lockDirContents.Image = &lock
+
+		case contents.ImgpkgBundle != nil:
+			d.ui.PrintLinef("Fetching: %s + %s (imgpkgBundle from %s)", d.opts.Path, contents.Path, contents.ImgpkgBundle.Image)
+
+			lock, err := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher).Sync(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with imgpkgBundle contents: %s", contents.Path, err)
+			}
+
+			lockDirContents.ImgpkgBundle = &lock
 
 		case contents.GithubRelease != nil:
 			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
