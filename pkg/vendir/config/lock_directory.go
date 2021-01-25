@@ -11,7 +11,7 @@ type LockDirectoryContents struct {
 	Git           *LockDirectoryContentsGit           `json:"git,omitempty"`
 	HTTP          *LockDirectoryContentsHTTP          `json:"http,omitempty"`
 	Image         *LockDirectoryContentsImage         `json:"image,omitempty"`
-	Bundle        *LockDirectoryContentsBundle        `json:"bundle,omitempty"`
+	ImgpkgBundle  *LockDirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
 	GithubRelease *LockDirectoryContentsGithubRelease `json:"githubRelease,omitempty"`
 	HelmChart     *LockDirectoryContentsHelmChart     `json:"helmChart,omitempty"`
 	Manual        *LockDirectoryContentsManual        `json:"manual,omitempty"`
@@ -31,8 +31,8 @@ type LockDirectoryContentsImage struct {
 	URL string `json:"url"`
 }
 
-type LockDirectoryContentsBundle struct {
-	URL string `json:"url"`
+type LockDirectoryContentsImgpkgBundle struct {
+	Image string `json:"image"`
 }
 
 type LockDirectoryContentsGithubRelease struct {

@@ -32,7 +32,7 @@ type DirectoryContents struct {
 	Git           *DirectoryContentsGit           `json:"git,omitempty"`
 	HTTP          *DirectoryContentsHTTP          `json:"http,omitempty"`
 	Image         *DirectoryContentsImage         `json:"image,omitempty"`
-	Bundle        *DirectoryContentsBundle        `json:"bundle,omitempty"`
+	ImgpkgBundle  *DirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
 	GithubRelease *DirectoryContentsGithubRelease `json:"githubRelease,omitempty"`
 	HelmChart     *DirectoryContentsHelmChart     `json:"helmChart,omitempty"`
 	Manual        *DirectoryContentsManual        `json:"manual,omitempty"`
@@ -84,9 +84,9 @@ type DirectoryContentsImage struct {
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 }
 
-type DirectoryContentsBundle struct {
+type DirectoryContentsImgpkgBundle struct {
 	// Example: username/app1-config:v0.1.0
-	URL string `json:"url,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
 	// TODO support docker config formated secret
@@ -212,8 +212,8 @@ func (c DirectoryContents) Validate() error {
 	if c.Inline != nil {
 		srcTypes = append(srcTypes, "inline")
 	}
-	if c.Bundle != nil {
-		srcTypes = append(srcTypes, "bundle")
+	if c.ImgpkgBundle != nil {
+		srcTypes = append(srcTypes, "imgpkgBundle")
 	}
 
 	if len(srcTypes) == 0 {
@@ -263,8 +263,8 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 		return c.HTTP.Lock(lockConfig.HTTP)
 	case c.Image != nil:
 		return c.Image.Lock(lockConfig.Image)
-	case c.Bundle != nil:
-		return c.Bundle.Lock(lockConfig.Bundle)
+	case c.ImgpkgBundle != nil:
+		return c.ImgpkgBundle.Lock(lockConfig.ImgpkgBundle)
 	case c.GithubRelease != nil:
 		return c.GithubRelease.Lock(lockConfig.GithubRelease)
 	case c.HelmChart != nil:
@@ -309,14 +309,14 @@ func (c *DirectoryContentsImage) Lock(lockConfig *LockDirectoryContentsImage) er
 	return nil
 }
 
-func (c *DirectoryContentsBundle) Lock(lockConfig *LockDirectoryContentsBundle) error {
+func (c *DirectoryContentsImgpkgBundle) Lock(lockConfig *LockDirectoryContentsImgpkgBundle) error {
 	if lockConfig == nil {
 		return fmt.Errorf("Expected image lock configuration to be non-empty")
 	}
-	if len(lockConfig.URL) == 0 {
-		return fmt.Errorf("Expected image URL to be non-empty")
+	if len(lockConfig.Image) == 0 {
+		return fmt.Errorf("Expected image Image to be non-empty")
 	}
-	c.URL = lockConfig.URL
+	c.Image = lockConfig.Image
 	return nil
 }
 

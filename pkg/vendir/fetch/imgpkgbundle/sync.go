@@ -1,6 +1,6 @@
 // Copyright 2021 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
-package bundle
+package imgpkgbundle
 
 import (
 	"bytes"
@@ -13,28 +13,28 @@ import (
 )
 
 type Sync struct {
-	opts       ctlconf.DirectoryContentsBundle
+	opts       ctlconf.DirectoryContentsImgpkgBundle
 	refFetcher ctlfetch.RefFetcher
 }
 
-func NewSync(opts ctlconf.DirectoryContentsBundle, refFetcher ctlfetch.RefFetcher) *Sync {
+func NewSync(opts ctlconf.DirectoryContentsImgpkgBundle, refFetcher ctlfetch.RefFetcher) *Sync {
 	return &Sync{opts, refFetcher}
 }
 
 var (
 	// Example image ref in imgpkg stdout:
-	//   Pulling image 'index.docker.io/dkalinin/consul-helm@sha256:d1cdbd46561a144332f0744302d45f27583fc0d75002cba473d840f46630c9f7'
+	//   Pulling bundle 'index.docker.io/dkalinin/consul-helm@sha256:d1cdbd46561a144332f0744302d45f27583fc0d75002cba473d840f46630c9f7'
 	imgpkgPulledImageRef = regexp.MustCompile("(?m)^Pulling bundle '(.+)'$")
 )
 
-func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsBundle, error) {
-	lockConf := ctlconf.LockDirectoryContentsBundle{}
+func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, error) {
+	lockConf := ctlconf.LockDirectoryContentsImgpkgBundle{}
 
-	if len(t.opts.URL) == 0 {
-		return lockConf, fmt.Errorf("Expected non-empty URL")
+	if len(t.opts.Image) == 0 {
+		return lockConf, fmt.Errorf("Expected non-empty Image")
 	}
 
-	args := []string{"pull", "-b", t.opts.URL, "-o", dstPath, "--tty=true"}
+	args := []string{"pull", "-b", t.opts.Image, "-o", dstPath, "--tty=true"}
 
 	args, err := t.addAuthArgs(args)
 	if err != nil {
@@ -62,7 +62,7 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsBundle, error)
 		return lockConf, fmt.Errorf("Expected ref '%s' to be in digest form, but was not", matches[1])
 	}
 
-	lockConf.URL = matches[1]
+	lockConf.Image = matches[1]
 
 	return lockConf, nil
 }

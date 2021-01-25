@@ -9,12 +9,12 @@ import (
 	dircopy "github.com/otiai10/copy"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlbundle "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/bundle"
 	ctlgit "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/git"
 	ctlghr "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
 	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
 	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
+	ctlimgpkgbundle "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/imgpkgbundle"
 	ctlinl "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/inline"
 )
 
@@ -89,15 +89,15 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lockDirContents.Image = &lock
 
-		case contents.Bundle != nil:
-			d.ui.PrintLinef("Fetching: %s + %s (bundle from %s)", d.opts.Path, contents.Path, contents.Bundle.URL)
+		case contents.ImgpkgBundle != nil:
+			d.ui.PrintLinef("Fetching: %s + %s (imgpkgBundle from %s)", d.opts.Path, contents.Path, contents.ImgpkgBundle.Image)
 
-			lock, err := ctlbundle.NewSync(*contents.Bundle, syncOpts.RefFetcher).Sync(stagingDstPath)
+			lock, err := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with bundle contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with imgpkgBundle contents: %s", contents.Path, err)
 			}
 
-			lockDirContents.Bundle = &lock
+			lockDirContents.ImgpkgBundle = &lock
 
 		case contents.GithubRelease != nil:
 			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
