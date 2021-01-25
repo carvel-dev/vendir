@@ -314,7 +314,7 @@ func (c *DirectoryContentsImgpkgBundle) Lock(lockConfig *LockDirectoryContentsIm
 		return fmt.Errorf("Expected image lock configuration to be non-empty")
 	}
 	if len(lockConfig.Image) == 0 {
-		return fmt.Errorf("Expected image Image to be non-empty")
+		return fmt.Errorf("Expected imgpkg bundle Image to be non-empty")
 	}
 	c.Image = lockConfig.Image
 	return nil
