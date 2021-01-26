@@ -8,5 +8,8 @@ linters-settings:
   goheader:
     values:
       regexp:
-        copyright-year: 20[2-9]\d
+        copyright-year: 202[0-1]
     template-path: code-header-template.txt
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0 
