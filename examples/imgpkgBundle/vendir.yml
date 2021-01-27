@@ -1,0 +1,22 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: docker.io/ewrenn/consul-helm-naked
+    imgpkgBundle:
+      image: ewrenn/consul-helm-bundle
+    excludePaths:
+    - .git/**/*
+
+  - path: docker.io/ewrenn/consul-helm-by-tag
+    imgpkgBundle:
+      image: ewrenn/consul-helm-bundle:v1
+    excludePaths:
+    - .git/**/*
+
+  - path: docker.io/ewrenn/consul-helm-by-digest
+    imgpkgBundle:
+      image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
+    excludePaths:
+    - .git/**/*

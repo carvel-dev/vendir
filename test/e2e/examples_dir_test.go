@@ -17,6 +17,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "git"},
 		{Name: "http"},
 		{Name: "image"},
+		{Name: "imgpkgBundle"},
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm2Binary}},
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "github-release"},

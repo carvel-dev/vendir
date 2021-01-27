@@ -1,0 +1,211 @@
+# DaemonSet to run the Consul clients on every node.
+{{- if (or (and (ne (.Values.client.enabled | toString) "-") .Values.client.enabled) (and (eq (.Values.client.enabled | toString) "-") .Values.global.enabled)) }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "consul.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "consul.name" . }}
+    chart: {{ template "consul.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "consul.name" . }}
+      chart: {{ template "consul.chart" . }}
+      release: {{ .Release.Name }}
+      component: client
+      hasDNS: "true"
+  template:
+    metadata:
+      labels:
+        app: {{ template "consul.name" . }}
+        chart: {{ template "consul.chart" . }}
+        release: {{ .Release.Name }}
+        component: client
+        hasDNS: "true"
+      annotations:
+        "consul.hashicorp.com/connect-inject": "false"
+        {{- if .Values.client.annotations }}
+          {{- tpl .Values.client.annotations . | nindent 8 }}
+        {{- end }}
+    spec:
+    {{- if .Values.client.affinity }}
+      affinity:
+        {{ tpl .Values.client.affinity . | nindent 8 | trim }}
+    {{- end }}
+    {{- if .Values.client.tolerations }}
+      tolerations:
+        {{ tpl .Values.client.tolerations . | nindent 8 | trim }}
+    {{- end }}
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ template "consul.fullname" . }}-client
+
+      {{- if .Values.client.priorityClassName }}
+      priorityClassName: {{ .Values.client.priorityClassName | quote }}
+      {{- end }}
+
+      # Consul agents require a directory for data, even clients. The data
+      # is okay to be wiped though if the Pod is removed, so just use an
+      # emptyDir volume.
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ template "consul.fullname" . }}-client-config
+        {{- range .Values.client.extraVolumes }}
+        - name: userconfig-{{ .name }}
+          {{ .type }}:
+            {{- if (eq .type "configMap") }}
+            name: {{ .name }}
+            {{- else if (eq .type "secret") }}
+            secretName: {{ .name }}
+            {{- end }}
+        {{- end }}
+        {{- if .Values.global.bootstrapACLs }}
+        - name: aclconfig
+          emptyDir: {}
+        {{- end }}
+
+      containers:
+        - name: consul
+          image: "{{ default .Values.global.image .Values.client.image }}"
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- if (and .Values.global.gossipEncryption.secretName .Values.global.gossipEncryption.secretKey) }}
+            - name: GOSSIP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.gossipEncryption.secretName }}
+                  key: {{ .Values.global.gossipEncryption.secretKey }}
+            {{- end }}
+            {{- include "consul.extraEnvironmentVars" .Values.client | nindent 12 }}
+          command:
+            - "/bin/sh"
+            - "-ec"
+            - |
+              CONSUL_FULLNAME="{{template "consul.fullname" . }}"
+
+              exec /bin/consul agent \
+                -node="${NODE}" \
+                -advertise="${POD_IP}" \
+                -bind=0.0.0.0 \
+                -client=0.0.0.0 \
+                {{- if .Values.client.grpc }}
+                -hcl="ports { grpc = 8502 }" \
+                {{- end }}
+                -config-dir=/consul/config \
+                {{- range .Values.client.extraVolumes }}
+                {{- if .load }}
+                -config-dir=/consul/userconfig/{{ .name }} \
+                {{- end }}
+                {{- end }}
+                {{- if .Values.global.bootstrapACLs}}
+                -config-dir=/consul/aclconfig \
+                {{- end }}
+                -datacenter={{ .Values.global.datacenter }} \
+                -data-dir=/consul/data \
+                {{- if (and .Values.global.gossipEncryption.secretName .Values.global.gossipEncryption.secretKey) }}
+                -encrypt="${GOSSIP_KEY}" \
+                {{- end }}
+                {{- if (.Values.client.join) and (gt (len .Values.client.join) 0) }}
+                {{- range $value := .Values.client.join }}
+                -retry-join="{{ $value }}" \
+                {{- end }}
+                {{- else }}
+                {{- if .Values.server.enabled }}
+                {{- range $index := until (.Values.server.replicas | int) }}
+                -retry-join=${CONSUL_FULLNAME}-server-{{ $index }}.${CONSUL_FULLNAME}-server.${NAMESPACE}.svc \
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                -domain={{ .Values.global.domain }}
+          volumeMounts:
+            - name: data
+              mountPath: /consul/data
+            - name: config
+              mountPath: /consul/config
+            {{- range .Values.client.extraVolumes }}
+            - name: userconfig-{{ .name }}
+              readOnly: true
+              mountPath: /consul/userconfig/{{ .name }}
+            {{- end }}
+            {{- if .Values.global.bootstrapACLs}}
+            - name: aclconfig
+              mountPath: /consul/aclconfig
+            {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - consul leave
+          ports:
+            - containerPort: 8500
+              hostPort: 8500
+              name: http
+            - containerPort: 8502
+              hostPort: 8502
+              name: grpc
+            - containerPort: 8301
+              name: serflan
+            - containerPort: 8302
+              name: serfwan
+            - containerPort: 8300
+              name: server
+            - containerPort: 8600
+              name: dns-tcp
+              protocol: "TCP"
+            - containerPort: 8600
+              name: dns-udp
+              protocol: "UDP"
+          readinessProbe:
+            # NOTE(mitchellh): when our HTTP status endpoints support the
+            # proper status codes, we should switch to that. This is temporary.
+            exec:
+              command:
+                - "/bin/sh"
+                - "-ec"
+                - |
+                  curl http://127.0.0.1:8500/v1/status/leader 2>/dev/null | \
+                  grep -E '".+"'
+          {{- if .Values.client.resources }}
+          resources:
+            {{ tpl .Values.client.resources . | nindent 12 | trim }}
+          {{- end }}
+      {{- if .Values.global.bootstrapACLs }}
+      initContainers:
+      - name: client-acl-init
+        image: {{ .Values.global.imageK8S }}
+        command:
+          - "/bin/sh"
+          - "-ec"
+          - |
+            consul-k8s acl-init \
+              -secret-name="{{ .Release.Name }}-consul-client-acl-token" \
+              -k8s-namespace={{ .Release.Namespace }} \
+              -init-type="client"
+        volumeMounts:
+          - name: aclconfig
+            mountPath: /consul/aclconfig
+      {{- end }}
+      {{- if .Values.client.nodeSelector }}
+      nodeSelector:
+        {{ tpl .Values.client.nodeSelector . | indent 8 | trim }}
+      {{- end }}
+{{- end }}

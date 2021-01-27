@@ -1,0 +1,14 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - imgpkgBundle:
+      image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
+    path: docker.io/ewrenn/consul-helm-naked
+  - imgpkgBundle:
+      image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
+    path: docker.io/ewrenn/consul-helm-by-tag
+  - imgpkgBundle:
+      image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
+    path: docker.io/ewrenn/consul-helm-by-digest
+  path: vendor
+kind: LockConfig
