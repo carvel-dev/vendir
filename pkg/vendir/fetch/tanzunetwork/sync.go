@@ -249,8 +249,8 @@ func fileName(file pivnet.ProductFile) string {
 
 type noopLogger struct{}
 
-func (_ noopLogger) Debug(string, ...logger.Data) {}
-func (_ noopLogger) Info(string, ...logger.Data)  {}
+func (noopLogger) Debug(string, ...logger.Data) {}
+func (noopLogger) Info(string, ...logger.Data)  {}
 
 type sorter struct {
 	len  int
