@@ -19,6 +19,7 @@ import (
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
 	ctlimgpkgbundle "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/imgpkgbundle"
 	ctlinl "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/inline"
+	ctltanzu "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/tanzunetwork"
 )
 
 type Directory struct {
@@ -34,6 +35,9 @@ type SyncOpts struct {
 	RefFetcher     ctlfetch.RefFetcher
 	GithubAPIToken string
 	HelmBinary     string
+
+	TanzuNetworkHost     string
+	TanzuNetworkAPIToken string
 }
 
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
@@ -161,6 +165,16 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 
 			lockDirContents.Inline = &lock
+
+		case contents.TanzuNetwork != nil:
+			d.ui.PrintLinef("Fetching: %s + %s (tanzuNetwork)", d.opts.Path, contents.Path)
+
+			lock, err := ctltanzu.NewSync(syncOpts.TanzuNetworkHost, syncOpts.TanzuNetworkAPIToken, "carvel-vendir", false, *contents.TanzuNetwork).Sync(stagingDstPath, stagingDir.TempArea())
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with Tanzu Network: %s", contents.Path, err)
+			}
+
+			lockDirContents.TanzuNetworkProductFiles = &lock
 
 		default:
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)

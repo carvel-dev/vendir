@@ -1,0 +1,23 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - path: ops-manager
+    tanzuNetworkProductFiles:
+      files:
+      - id: 880050
+        name: ops-manager-aws-2.7.29-build.433.yml
+        sha246Sum: 443e3bbecaab9def119eff95be8fa2893ffa2fed4e3d05add44e8e1eeafac851
+      releaseID: 824916
+      slug: ops-manager
+      version: 2.7.29
+  - path: tas
+    tanzuNetworkProductFiles:
+      files:
+      - id: 656229
+        name: cf-cli-6.51.0.zip
+        sha246Sum: 3e23f3f75bf501771171d23817a4c131dbbe9a4a614977a9255405f2a5caec31
+      releaseID: 835314
+      slug: elastic-runtime
+      version: 2.7.31
+  path: vendor
+kind: LockConfig

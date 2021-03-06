@@ -1,0 +1,19 @@
+# Make sure VENDIR_TANZU_NETWORK_API_TOKEN is set
+
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: vendor
+    contents:
+      - path: ops-manager
+        tanzuNetwork:
+          slug: ops-manager
+          version: ">= 2.7, < 2.8"
+          files:
+            - name: ops-manager-aws-*.yml
+      - path: tas-cli
+        tanzuNetwork:
+          slug: elastic-runtime
+          version: ">= 2.7, < 2.8"
+          files:
+            - name: cf-cli-*.zip

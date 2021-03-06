@@ -103,9 +103,11 @@ func (o *SyncOptions) Run() error {
 	}
 
 	syncOpts := ctldir.SyncOpts{
-		RefFetcher:     ctldir.NewNamedRefFetcher(secrets, configMaps),
-		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
-		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
+		RefFetcher:           ctldir.NewNamedRefFetcher(secrets, configMaps),
+		GithubAPIToken:       os.Getenv("VENDIR_GITHUB_API_TOKEN"),
+		HelmBinary:           os.Getenv("VENDIR_HELM_BINARY"),
+		TanzuNetworkAPIToken: os.Getenv("VENDIR_TANZU_NETWORK_API_TOKEN"),
+		TanzuNetworkHost:     os.Getenv("VENDIR_TANZU_NETWORK_HOST"),
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 

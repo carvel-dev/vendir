@@ -41,6 +41,7 @@ type DirectoryContents struct {
 	Manual        *DirectoryContentsManual        `json:"manual,omitempty"`
 	Directory     *DirectoryContentsDirectory     `json:"directory,omitempty"`
 	Inline        *DirectoryContentsInline        `json:"inline,omitempty"`
+	TanzuNetwork  *DirectoryContentsTanzuNetwork  `json:"tanzuNetwork,omitempty"`
 
 	IncludePaths []string `json:"includePaths,omitempty"`
 	ExcludePaths []string `json:"excludePaths,omitempty"`
@@ -160,6 +161,27 @@ type DirectoryContentsLocalRef struct {
 	Name string `json:"name,omitempty"`
 }
 
+type DirectoryContentsTanzuNetwork struct {
+	Slug string `json:"slug"`
+
+	// *optional
+	Version string `json:"version"`
+
+	// *optional
+	ReleaseID *int `json:"releaseID"`
+
+	Files []DirectoryContentsTanzuNetworkFile `json:"files"`
+}
+
+type DirectoryContentsTanzuNetworkFile struct {
+	Name string `json:"name"`
+
+	// +optional
+	ID *int `json:"id,omitempty"`
+	// +optional
+	SHA256Sum *string `json:"sha246Sum,omitempty"`
+}
+
 func (c Directory) Validate() error {
 	err := isDisallowedPath(c.Path)
 	if err != nil {
@@ -217,6 +239,9 @@ func (c DirectoryContents) Validate() error {
 	}
 	if c.ImgpkgBundle != nil {
 		srcTypes = append(srcTypes, "imgpkgBundle")
+	}
+	if c.TanzuNetwork != nil {
+		srcTypes = append(srcTypes, "tanzuNetwork")
 	}
 
 	if len(srcTypes) == 0 {
@@ -278,6 +303,8 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 		return nil // nothing to lock
 	case c.Inline != nil:
 		return nil // nothing to lock
+	case c.TanzuNetwork != nil:
+		return c.TanzuNetwork.Lock(lockConfig.TanzuNetworkProductFiles)
 	default:
 		panic("Unknown contents type")
 	}
@@ -342,5 +369,44 @@ func (c *DirectoryContentsHelmChart) Lock(lockConfig *LockDirectoryContentsHelmC
 		return fmt.Errorf("Expected helm chart version to be non-empty")
 	}
 	c.Version = lockConfig.Version
+	return nil
+}
+
+func (c *DirectoryContentsTanzuNetwork) Lock(lockConfig *LockDirectoryContentsTanzuNetwork) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected Tanzu Network product file configuration to be non-empty")
+	}
+
+	c.Slug = lockConfig.Slug
+	c.ReleaseID = &lockConfig.ReleaseID
+
+	c.Files = make([]DirectoryContentsTanzuNetworkFile, len(lockConfig.Files))
+	for i, lock := range lockConfig.Files {
+		err := c.Files[i].Lock(&lock)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *DirectoryContentsTanzuNetworkFile) Lock(lockConfig *LockDirectoryContentsTanzuNetworkFile) error {
+	if lockConfig.Name == "" {
+		return fmt.Errorf("Expected Tanzu Network product file name to not be non-empty")
+	}
+
+	if lockConfig.SHA256Sum == "" {
+		return fmt.Errorf("Expected Tanzu Network product file with name %q to have sha256sum not be non-empty", lockConfig.Name)
+	}
+
+	if lockConfig.ID == 0 {
+		// Are there valid file id's with value 0? I'm not sure.
+		return fmt.Errorf("Expected Tanzu Network product file with name %q to have sha256sum not be non-empty (non-zero)", lockConfig.Name)
+	}
+
+	c.Name = lockConfig.Name
+	c.SHA256Sum = &lockConfig.SHA256Sum
+	c.ID = &lockConfig.ID
+
 	return nil
 }

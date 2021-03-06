@@ -11,15 +11,16 @@ type LockDirectory struct {
 type LockDirectoryContents struct {
 	Path string `json:"path"`
 
-	Git           *LockDirectoryContentsGit           `json:"git,omitempty"`
-	HTTP          *LockDirectoryContentsHTTP          `json:"http,omitempty"`
-	Image         *LockDirectoryContentsImage         `json:"image,omitempty"`
-	ImgpkgBundle  *LockDirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
-	GithubRelease *LockDirectoryContentsGithubRelease `json:"githubRelease,omitempty"`
-	HelmChart     *LockDirectoryContentsHelmChart     `json:"helmChart,omitempty"`
-	Manual        *LockDirectoryContentsManual        `json:"manual,omitempty"`
-	Directory     *LockDirectoryContentsDirectory     `json:"directory,omitempty"`
-	Inline        *LockDirectoryContentsInline        `json:"inline,omitempty"`
+	Git                      *LockDirectoryContentsGit           `json:"git,omitempty"`
+	HTTP                     *LockDirectoryContentsHTTP          `json:"http,omitempty"`
+	Image                    *LockDirectoryContentsImage         `json:"image,omitempty"`
+	ImgpkgBundle             *LockDirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
+	GithubRelease            *LockDirectoryContentsGithubRelease `json:"githubRelease,omitempty"`
+	HelmChart                *LockDirectoryContentsHelmChart     `json:"helmChart,omitempty"`
+	Manual                   *LockDirectoryContentsManual        `json:"manual,omitempty"`
+	Directory                *LockDirectoryContentsDirectory     `json:"directory,omitempty"`
+	Inline                   *LockDirectoryContentsInline        `json:"inline,omitempty"`
+	TanzuNetworkProductFiles *LockDirectoryContentsTanzuNetwork  `json:"tanzuNetworkProductFiles,omitempty"`
 }
 
 type LockDirectoryContentsGit struct {
@@ -45,6 +46,19 @@ type LockDirectoryContentsGithubRelease struct {
 type LockDirectoryContentsHelmChart struct {
 	Version    string `json:"version"`
 	AppVersion string `json:"appVersion"`
+}
+
+type LockDirectoryContentsTanzuNetwork struct {
+	Slug      string                                  `json:"slug"`
+	Version   string                                  `json:"version"`
+	ReleaseID int                                     `json:"releaseID"`
+	Files     []LockDirectoryContentsTanzuNetworkFile `json:"files"`
+}
+
+type LockDirectoryContentsTanzuNetworkFile struct {
+	Name      string `json:"name"`
+	ID        int    `json:"id"`
+	SHA256Sum string `json:"sha246Sum"`
 }
 
 type LockDirectoryContentsManual struct{}
