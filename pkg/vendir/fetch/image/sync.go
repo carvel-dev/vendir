@@ -43,6 +43,8 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) 
 		return lockConf, err
 	}
 
+	args = t.addDangerousArgs(args)
+
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command("imgpkg", args...)
@@ -97,4 +99,11 @@ func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 	}
 
 	return append(args, authArgs...), nil
+}
+
+func (t *Sync) addDangerousArgs(args []string) []string {
+	if t.opts.DangerousSkipTLSVerify {
+		args = append(args, "--registry-verify-certs=false")
+	}
+	return args
 }
