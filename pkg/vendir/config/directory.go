@@ -85,6 +85,8 @@ type DirectoryContentsImage struct {
 	// TODO support docker config formated secret
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
+
+	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 }
 
 type DirectoryContentsImgpkgBundle struct {
@@ -95,6 +97,8 @@ type DirectoryContentsImgpkgBundle struct {
 	// TODO support docker config formated secret
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
+
+	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 }
 
 type DirectoryContentsGithubRelease struct {

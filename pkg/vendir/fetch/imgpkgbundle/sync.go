@@ -5,11 +5,12 @@ package imgpkgbundle
 import (
 	"bytes"
 	"fmt"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
 type Sync struct {
@@ -40,6 +41,8 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 	if err != nil {
 		return lockConf, err
 	}
+
+	args = t.addDangerousArgs(args)
 
 	var stdoutBs, stderrBs bytes.Buffer
 
@@ -95,4 +98,11 @@ func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 	}
 
 	return append(args, authArgs...), nil
+}
+
+func (t *Sync) addDangerousArgs(args []string) []string {
+	if t.opts.DangerousSkipTLSVerify {
+		args = append(args, "--registry-verify-certs=false")
+	}
+	return args
 }
