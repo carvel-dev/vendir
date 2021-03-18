@@ -140,10 +140,10 @@ func (t *Sync) fetch(helmHomeDir, chartsPath string) error {
 		name = t.opts.Name
 	}
 
-	args := []string{"fetch", name, "--untar", "--untardir", chartsPath}
+	fetchArgs := []string{"fetch", name, "--untar", "--untardir", chartsPath}
 
 	if len(t.opts.Version) > 0 {
-		args = append(args, []string{"--version", t.opts.Version}...)
+		fetchArgs = append(fetchArgs, []string{"--version", t.opts.Version}...)
 	}
 
 	if t.opts.Repository != nil {
@@ -169,11 +169,11 @@ func (t *Sync) fetch(helmHomeDir, chartsPath string) error {
 			}
 		}
 
-		args = append(args, []string{"--repo", repoURL}...)
+		fetchArgs = append(fetchArgs, []string{"--repo", repoURL}...)
 
 		var err error
 
-		args, err = t.addAuthArgs(args)
+		fetchArgs, err = t.addAuthArgs(fetchArgs)
 		if err != nil {
 			return fmt.Errorf("Adding helm chart auth info: %s", err)
 		}
@@ -181,7 +181,7 @@ func (t *Sync) fetch(helmHomeDir, chartsPath string) error {
 
 	var stdoutBs, stderrBs bytes.Buffer
 
-	cmd := exec.Command(t.helmBinary, args...)
+	cmd := exec.Command(t.helmBinary, fetchArgs...)
 	cmd.Env = []string{"HOME=" + helmHomeDir}
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
