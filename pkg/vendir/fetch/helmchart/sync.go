@@ -156,14 +156,20 @@ func (t *Sync) fetch(helmHomeDir, chartsPath string) error {
 	if len(repoURL) > 0 {
 		// Add repo explicitly for helm to be recognized in fetch command
 		{
+			repoAddArgs := []string{"repo", "add", "vendir-unused", repoURL}
+			repoAddArgs, err := t.addAuthArgs(repoAddArgs)
+			if err != nil {
+				return fmt.Errorf("Adding helm chart auth info: %s", err)
+			}
+
 			var stdoutBs, stderrBs bytes.Buffer
 
-			cmd := exec.Command(t.helmBinary, "repo", "add", "vendir-unused", repoURL)
+			cmd := exec.Command(t.helmBinary, repoAddArgs...)
 			cmd.Env = []string{"HOME=" + helmHomeDir}
 			cmd.Stdout = &stdoutBs
 			cmd.Stderr = &stderrBs
 
-			err := cmd.Run()
+			err = cmd.Run()
 			if err != nil {
 				return fmt.Errorf("Add helm chart repository: %s (stderr: %s)", err, stderrBs.String())
 			}
