@@ -49,15 +49,18 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 	cmd.AddCommand(toolsCmd)
 
 	// Last one runs first
-	cobrautil.VisitCommands(cmd, cobrautil.ReconfigureCmdWithSubcmd)
-	cobrautil.VisitCommands(cmd, cobrautil.ReconfigureLeafCmd)
-
-	cobrautil.VisitCommands(cmd, cobrautil.WrapRunEForCmd(func(*cobra.Command, []string) error {
+	configureUI := func(*cobra.Command, []string) error {
 		o.UIFlags.ConfigureUI(o.ui)
 		return nil
-	}))
+	}
 
-	cobrautil.VisitCommands(cmd, cobrautil.WrapRunEForCmd(cobrautil.ResolveFlagsForCmd))
+	cobrautil.VisitCommands(
+		cmd,
+		cobrautil.ReconfigureCmdWithSubcmd,
+		cobrautil.DisallowExtraArgs,
+		cobrautil.WrapRunEForCmd(cobrautil.ResolveFlagsForCmd),
+		cobrautil.WrapRunEForCmd(configureUI),
+	)
 
 	return cmd
 }
