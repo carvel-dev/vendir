@@ -6,7 +6,7 @@ github.com/PuerkitoBio/urlesc
 github.com/blang/semver/v4
 # github.com/bmatcuk/doublestar v1.2.1
 github.com/bmatcuk/doublestar
-# github.com/cppforlife/cobrautil v0.0.0-20180924214100-a39a1714c920
+# github.com/cppforlife/cobrautil v0.0.0-20200514214827-bb86e6965d72
 github.com/cppforlife/cobrautil
 # github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
 github.com/cppforlife/go-cli-ui/ui
@@ -46,7 +46,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/otiai10/copy v1.0.2
 github.com/otiai10/copy
-# github.com/spf13/cobra v0.0.3
+# github.com/spf13/cobra v1.1.3
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
@@ -74,7 +74,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/tools v0.0.0-20190920225731-5eefd052ad72
+# golang.org/x/tools v0.0.0-20191112195655-aa38f8e97acc
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
@@ -86,6 +86,7 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/module
 golang.org/x/tools/internal/semver
+golang.org/x/tools/internal/span
 # gonum.org/v1/gonum v0.0.0-20190331200053-3d26580ed485
 gonum.org/v1/gonum/blas
 gonum.org/v1/gonum/blas/blas64
@@ -111,7 +112,7 @@ gonum.org/v1/gonum/lapack
 gonum.org/v1/gonum/lapack/gonum
 gonum.org/v1/gonum/lapack/lapack64
 gonum.org/v1/gonum/mat
-# gopkg.in/yaml.v2 v2.2.8
+# gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2
 # k8s.io/apimachinery v0.17.2
 k8s.io/apimachinery/pkg/util/yaml
