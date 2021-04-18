@@ -24,6 +24,7 @@ type Secret struct {
 	Kind       string
 
 	Metadata GenericMetadata
+	Type     string
 	Data     map[string][]byte
 }
 

@@ -176,6 +176,11 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 			return nil, nil, err
 		}
 
+		secret, err = secret.ToBasicAuthSecret()
+		if err != nil {
+			return nil, nil, err
+		}
+
 		for name, val := range secret.Data {
 			switch name {
 			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:

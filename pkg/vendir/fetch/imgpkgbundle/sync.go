@@ -79,6 +79,11 @@ func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 			return nil, err
 		}
 
+		secret, err = secret.ToBasicAuthSecret()
+		if err != nil {
+			return nil, err
+		}
+
 		for name, val := range secret.Data {
 			switch name {
 			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
