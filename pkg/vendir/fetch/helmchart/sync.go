@@ -61,9 +61,16 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 
 	defer os.RemoveAll(chartsDir)
 
-	err = NewHTTPSource(t.opts, t.helmBinary, t.refFetcher).Fetch(chartsDir, tempArea)
-	if err != nil {
-		return lockConf, err
+	if t.opts.Repository != nil && strings.HasPrefix(t.opts.Repository.URL, "oci://") {
+		err = NewOCISource(t.opts, t.helmBinary, t.refFetcher).Fetch(chartsDir, tempArea)
+		if err != nil {
+			return lockConf, err
+		}
+	} else {
+		err = NewHTTPSource(t.opts, t.helmBinary, t.refFetcher).Fetch(chartsDir, tempArea)
+		if err != nil {
+			return lockConf, err
+		}
 	}
 
 	chartPath, err := t.findChartDir(chartsDir)
@@ -126,7 +133,7 @@ func (t *Sync) findChartDir(chartsPath string) (string, error) {
 	}
 
 	if len(dirNames) != 1 {
-		return "", fmt.Errorf("Expected single directory in charts directory, but was: %#v", dirNames)
+		return "", fmt.Errorf("Expected single directory in charts directory, but was: %s", dirNames)
 	}
 	return filepath.Join(chartsPath, dirNames[0]), nil
 }
