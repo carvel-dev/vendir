@@ -6,7 +6,7 @@ directories:
   contents:
   - path: github.com/cloudfoundry/cf-k8s-networking
     git:
-      url: https://github.com/cloudfoundry/cf-k8s-networking
+      url: https://github.com/cloudfoundry/cf-for-k8s
       refSelection:
         semver:
           constraints: ">0.2.0 <0.4.0"
