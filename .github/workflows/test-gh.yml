@@ -25,8 +25,8 @@ jobs:
         export PATH=/tmp/bin:$PATH
 
         # imgpkg
-        wget -O- https://github.com/k14s/imgpkg/releases/download/v0.3.0/imgpkg-linux-amd64 > /tmp/bin/imgpkg && \
-          echo "7ebd513bdb4d448764725202f0bfe41e052a594eddeb55e53681ebdf4c27d4dc  /tmp/bin/imgpkg" | shasum -c - && \
+        wget -O- https://github.com/k14s/imgpkg/releases/download/v0.7.0/imgpkg-linux-amd64 > /tmp/bin/imgpkg && \
+          echo "bb90881c2c03cad4d50b2f0881d1330d341a37bb55bd8fff50bf228f7cfcf3d2  /tmp/bin/imgpkg" | shasum -c - && \
           chmod +x /tmp/bin/imgpkg
 
         # helm 2

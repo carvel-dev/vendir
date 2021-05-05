@@ -99,6 +99,7 @@ type DirectoryContentsImgpkgBundle struct {
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
+	Recursive              bool `json:"recursive,omitempty"`
 }
 
 type DirectoryContentsGithubRelease struct {

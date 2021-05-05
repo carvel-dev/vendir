@@ -1,0 +1,4 @@
+apiVersion: imgpkg.carvel.dev/v1alpha1
+kind: ImagesLock
+images:
+- image: index.docker.io/k8slt/vendir-test-referenced-bundle@sha256:69a0ebcf1abcea7b53e0c61885e8a3d6e93e6583aad7eb78a3a161e7133f76bf
