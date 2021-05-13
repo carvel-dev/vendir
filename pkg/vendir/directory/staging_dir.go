@@ -66,10 +66,16 @@ func (d StagingDir) CopyExistingFiles(destPath string, ignore []string) error {
 		return nil
 	}
 
+	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+		return nil // Path does not exist so there is nothing to copy
+	}
+
 	var ignorePaths []string
 	for _, ignorePath := range ignore {
 		ignorePaths = append(ignorePaths, filepath.Join(destPath, ignorePath)) // Prefix ignore glob with destination path
 	}
+
+	// Consider WalkDir in the future for efficiency (Go 1.16)
 	err := filepath.Walk(destPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -96,6 +102,9 @@ func (d StagingDir) CopyExistingFiles(destPath string, ignore []string) error {
 		}
 		return nil
 	})
+	if err == os.ErrNotExist {
+		return nil
+	}
 	return err
 }
 
