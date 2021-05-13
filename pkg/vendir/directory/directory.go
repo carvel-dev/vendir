@@ -38,7 +38,6 @@ type SyncOpts struct {
 
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	lockConfig := ctlconf.LockDirectory{Path: d.opts.Path}
-
 	stagingDir := NewStagingDir()
 
 	err := stagingDir.Prepare()
@@ -47,7 +46,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	defer stagingDir.CleanUp()
-
+	var ignorePaths []string
 	for _, contents := range d.opts.Contents {
 		stagingDstPath, err := stagingDir.NewChild(contents.Path)
 		if err != nil {
@@ -58,6 +57,8 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		skipFileFilter := false
 		skipNewRootPath := false
+
+		ignorePaths = append(ignorePaths, contents.IgnorePaths...)
 
 		switch {
 		case contents.Git != nil:
@@ -181,6 +182,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
+	}
+
+	// Copy files from current source if values are supposed to be ignored
+	err = stagingDir.CopyExistingFiles(d.opts.Path, ignorePaths)
+	if err != nil {
+		return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
 	}
 
 	err = stagingDir.Replace(d.opts.Path)

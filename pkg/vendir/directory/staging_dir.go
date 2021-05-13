@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/bmatcuk/doublestar"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
@@ -58,7 +60,61 @@ func (d StagingDir) NewChild(path string) (string, error) {
 	return childPath, nil
 }
 
+func (d StagingDir) CopyExistingFiles(destPath string, ignore []string) error {
+
+	if len(ignore) == 0 {
+		return nil
+	}
+
+	var ignorePaths []string
+	for _, ignorePath := range ignore {
+		ignorePaths = append(ignorePaths, filepath.Join(destPath, ignorePath)) // Prefix ignore glob with destination path
+	}
+	err := filepath.Walk(destPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Verify that the path should be ignored
+		if !ignorePath(path, ignorePaths) {
+			return nil
+		}
+
+		stagingPath := strings.Replace(path, destPath, d.stagingDir, 1) // Preserve structure from destination to staging
+
+		// Ensure that the directories exist in the staging directory
+		stagingDir := filepath.Dir(stagingPath)
+		err = os.MkdirAll(stagingDir, 0700)
+		if err != nil {
+			return fmt.Errorf("Unable to create staging directory '%s': %s", stagingDir, err)
+		}
+
+		// Move the file to the staging directory
+		err = os.Rename(path, stagingPath)
+		if err != nil {
+			return fmt.Errorf("Moving source file '%s' to staging location '%s': %s", path, stagingPath, err)
+		}
+		return nil
+	})
+	return err
+}
+
+func ignorePath(path string, ignorePaths []string) bool {
+
+	for _, ip := range ignorePaths {
+		ok, err := doublestar.PathMatch(ip, path)
+		if err != nil {
+			return false
+		}
+		if ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (d StagingDir) Replace(path string) error {
+
 	err := os.RemoveAll(path)
 	if err != nil {
 		return fmt.Errorf("Deleting dir %s: %s", path, err)

@@ -11,4 +11,4 @@ directories:
     - cfroutesync/crds/**/*
     - install/ytt/networking/**/*
     ignorePaths:
-    - install/ytt/**/values.yml
+    - install/ytt/**/values.yaml

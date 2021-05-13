@@ -13,7 +13,7 @@ cfroutesync:
   ccBaseURL: 'https://api.example.com'
   uaaCA: 'base64_encoded_uaa_ca'
   uaaBaseURL: 'https://uaa.example.com'
-  clientName: 'uaaClientName'
+  clientName: 'test'
   clientSecret: 'base64_encoded_uaaClientSecret'
   eiriniPodLabelPrefix: 'eiriniPodLabelPrefix'
 

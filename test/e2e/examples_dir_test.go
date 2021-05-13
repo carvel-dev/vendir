@@ -14,6 +14,7 @@ func TestExamplesDir(t *testing.T) {
 	_ = env.Helm3Binary
 
 	tests := []example{
+
 		{Name: "git"},
 		{Name: "http"},
 		{Name: "image"},
@@ -26,6 +27,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "locked", OnlyLocked: true, Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "new-root-path"},
 		{Name: "versionselection"},
+		{Name: "ignore", SkipRemove: true},
 	}
 
 	for _, test := range tests {
