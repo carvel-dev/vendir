@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
@@ -60,23 +61,27 @@ func (d StagingDir) NewChild(path string) (string, error) {
 	return childPath, nil
 }
 
-func (d StagingDir) CopyExistingFiles(destPath string, ignore []string) error {
+func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, contents ctlconf.DirectoryContents) error {
 
-	if len(ignore) == 0 {
+	if len(contents.IgnorePaths) == 0 {
 		return nil
 	}
 
-	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+	// Create reference point from staging path to root
+	rootPath := strings.Replace(stagingPath, d.stagingDir, rootDir, 1)
+
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		return nil // Path does not exist so there is nothing to copy
 	}
 
 	var ignorePaths []string
-	for _, ignorePath := range ignore {
-		ignorePaths = append(ignorePaths, filepath.Join(destPath, ignorePath)) // Prefix ignore glob with destination path
+	for _, ignorePath := range contents.IgnorePaths {
+		ignorePaths = append(ignorePaths, filepath.Join(rootPath, ignorePath)) // Prefix ignore glob with destination path
 	}
 
 	// Consider WalkDir in the future for efficiency (Go 1.16)
-	err := filepath.Walk(destPath, func(path string, info os.FileInfo, err error) error {
+	// Walk root path above to determine files that can be ignored
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -86,7 +91,7 @@ func (d StagingDir) CopyExistingFiles(destPath string, ignore []string) error {
 			return nil
 		}
 
-		stagingPath := strings.Replace(path, destPath, d.stagingDir, 1) // Preserve structure from destination to staging
+		stagingPath := strings.Replace(path, rootPath, stagingPath, 1) // Preserve structure from destination to staging
 
 		// Ensure that the directories exist in the staging directory
 		stagingDir := filepath.Dir(stagingPath)

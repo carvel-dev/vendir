@@ -46,7 +46,6 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	defer stagingDir.CleanUp()
-	var ignorePaths []string
 	for _, contents := range d.opts.Contents {
 		stagingDstPath, err := stagingDir.NewChild(contents.Path)
 		if err != nil {
@@ -58,12 +57,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		skipFileFilter := false
 		skipNewRootPath := false
 
-		ignorePaths = append(ignorePaths, contents.IgnorePaths...)
-
 		switch {
 		case contents.Git != nil:
 			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher)
-
 			d.ui.PrintLinef("Fetching: %s + %s (git from %s)", d.opts.Path, contents.Path, gitSync.Desc())
 
 			lock, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
@@ -181,13 +177,13 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 		}
 
-		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
-	}
+		// Copy files from current source if values are supposed to be ignored
+		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents)
+		if err != nil {
+			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+		}
 
-	// Copy files from current source if values are supposed to be ignored
-	err = stagingDir.CopyExistingFiles(d.opts.Path, ignorePaths)
-	if err != nil {
-		return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
 	}
 
 	err = stagingDir.Replace(d.opts.Path)
