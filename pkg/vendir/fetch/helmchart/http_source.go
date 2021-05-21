@@ -43,8 +43,8 @@ func (t *HTTPSource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	return t.fetch(helmHomeDir, dstPath)
 }
 
-func SetEnv(helmHomeDir string) []string {
-	re := regexp.MustCompile(`(https?|no)_proxy=.*`)
+func setEnv(helmHomeDir string) []string {
+	re := regexp.MustCompile(`(?i)^(https?|no)_proxy=.*`)
 	env := []string{"HOME=" + helmHomeDir}
 	for _, e := range os.Environ() {
 		if re.MatchString(e) {
@@ -60,7 +60,7 @@ func (t *HTTPSource) init(helmHomeDir string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = SetEnv(helmHomeDir)
+	cmd.Env = setEnv(helmHomeDir)
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
@@ -118,7 +118,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 			var stdoutBs, stderrBs bytes.Buffer
 
 			cmd := exec.Command(t.helmBinary, repoAddArgs...)
-			cmd.Env = SetEnv(helmHomeDir)
+			cmd.Env = setEnv(helmHomeDir)
 			cmd.Stdout = &stdoutBs
 			cmd.Stderr = &stderrBs
 
@@ -141,7 +141,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, fetchArgs...)
-	cmd.Env = SetEnv(helmHomeDir)
+	cmd.Env = setEnv(helmHomeDir)
 
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
