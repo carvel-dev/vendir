@@ -44,7 +44,7 @@ func (t *HTTPSource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 }
 
 func setEnv(helmHomeDir string) []string {
-	re := regexp.MustCompile(`(?i)^(https?|no)_proxy=.*`)
+	re := regexp.MustCompile(`(?i)\A(https?|no)_proxy=.*`)
 	env := []string{"HOME=" + helmHomeDir}
 	for _, e := range os.Environ() {
 		if re.MatchString(e) {
