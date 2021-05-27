@@ -43,6 +43,7 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 	}
 
 	args = t.addDangerousArgs(args)
+	args = t.addGeneralArgs(args)
 
 	var stdoutBs, stderrBs bytes.Buffer
 
@@ -108,6 +109,13 @@ func (t *Sync) addAuthArgs(args []string) ([]string, error) {
 func (t *Sync) addDangerousArgs(args []string) []string {
 	if t.opts.DangerousSkipTLSVerify {
 		args = append(args, "--registry-verify-certs=false")
+	}
+	return args
+}
+
+func (t *Sync) addGeneralArgs(args []string) []string {
+	if t.opts.Recursive {
+		args = append(args, "--recursive")
 	}
 	return args
 }
