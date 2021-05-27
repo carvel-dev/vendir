@@ -5,13 +5,13 @@ package directory
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/bmatcuk/doublestar"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
@@ -61,9 +61,8 @@ func (d StagingDir) NewChild(path string) (string, error) {
 	return childPath, nil
 }
 
-func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, contents ctlconf.DirectoryContents) error {
-
-	if len(contents.IgnorePaths) == 0 {
+func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, ignorePaths []string) error {
+	if len(ignorePaths) == 0 {
 		return nil
 	}
 
@@ -74,9 +73,9 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, conten
 		return nil // Path does not exist so there is nothing to copy
 	}
 
-	var ignorePaths []string
-	for _, ignorePath := range contents.IgnorePaths {
-		ignorePaths = append(ignorePaths, filepath.Join(rootPath, ignorePath)) // Prefix ignore glob with destination path
+	var ip []string
+	for _, ignorePath := range ignorePaths {
+		ip = append(ip, filepath.Join(rootPath, ignorePath)) // Prefix ignore glob with destination path
 	}
 
 	// Consider WalkDir in the future for efficiency (Go 1.16)
@@ -87,7 +86,12 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, conten
 		}
 
 		// Verify that the path should be ignored
-		if !ignorePath(path, ignorePaths) {
+		ignored, err := isPathIgnored(path, ip)
+		if err != nil {
+			return err
+		}
+
+		if !ignored {
 			return nil
 		}
 
@@ -101,7 +105,7 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, conten
 		}
 
 		// Move the file to the staging directory
-		err = os.Rename(path, stagingPath)
+		err = copy(path, stagingPath)
 		if err != nil {
 			return fmt.Errorf("Moving source file '%s' to staging location '%s': %s", path, stagingPath, err)
 		}
@@ -113,22 +117,21 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, conten
 	return err
 }
 
-func ignorePath(path string, ignorePaths []string) bool {
+func isPathIgnored(path string, ignorePaths []string) (bool, error) {
 
 	for _, ip := range ignorePaths {
 		ok, err := doublestar.PathMatch(ip, path)
 		if err != nil {
-			return false
+			return false, err
 		}
 		if ok {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (d StagingDir) Replace(path string) error {
-
 	err := os.RemoveAll(path)
 	if err != nil {
 		return fmt.Errorf("Deleting dir %s: %s", path, err)
@@ -190,4 +193,35 @@ func (d StagingTempArea) NewTempDir(name string) (string, error) {
 
 func (d StagingTempArea) NewTempFile(pattern string) (*os.File, error) {
 	return ioutil.TempFile(d.path, pattern)
+}
+
+func copy(src, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("Unable to read file info: %s", src)
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("Unable to open file: %s", src)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("Unable to create destination file: %s", dstFile)
+	}
+
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("Copying into dst file: %s", err)
+	}
+
+	return nil
 }
