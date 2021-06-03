@@ -1,15 +1,13 @@
 module github.com/vmware-tanzu/carvel-vendir
 
-go 1.13
+go 1.16
 
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/bmatcuk/doublestar v1.2.1
 	github.com/cppforlife/cobrautil v0.0.0-20200514214827-bb86e6965d72
 	github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/pty v1.1.8 // indirect
@@ -22,7 +20,7 @@ require (
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4 // indirect
 	golang.org/x/text v0.3.3 // indirect
-	google.golang.org/protobuf v1.24.0 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	k8s.io/apimachinery v0.17.2
 	k8s.io/code-generator v0.17.2
