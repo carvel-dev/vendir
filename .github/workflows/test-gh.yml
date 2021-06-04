@@ -1,5 +1,10 @@
 name: test-gh
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    types: [opened, reopened, synchronize]
 jobs:
   test-all:
     name: Test GH
