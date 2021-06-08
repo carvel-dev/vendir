@@ -165,6 +165,8 @@ func (d StagingDir) CleanUp() error {
 		stat, e := os.Stat(d.rootDir)
 		if e == nil && stat.IsDir() {
 			err = d.cleanUpAll()
+		} else if !os.IsNotExist(e) {
+			return e
 		} else {
 			break
 		}
