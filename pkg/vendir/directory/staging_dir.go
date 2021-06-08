@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +22,7 @@ type StagingDir struct {
 }
 
 func NewStagingDir() StagingDir {
-	rootDir := fmt.Sprintf(".vendir-tmp-%d", rand.Uint32())
+	rootDir := ".vendir-tmp"
 	return StagingDir{
 		rootDir:     rootDir,
 		stagingDir:  filepath.Join(rootDir, "staging"),
@@ -159,19 +158,7 @@ func (d StagingDir) TempArea() StagingTempArea {
 }
 
 func (d StagingDir) CleanUp() error {
-	// workaround where os.RemoveAll would not delete folder
-	var err error
-	for {
-		stat, e := os.Stat(d.rootDir)
-		if e == nil && stat.IsDir() {
-			err = d.cleanUpAll()
-		} else if !os.IsNotExist(e) {
-			return e
-		} else {
-			break
-		}
-	}
-	return err
+	return d.cleanUpAll()
 }
 
 func (d StagingDir) cleanUpAll() error {
@@ -191,9 +178,10 @@ var _ ctlfetch.TempArea = StagingTempArea{}
 func (d StagingTempArea) NewTempDir(name string) (string, error) {
 	dir := d.path
 	if dir == "" {
+		// same behavior as ioutil.TempFile()
 		dir = os.TempDir()
 	}
-	tmpDir := filepath.Join(dir, fmt.Sprintf("%s-%d", name, rand.Uint32()))
+	tmpDir := filepath.Join(dir, name)
 
 	absTmpDir, err := filepath.Abs(tmpDir)
 	if err != nil {
