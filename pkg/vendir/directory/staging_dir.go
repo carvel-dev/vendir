@@ -213,7 +213,7 @@ func copy(src, dst string) error {
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("Unable to create destination file: %s", dstFile)
+		return fmt.Errorf("Unable to create destination file: %s", dst)
 	}
 
 	defer dstFile.Close()
