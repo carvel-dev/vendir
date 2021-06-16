@@ -11,7 +11,7 @@ import (
 )
 
 func TestSemverOrder(t *testing.T) {
-	result := versions.NewSemvers([]string{
+	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-pre.1",
@@ -39,7 +39,7 @@ func TestSemverOrder(t *testing.T) {
 }
 
 func TestSemverFilter(t *testing.T) {
-	result, err := versions.NewSemvers([]string{
+	result, err := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-pre.1",
@@ -65,7 +65,7 @@ func TestSemverFilter(t *testing.T) {
 }
 
 func TestSemverWithoutPrereleases(t *testing.T) {
-	result := versions.NewSemvers([]string{
+	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-pre.1",
@@ -88,7 +88,7 @@ func TestSemverWithoutPrereleases(t *testing.T) {
 func TestSemverWithPrereleases(t *testing.T) {
 	preConf := &versions.VersionSelectionSemverPrereleases{}
 
-	result := versions.NewSemvers([]string{
+	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-pre.1",
@@ -116,7 +116,7 @@ func TestSemverWithPrereleases(t *testing.T) {
 func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
 	preConf := &versions.VersionSelectionSemverPrereleases{Identifiers: []string{"alpha", "rc"}}
 
-	result := versions.NewSemvers([]string{
+	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-alpha.1",

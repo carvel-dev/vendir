@@ -39,7 +39,7 @@ func NewSortSemverCmd(o *SortSemverOptions) *cobra.Command {
 }
 
 func (o *SortSemverOptions) Run() error {
-	allVers := ctlver.NewSemvers(o.versions()).Sorted()
+	allVers := ctlver.NewRelaxedSemversNoErr(o.versions()).Sorted()
 
 	if len(o.Constraints) > 0 {
 		var err error
