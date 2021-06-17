@@ -176,12 +176,7 @@ type StagingTempArea struct {
 var _ ctlfetch.TempArea = StagingTempArea{}
 
 func (d StagingTempArea) NewTempDir(name string) (string, error) {
-	dir := d.path
-	if dir == "" {
-		// same behavior as ioutil.TempFile()
-		dir = os.TempDir()
-	}
-	tmpDir := filepath.Join(dir, name)
+	tmpDir := filepath.Join(d.path, name)
 
 	absTmpDir, err := filepath.Abs(tmpDir)
 	if err != nil {
