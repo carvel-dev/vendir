@@ -12,36 +12,53 @@ import (
 )
 
 type Semvers struct {
-	versions []semverWrap
+	versions []SemverWrap
 }
 
-type semverWrap struct {
+type SemverWrap struct {
 	semver.Version
 	Original string
 }
 
-func NewSemvers(versions []string) Semvers {
-	var parsedVersions []semverWrap
+func NewSemver(version string) (SemverWrap, error) {
+	parsedVersion, err := semver.Parse(version)
+	if err != nil {
+		return SemverWrap{}, err
+	}
+
+	return SemverWrap{parsedVersion, version}, nil
+}
+
+func NewRelaxedSemver(version string) (SemverWrap, error) {
+	parsableVersion := version
+	if strings.HasPrefix(version, "v") {
+		parsableVersion = strings.TrimPrefix(version, "v")
+	}
+
+	parsedVersion, err := semver.Parse(parsableVersion)
+	if err != nil {
+		return SemverWrap{}, err
+	}
+
+	return SemverWrap{parsedVersion, version}, nil
+}
+
+func NewRelaxedSemversNoErr(versions []string) Semvers {
+	var parsedVersions []SemverWrap
 
 	for _, vStr := range versions {
-		ver, err := semver.Parse(vStr)
-		if err == nil {
-			parsedVersions = append(parsedVersions, semverWrap{Version: ver, Original: vStr})
-		} else if strings.HasPrefix(vStr, "v") {
-			ver, err := semver.Parse(strings.TrimPrefix(vStr, "v"))
-			if err == nil {
-				parsedVersions = append(parsedVersions, semverWrap{Version: ver, Original: vStr})
-			}
-		} else {
-			// Ignore non-parseable versions
+		ver, err := NewRelaxedSemver(vStr)
+		if err != nil {
+			continue
 		}
+		parsedVersions = append(parsedVersions, ver)
 	}
 
 	return Semvers{parsedVersions}
 }
 
 func (v Semvers) Sorted() Semvers {
-	var versions []semverWrap
+	var versions []SemverWrap
 
 	for _, ver := range v.versions {
 		versions = append(versions, ver)
@@ -60,7 +77,7 @@ func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 		return Semvers{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
 	}
 
-	var matchingVersions []semverWrap
+	var matchingVersions []SemverWrap
 
 	for _, ver := range v.versions {
 		if constraints(ver.Version) {
@@ -74,7 +91,7 @@ func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrereleases) Semvers {
 	if prereleases == nil {
 		// Exclude all prereleases
-		var result []semverWrap
+		var result []SemverWrap
 		for _, ver := range v.versions {
 			if len(ver.Version.Pre) == 0 {
 				result = append(result, ver)
@@ -85,7 +102,7 @@ func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrerelease
 
 	preIdentifiersAsMap := prereleases.IdentifiersAsMap()
 
-	var result []semverWrap
+	var result []SemverWrap
 	for _, ver := range v.versions {
 		if len(ver.Version.Pre) == 0 || v.shouldKeepPrerelease(ver.Version, preIdentifiersAsMap) {
 			result = append(result, ver)

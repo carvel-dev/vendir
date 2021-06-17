@@ -8,7 +8,7 @@ import "fmt"
 func HighestConstrainedVersion(versions []string, config VersionSelection) (string, error) {
 	switch {
 	case config.Semver != nil:
-		matchedVers := NewSemvers(versions).FilterPrereleases(config.Semver.Prereleases)
+		matchedVers := NewRelaxedSemversNoErr(versions).FilterPrereleases(config.Semver.Prereleases)
 
 		if len(config.Semver.Constraints) > 0 {
 			var err error
