@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: 'feat: add /metrics prometheus scrapable endpoint...'
+      sha: 2b009b61fa8afb330a4302c694ee61b11104c54c
+    path: .
+  path: vendor
+kind: LockConfig

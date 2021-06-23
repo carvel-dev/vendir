@@ -180,6 +180,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 		}
 
+		// Copy files from current source if values are supposed to be ignored
+		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
+		if err != nil {
+			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+		}
+
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
 	}
 

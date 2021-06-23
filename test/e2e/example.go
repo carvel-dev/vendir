@@ -13,6 +13,7 @@ type example struct {
 	Name       string
 	Env        []string
 	OnlyLocked bool
+	SkipRemove bool
 }
 
 func (et example) Check(t *testing.T) {
@@ -43,9 +44,11 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	}
 
 	// remove all vendored bits
-	err = os.RemoveAll(vendorPath)
-	if err != nil {
-		return fmt.Errorf("Expected no err for remove all")
+	if !et.SkipRemove {
+		err = os.RemoveAll(vendorPath)
+		if err != nil {
+			return fmt.Errorf("Expected no err for remove all")
+		}
 	}
 
 	if !et.OnlyLocked {

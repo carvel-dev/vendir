@@ -44,6 +44,7 @@ type DirectoryContents struct {
 
 	IncludePaths []string `json:"includePaths,omitempty"`
 	ExcludePaths []string `json:"excludePaths,omitempty"`
+	IgnorePaths  []string `json:"ignorePaths,omitempty"`
 
 	// By default LICENSE/LICENCE/NOTICE/COPYRIGHT files are kept
 	LegalPaths []string `json:"legalPaths,omitempty"`
