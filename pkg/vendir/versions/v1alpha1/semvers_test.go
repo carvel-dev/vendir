@@ -137,3 +137,35 @@ func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
 		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
 	}
 }
+
+func TestSemverWithBuildMetadata(t *testing.T) {
+	result := versions.NewRelaxedSemversNoErr([]string{
+		"1.0.0",
+		"1.0.0+1",
+		"1.0.0+2",
+		"1.0.0+ab1",
+		"1.0.0+z1",
+		"1.0.0+ab1.foo",
+		"1.0.0-pre+foo",
+		"1.1.0",
+		"1.1.0+aaaa",
+		"2.0.0",
+	}).Sorted().All()
+
+	expectedOrder := []string{
+		"1.0.0-pre+foo",
+		"1.0.0+1",
+		"1.0.0+2",
+		"1.0.0+ab1",
+		"1.0.0+ab1.foo",
+		"1.0.0+z1",
+		"1.0.0",
+		"1.1.0+aaaa",
+		"1.1.0",
+		"2.0.0",
+	}
+
+	if !reflect.DeepEqual(result, expectedOrder) {
+		t.Fatalf("Expected result '%#v' to equal '%#v'", result, expectedOrder)
+	}
+}

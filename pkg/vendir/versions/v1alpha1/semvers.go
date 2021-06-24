@@ -6,9 +6,16 @@ package v1alpha1
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	semver "github.com/blang/semver/v4"
+)
+
+const (
+	lessThan    = -1
+	greaterThan = 1
+	equalTo     = 0
 )
 
 type Semvers struct {
@@ -16,8 +23,16 @@ type Semvers struct {
 }
 
 type SemverWrap struct {
-	semver.Version
+	version  semver.Version
 	Original string
+}
+
+func (sw SemverWrap) Compare(subj SemverWrap) int {
+	if result := sw.version.Compare(subj.version); result != 0 {
+		return result
+	}
+
+	return newBuildMeta(sw.version.Build).compare(newBuildMeta(subj.version.Build))
 }
 
 func NewSemver(version string) (SemverWrap, error) {
@@ -65,7 +80,7 @@ func (v Semvers) Sorted() Semvers {
 	}
 
 	sort.SliceStable(versions, func(i, j int) bool {
-		return versions[i].Version.LT(versions[j].Version)
+		return versions[i].Compare(versions[j]) == lessThan
 	})
 
 	return Semvers{versions}
@@ -80,7 +95,7 @@ func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 	var matchingVersions []SemverWrap
 
 	for _, ver := range v.versions {
-		if constraints(ver.Version) {
+		if constraints(ver.version) {
 			matchingVersions = append(matchingVersions, ver)
 		}
 	}
@@ -93,7 +108,7 @@ func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrerelease
 		// Exclude all prereleases
 		var result []SemverWrap
 		for _, ver := range v.versions {
-			if len(ver.Version.Pre) == 0 {
+			if len(ver.version.Pre) == 0 {
 				result = append(result, ver)
 			}
 		}
@@ -104,7 +119,7 @@ func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrerelease
 
 	var result []SemverWrap
 	for _, ver := range v.versions {
-		if len(ver.Version.Pre) == 0 || v.shouldKeepPrerelease(ver.Version, preIdentifiersAsMap) {
+		if len(ver.version.Pre) == 0 || v.shouldKeepPrerelease(ver.version, preIdentifiersAsMap) {
 			result = append(result, ver)
 		}
 	}
@@ -141,4 +156,95 @@ func (v Semvers) All() []string {
 		verStrs = append(verStrs, ver.Original)
 	}
 	return verStrs
+}
+
+type buildMeta struct {
+	parts []buildMetaPart
+}
+
+// Since this method is private to the package,
+// we are not doing any validations of characters
+// here and are instead relying on the semver
+// library parsing
+func newBuildMeta(metaParts []string) buildMeta {
+	parts := make([]buildMetaPart, len(metaParts))
+	for i, str := range metaParts {
+		parts[i] = newBuildMetaPart(str)
+	}
+	return buildMeta{parts}
+}
+
+func (b buildMeta) compare(subj buildMeta) int {
+	bLen, subjLen := len(b.parts), len(subj.parts)
+	if bLen == 0 && subjLen > 0 {
+		return greaterThan
+	} else if bLen > 0 && subjLen == 0 {
+		return lessThan
+	}
+
+	minLen := min(bLen, subjLen)
+	for i := 0; i < minLen; i++ {
+		if result := b.parts[i].compare(subj.parts[i]); result != equalTo {
+			return result
+		}
+	}
+
+	if bLen > subjLen {
+		return greaterThan
+	} else if subjLen > bLen {
+		return lessThan
+	}
+	return equalTo
+}
+
+type buildMetaPart struct {
+	numeric    bool
+	numericVal uint64
+
+	alphanumVal string
+}
+
+func newBuildMetaPart(part string) buildMetaPart {
+	if isFullyNumeric(part) {
+		val, _ := strconv.ParseUint(part, 10, 64)
+		return buildMetaPart{numeric: true, numericVal: val}
+	}
+	return buildMetaPart{alphanumVal: part}
+}
+
+func (b buildMetaPart) compare(subj buildMetaPart) int {
+	switch {
+	case b.numeric && subj.numeric:
+		switch {
+		case b.numericVal < subj.numericVal:
+			return lessThan
+		case b.numericVal > subj.numericVal:
+			return greaterThan
+		default:
+			return equalTo
+		}
+	case b.numeric:
+		return lessThan
+	case subj.numeric:
+		return greaterThan
+	default:
+		return strings.Compare(b.alphanumVal, subj.alphanumVal)
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func isFullyNumeric(a string) bool {
+	const numbers = "0123456789"
+	for _, c := range a {
+		if !strings.ContainsRune(numbers, c) {
+			return false
+		}
+	}
+	return true
 }
