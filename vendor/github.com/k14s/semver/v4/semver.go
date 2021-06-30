@@ -7,10 +7,16 @@ import (
 	"strings"
 )
 
+type versionExtType string
+type validationFunc func(ext versionExtension) error
+
 const (
 	numbers  string = "0123456789"
 	alphas          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-"
 	alphanum        = alphas + numbers
+
+	prereleaseType versionExtType = "PreRelease"
+	buildmetaType                 = "BuildMeta"
 )
 
 // SpecVersion is the latest fully supported spec version of semver
@@ -25,8 +31,8 @@ type Version struct {
 	Major uint64
 	Minor uint64
 	Patch uint64
-	Pre   []PRVersion
-	Build []string //No Precedence
+	Pre   versionExtensions
+	Build versionExtensions
 }
 
 // Version to string
@@ -50,11 +56,11 @@ func (v Version) String() string {
 
 	if len(v.Build) > 0 {
 		b = append(b, '+')
-		b = append(b, v.Build[0]...)
+		b = append(b, v.Build[0].VersionStr...)
 
 		for _, build := range v.Build[1:] {
 			b = append(b, '.')
-			b = append(b, build...)
+			b = append(b, build.VersionStr...)
 		}
 	}
 
@@ -142,35 +148,11 @@ func (v Version) Compare(o Version) int {
 		return -1
 	}
 
-	// Quick comparison if a version has no prerelease versions
-	if len(v.Pre) == 0 && len(o.Pre) == 0 {
-		return 0
-	} else if len(v.Pre) == 0 && len(o.Pre) > 0 {
-		return 1
-	} else if len(v.Pre) > 0 && len(o.Pre) == 0 {
-		return -1
+	if comp := v.Pre.Compare(o.Pre); comp != 0 {
+		return comp
 	}
 
-	i := 0
-	for ; i < len(v.Pre) && i < len(o.Pre); i++ {
-		if comp := v.Pre[i].Compare(o.Pre[i]); comp == 0 {
-			continue
-		} else if comp == 1 {
-			return 1
-		} else {
-			return -1
-		}
-	}
-
-	// If all pr versions are the equal but one has further prversion, this one greater
-	if i == len(v.Pre) && i == len(o.Pre) {
-		return 0
-	} else if i == len(v.Pre) && i < len(o.Pre) {
-		return -1
-	} else {
-		return 1
-	}
-
+	return v.Build.Compare(o.Build)
 }
 
 // IncrementPatch increments the patch version
@@ -210,10 +192,10 @@ func (v Version) Validate() error {
 	}
 
 	for _, build := range v.Build {
-		if len(build) == 0 {
+		if len(build.VersionStr) == 0 {
 			return fmt.Errorf("Build meta data can not be empty %q", build)
 		}
-		if !containsOnly(build, alphanum) {
+		if !containsOnly(build.VersionStr, alphanum) {
 			return fmt.Errorf("Invalid character(s) found in build meta data %q", build)
 		}
 	}
@@ -344,13 +326,11 @@ func Parse(s string) (Version, error) {
 
 	// Build meta data
 	for _, str := range build {
-		if len(str) == 0 {
-			return Version{}, errors.New("Build meta data is empty")
+		parsedBuildMeta, err := NewBuildVersion(str)
+		if err != nil {
+			return Version{}, err
 		}
-		if !containsOnly(str, alphanum) {
-			return Version{}, fmt.Errorf("Invalid character(s) found in build meta data %q", str)
-		}
-		v.Build = append(v.Build, str)
+		v.Build = append(v.Build, parsedBuildMeta)
 	}
 
 	return v, nil
@@ -365,50 +345,90 @@ func MustParse(s string) Version {
 	return v
 }
 
-// PRVersion represents a PreRelease Version
-type PRVersion struct {
+func NewPRVersion(str string) (versionExtension, error) {
+	return newVersionExtension(str, prereleaseType, validatePRLeading0s)
+}
+
+func NewBuildVersion(str string) (versionExtension, error) {
+	return newVersionExtension(str, buildmetaType)
+}
+
+type versionExtensions []versionExtension
+
+func (ve versionExtensions) Compare(o versionExtensions) int {
+	if len(ve) == 0 && len(o) == 0 {
+		return 0
+	} else if len(ve) == 0 && len(o) > 0 {
+		return 1
+	} else if len(ve) > 0 && len(o) == 0 {
+		return -1
+	}
+
+	i := 0
+	for ; i < len(ve) && i < len(o); i++ {
+		if comp := ve[i].Compare(o[i]); comp == 0 {
+			continue
+		} else if comp == 1 {
+			return 1
+		} else {
+			return -1
+		}
+	}
+
+	if i == len(ve) && i < len(o) {
+		return -1
+	} else if i == len(o) && i < len(ve) {
+		return 1
+	}
+
+	return 0
+}
+
+type versionExtension struct {
 	VersionStr string
 	VersionNum uint64
 	IsNum      bool
 }
 
-// NewPRVersion creates a new valid prerelease version
-func NewPRVersion(s string) (PRVersion, error) {
+func newVersionExtension(s string, extType versionExtType, additionalValidations ...validationFunc) (versionExtension, error) {
 	if len(s) == 0 {
-		return PRVersion{}, errors.New("Prerelease is empty")
+		return versionExtension{}, fmt.Errorf("%s is empty", extType)
 	}
-	v := PRVersion{}
+	v := versionExtension{VersionStr: s}
 	if containsOnly(s, numbers) {
-		if hasLeadingZeroes(s) {
-			return PRVersion{}, fmt.Errorf("Numeric PreRelease version must not contain leading zeroes %q", s)
-		}
 		num, err := strconv.ParseUint(s, 10, 64)
 
 		// Might never be hit, but just in case
 		if err != nil {
-			return PRVersion{}, err
+			return versionExtension{}, err
 		}
 		v.VersionNum = num
 		v.IsNum = true
 	} else if containsOnly(s, alphanum) {
-		v.VersionStr = s
 		v.IsNum = false
 	} else {
-		return PRVersion{}, fmt.Errorf("Invalid character(s) found in prerelease %q", s)
+		return versionExtension{}, fmt.Errorf("Invalid character(s) found in %s %q", extType, s)
 	}
+
+	for _, fn := range additionalValidations {
+		if err := fn(v); err != nil {
+			return versionExtension{}, err
+		}
+	}
+
 	return v, nil
 }
 
-// IsNumeric checks if prerelease-version is numeric
-func (v PRVersion) IsNumeric() bool {
+// IsNumeric checks if this extension is numeric is numeric
+func (v versionExtension) IsNumeric() bool {
 	return v.IsNum
 }
 
-// Compare compares two PreRelease Versions v and o:
+// Compare compares two version extensions v and o:
 // -1 == v is less than o
 // 0 == v is equal to o
 // 1 == v is greater than o
-func (v PRVersion) Compare(o PRVersion) int {
+func (v versionExtension) Compare(o versionExtension) int {
 	if v.IsNum && !o.IsNum {
 		return -1
 	} else if !v.IsNum && o.IsNum {
@@ -432,8 +452,7 @@ func (v PRVersion) Compare(o PRVersion) int {
 	}
 }
 
-// PreRelease version to string
-func (v PRVersion) String() string {
+func (v versionExtension) String() string {
 	if v.IsNum {
 		return strconv.FormatUint(v.VersionNum, 10)
 	}
@@ -450,15 +469,11 @@ func hasLeadingZeroes(s string) bool {
 	return len(s) > 1 && s[0] == '0'
 }
 
-// NewBuildVersion creates a new valid build version
-func NewBuildVersion(s string) (string, error) {
-	if len(s) == 0 {
-		return "", errors.New("Buildversion is empty")
+func validatePRLeading0s(ext versionExtension) error {
+	if ext.IsNum && hasLeadingZeroes(ext.VersionStr) {
+		return fmt.Errorf("Numeric PreRelease version must not contain leading zeroes %q", ext.VersionStr)
 	}
-	if !containsOnly(s, alphanum) {
-		return "", fmt.Errorf("Invalid character(s) found in build meta data %q", s)
-	}
-	return s, nil
+	return nil
 }
 
 // FinalizeVersion returns the major, minor and patch number only and discards

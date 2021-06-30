@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	semver "github.com/blang/semver/v4"
+	semver "github.com/k14s/semver/v4"
 )
 
 type Semvers struct {
