@@ -6,11 +6,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/cppforlife/go-cli-ui/ui"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctldir "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/directory"
@@ -234,7 +234,7 @@ func (dirs dirOverrides) ExpandUserHomeDirs() error {
 }
 
 func (dirOverrides) userHomeDir() (string, error) {
-	out, err := exec.Command("sh", "-c", "echo ~").Output()
+	out, err := homedir.Dir()
 	if err != nil {
 		return "", fmt.Errorf("Expanding user home directory: %s", err)
 	}

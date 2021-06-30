@@ -36,6 +36,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 		return lockConf, err
 	}
 
+	defer tmpFile.Close()
 	defer os.Remove(tmpFile.Name())
 
 	err = t.downloadFileAndChecksum(tmpFile)

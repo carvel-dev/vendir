@@ -45,12 +45,20 @@ func (t *HTTPSource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 
 func setEnv(helmHomeDir string) []string {
 	re := regexp.MustCompile(`(?i)\A(https?|no)_proxy=.*`)
-	env := []string{"HOME=" + helmHomeDir}
+	env := []string{
+		"HOME=" + helmHomeDir,
+		"TEMP=" + helmHomeDir,
+		"HELM_CACHE_HOME=" + helmHomeDir,
+		"HELM_CONFIG_HOME=" + helmHomeDir,
+		"HELM_DATA_HOME=" + helmHomeDir,
+	}
 	for _, e := range os.Environ() {
 		if re.MatchString(e) {
 			env = append(env, e)
 		}
 	}
+	// TODO: what about all those other variables ?
+	// https://helm.sh/docs/helm/helm/
 	return env
 }
 
