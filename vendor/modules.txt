@@ -4,7 +4,6 @@ github.com/PuerkitoBio/purell
 github.com/PuerkitoBio/urlesc
 # github.com/blang/semver/v4 v4.0.0
 ## explicit
-github.com/blang/semver/v4
 # github.com/bmatcuk/doublestar v1.2.1
 ## explicit
 github.com/bmatcuk/doublestar
@@ -38,6 +37,9 @@ github.com/hashicorp/go-version
 github.com/inconshreveable/mousetrap
 # github.com/json-iterator/go v1.1.8
 github.com/json-iterator/go
+# github.com/k14s/semver/v4 v4.0.1-0.20210630171630-daa66e4a5629
+## explicit
+github.com/k14s/semver/v4
 # github.com/kr/pretty v0.2.0
 ## explicit
 # github.com/kr/pty v1.1.8
