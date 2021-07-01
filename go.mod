@@ -8,7 +8,7 @@ require (
 	github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
 	github.com/ghodss/yaml v1.0.0
 	github.com/hashicorp/go-version v1.2.0
-	github.com/k14s/semver/v4 v4.0.1-0.20210630171630-daa66e4a5629
+	github.com/k14s/semver/v4 v4.0.1-0.20210701191048-266d47ac6115
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/mitchellh/go-homedir v1.1.0

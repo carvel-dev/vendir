@@ -27,8 +27,8 @@ func TestSemverOrder(t *testing.T) {
 		"0.0.1-pre.10",
 		"0.0.1-rc.0",
 		"0.1.0",
-		"2.0.0-10+meta.10",
 		"2.0.0-10",
+		"2.0.0-10+meta.10",
 		"2.0.0",
 		"v2.0.0",
 	}
@@ -54,8 +54,8 @@ func TestSemverFilter(t *testing.T) {
 
 	expectedOrder := []string{
 		"0.1.0",
-		"2.0.0-10+meta.10", // prerelease is included
 		"2.0.0-10",
+		"2.0.0-10+meta.10", // prerelease is included
 		"2.0.0",
 	}
 
@@ -154,14 +154,14 @@ func TestSemverWithBuildMetadata(t *testing.T) {
 
 	expectedOrder := []string{
 		"1.0.0-pre+foo",
+		"1.0.0",
 		"1.0.0+1",
 		"1.0.0+2",
 		"1.0.0+ab1",
 		"1.0.0+ab1.foo",
 		"1.0.0+z1",
-		"1.0.0",
-		"1.1.0+aaaa",
 		"1.1.0",
+		"1.1.0+aaaa",
 		"2.0.0",
 	}
 
@@ -187,7 +187,6 @@ func TestSemverWithBuildMetadataAndConstraint(t *testing.T) {
 
 	expectedOrder := []string{
 		"1.0.0+z1",
-		"1.0.0",
 	}
 
 	if !reflect.DeepEqual(result.All(), expectedOrder) {

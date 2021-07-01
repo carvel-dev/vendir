@@ -35,7 +35,7 @@ github.com/hashicorp/go-version
 github.com/inconshreveable/mousetrap
 # github.com/json-iterator/go v1.1.8
 github.com/json-iterator/go
-# github.com/k14s/semver/v4 v4.0.1-0.20210630171630-daa66e4a5629
+# github.com/k14s/semver/v4 v4.0.1-0.20210701191048-266d47ac6115
 ## explicit
 github.com/k14s/semver/v4
 # github.com/kr/pretty v0.2.0
