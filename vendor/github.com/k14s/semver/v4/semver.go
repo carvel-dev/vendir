@@ -31,8 +31,8 @@ type Version struct {
 	Major uint64
 	Minor uint64
 	Patch uint64
-	Pre   versionExtensions
-	Build versionExtensions
+	Pre   PRVersion
+	Build BuildMeta
 }
 
 // Version to string
@@ -353,9 +353,40 @@ func NewBuildVersion(str string) (versionExtension, error) {
 	return newVersionExtension(str, buildmetaType)
 }
 
-type versionExtensions []versionExtension
+type BuildMeta []versionExtension
 
-func (ve versionExtensions) Compare(o versionExtensions) int {
+func (ve BuildMeta) Compare(o BuildMeta) int {
+	if len(ve) == 0 && len(o) == 0 {
+		return 0
+	} else if len(ve) == 0 && len(o) > 0 {
+		return -1
+	} else if len(ve) > 0 && len(o) == 0 {
+		return 1
+	}
+
+	i := 0
+	for ; i < len(ve) && i < len(o); i++ {
+		if comp := ve[i].Compare(o[i]); comp == 0 {
+			continue
+		} else if comp == 1 {
+			return 1
+		} else {
+			return -1
+		}
+	}
+
+	if i == len(ve) && i < len(o) {
+		return -1
+	} else if i == len(o) && i < len(ve) {
+		return 1
+	}
+
+	return 0
+}
+
+type PRVersion []versionExtension
+
+func (ve PRVersion) Compare(o PRVersion) int {
 	if len(ve) == 0 && len(o) == 0 {
 		return 0
 	} else if len(ve) == 0 && len(o) > 0 {
