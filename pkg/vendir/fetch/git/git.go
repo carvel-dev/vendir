@@ -147,6 +147,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		{"init"},
 		{"config", "credential.helper", "store --file " + gitCredsPath},
 		{"remote", "add", "origin", gitURL},
+		{"config", "remote.origin.tagOpt", "--tags"},
 		{"fetch", "origin"},
 	}
 
