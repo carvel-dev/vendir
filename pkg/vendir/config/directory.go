@@ -104,10 +104,11 @@ type DirectoryContentsImgpkgBundle struct {
 }
 
 type DirectoryContentsGithubRelease struct {
-	Slug   string `json:"slug"` // e.g. organization/repository
-	Tag    string `json:"tag"`
-	Latest bool   `json:"latest,omitempty"`
-	URL    string `json:"url,omitempty"`
+	Slug         string                   `json:"slug"` // e.g. organization/repository
+	Tag          string                   `json:"tag"`
+	TagSelection *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+	Latest       bool                     `json:"latest,omitempty"`
+	URL          string                   `json:"url,omitempty"`
 
 	Checksums                     map[string]string `json:"checksums,omitempty"`
 	DisableAutoChecksumValidation bool              `json:"disableAutoChecksumValidation,omitempty"`

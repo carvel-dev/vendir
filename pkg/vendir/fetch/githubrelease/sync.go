@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,24 +31,48 @@ func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
 	return Sync{opts, defaultAPIToken, refFetcher}
 }
 
-func (d Sync) DescAndURL() (string, string, error) {
+func (d Sync) Desc() (string, error) {
 	desc := ""
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
 
 	switch {
 	case len(d.opts.URL) > 0:
 		desc = d.opts.URL
-		url = d.opts.URL
 	case len(d.opts.Tag) > 0:
 		desc = d.opts.Slug + "@" + d.opts.Tag
-		url += "/tags/" + d.opts.Tag
+	case d.opts.TagSelection != nil:
+		desc = d.opts.Slug + "@"
+		switch {
+		case d.opts.TagSelection.Semver != nil:
+			desc += fmt.Sprintf("[%s]", d.opts.TagSelection.Semver.Constraints)
+		}
 	case d.opts.Latest:
 		desc = d.opts.Slug + "@latest"
+	default:
+		return "", fmt.Errorf("Expected to have non-empty tag, tagSelection, latest or url")
+	}
+	return desc, nil
+}
+
+func (d Sync) URL() (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
+
+	switch {
+	case len(d.opts.URL) > 0:
+		url = d.opts.URL
+	case len(d.opts.Tag) > 0:
+		url += "/tags/" + d.opts.Tag
+	case d.opts.TagSelection != nil:
+		tag, err := d.fetchTagSelection()
+		if err != nil {
+			return "", err
+		}
+		url += "/tags/" + tag
+	case d.opts.Latest:
 		url += "/latest"
 	default:
-		return "", "", fmt.Errorf("Expected to have non-empty tag, latest or url")
+		return "", fmt.Errorf("Expected to have non-empty tag, tagSelection, latest or url")
 	}
-	return desc, url, nil
+	return url, nil
 }
 
 func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGithubRelease, error) {
@@ -165,17 +190,71 @@ func (d Sync) matchesAssetName(name string) (bool, error) {
 	return false, nil
 }
 
+func (d Sync) fetchTagSelection() (string, error) {
+	authToken, err := d.authToken()
+	if err != nil {
+		return "", err
+	}
+	tagList, err := d.downloadTags(authToken)
+	if err != nil {
+		return "", fmt.Errorf("Downloading tags info: %s", err)
+	}
+	tags := make([]string, len(tagList))
+	for _, tag := range tagList {
+		tags = append(tags, tag.Name)
+	}
+	tag, err := ctlver.HighestConstrainedVersion(tags, *d.opts.TagSelection)
+	if err != nil {
+		return "", fmt.Errorf("Failed to find tag matching tagSelection %v : %s", d.opts.TagSelection.Semver, err)
+	}
+	return tag, err
+}
+
+func (d Sync) downloadTags(authToken string) ([]TagAPI, error) {
+	tagAPI := []TagAPI{}
+	// CAUTION! Paginaton not implemented, more than 100 results not supported
+	// Results seem to be sorted lexically in reverse (i.e. highest semver first),
+	// rather than by descending date / commit order (as in the API)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/tags?per_page=100", d.opts.Slug)
+	respBytes, err := d.downloadAPIResponse(url, authToken)
+	if err != nil {
+		return tagAPI, err
+	}
+	err = json.Unmarshal(respBytes, &tagAPI)
+	if err != nil {
+		return tagAPI, err
+	}
+
+	return tagAPI, nil
+}
+
 func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 	releaseAPI := ReleaseAPI{}
 
-	_, url, err := d.DescAndURL()
+	url, err := d.URL()
 	if err != nil {
-		return releaseAPI, err
+		return releaseAPI, fmt.Errorf("getting release URL: %s", err)
 	}
+	respBytes, err := d.downloadAPIResponse(url, authToken)
+	if err != nil {
+		errMsg := err.Error()
+		return releaseAPI, fmt.Errorf("error downloading release details from %s : %s", url, errMsg)
+	}
+
+	err = json.Unmarshal(respBytes, &releaseAPI)
+	if err != nil {
+		return releaseAPI, fmt.Errorf("error parsing response from: %s error: %s", url, err.Error())
+	}
+
+	return releaseAPI, nil
+}
+
+func (d Sync) downloadAPIResponse(url string, authToken string) ([]byte, error) {
+	bs := []byte{}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return releaseAPI, err
+		return bs, err
 	}
 
 	if len(authToken) > 0 {
@@ -184,7 +263,7 @@ func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return releaseAPI, err
+		return bs, err
 	}
 	defer resp.Body.Close()
 
@@ -197,22 +276,18 @@ func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		case 404:
 			hintMsg := "(hint: if you are using 'latest: true', there may not be any non-pre-release releases)"
-			errMsg += " " + hintMsg
+			bs, _ := ioutil.ReadAll(resp.Body)
+			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		}
-		return releaseAPI, fmt.Errorf(errMsg)
+		return bs, fmt.Errorf(errMsg)
 	}
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return releaseAPI, err
+		return bs, err
 	}
 
-	err = json.Unmarshal(bs, &releaseAPI)
-	if err != nil {
-		return releaseAPI, err
-	}
-
-	return releaseAPI, nil
+	return bs, nil
 }
 
 func (d Sync) downloadFile(url, dstPath, authToken string) error {
@@ -238,8 +313,9 @@ func (d Sync) downloadFile(url, dstPath, authToken string) error {
 		errMsg := fmt.Sprintf("Expected response status 200, but was '%d'", resp.StatusCode)
 		switch resp.StatusCode {
 		case 401, 403:
+			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
 			bs, _ := ioutil.ReadAll(resp.Body)
-			errMsg += fmt.Sprintf(" (body: '%s')", bs)
+			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		}
 		return fmt.Errorf(errMsg)
 	}
@@ -316,6 +392,27 @@ func (d Sync) authToken() (string, error) {
 
 	return token, nil
 }
+
+type TagAPI struct {
+	Name string
+}
+
+/*
+Example response:
+
+[
+	{
+		"name": "0.0.1",
+		"zipball_url": "https://api.github.com/repos/%s/zipball/refs/tags/0.05",
+		"tarball_url": "https://api.github.com/repos/%s/tarball/refs/tags/0.05",
+		"commit": {
+			"sha": "{COMMIT_SHA}",
+			"url": "https://api.github.com/repos/%s/commits/{COMMIT_ID}"
+		},
+		"node_id": "{{  NODE_ID }}"
+	}
+]
+*/
 
 type ReleaseAPI struct {
 	URL    string `json:"url"`

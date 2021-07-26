@@ -19,5 +19,8 @@ directories:
       tags:
       - v1.0.0-rc.2
     path: with-filtered-prerelease
+  - githubRelease:
+      url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/46928793
+    path: github-release-tag-selection
   path: vendor
 kind: LockConfig

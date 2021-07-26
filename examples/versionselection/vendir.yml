@@ -32,3 +32,11 @@ directories:
             identifiers: [rc]
     includePaths:
     - config/kpack/**/*
+
+  - path: github-release-tag-selection
+    githubRelease:
+      slug: k14s/kapp-controller
+      tagSelection:
+        semver:
+          constraints: ">0.1.0 <1.0.0"
+      assetNames: ["release.yml"]

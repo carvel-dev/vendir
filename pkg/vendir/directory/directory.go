@@ -105,7 +105,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.GithubRelease != nil:
 			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
 
-			desc, _, _ := sync.DescAndURL()
+			desc, _ := sync.Desc()
 			d.ui.PrintLinef("Fetching: %s + %s (github release %s)", d.opts.Path, contents.Path, desc)
 
 			lock, err := sync.Sync(stagingDstPath, stagingDir.TempArea())

@@ -19,7 +19,7 @@ Features:
 - Various sources
   - pull Git repositories ([examples/git](examples/git), semver tag resolution in [examples/versionselection](examples/versionselection))
     - including tag semver selection, GPG verification
-  - pull Github releases ([examples/github-release](examples/github-release))
+  - pull Github releases ([examples/github-release](examples/github-release), semver tag resolution in [examples/versionselection](examples/versionselection))
   - pull HTTP asset ([examples/http](examples/http))
   - pull Docker image contents ([examples/image](examples/image))
   - pull Helm chart contents ([examples/helm-chart](examples/helm-chart))
