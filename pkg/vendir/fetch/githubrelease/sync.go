@@ -38,12 +38,16 @@ func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
 	if err != nil {
 		return Sync{}, fmt.Errorf("Getting auth token: %s", err.Error())
 	}
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: accessToken},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
-	client := github.NewClient(tc)
-	sync.client = client
+	if accessToken == "" {
+		sync.client = github.NewClient(nil)
+	} else {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: accessToken},
+		)
+		tc := oauth2.NewClient(context.Background(), ts)
+		sync.client = github.NewClient(tc)
+	}
+
 	return sync, nil
 }
 
@@ -215,7 +219,14 @@ func (d Sync) fetchTagSelection() (string, error) {
 	for {
 		tagList, resp, err := d.client.Repositories.ListTags(context.Background(), strings.Split(d.opts.Slug, "/")[0], strings.Split(d.opts.Slug, "/")[1], &github.ListOptions{})
 		if err != nil {
-			return "", fmt.Errorf("Downloading tags info: %s", err)
+			errMsg := err.Error()
+			switch resp.StatusCode {
+			case 401, 403:
+				hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
+				bs, _ := ioutil.ReadAll(resp.Body)
+				errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+			}
+			return "", fmt.Errorf("Downloading tags info: %s", errMsg)
 		}
 		for _, tag := range tagList {
 			if tag != nil && tag.Name != nil {
