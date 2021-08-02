@@ -4,31 +4,47 @@
 package githubrelease
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bmatcuk/doublestar"
+	"github.com/google/go-github/github"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	"golang.org/x/oauth2"
 )
 
 type Sync struct {
 	opts            ctlconf.DirectoryContentsGithubRelease
 	defaultAPIToken string
 	refFetcher      ctlfetch.RefFetcher
+	client          *github.Client
 }
 
 func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
-	defaultAPIToken string, refFetcher ctlfetch.RefFetcher) Sync {
+	defaultAPIToken string, refFetcher ctlfetch.RefFetcher) (Sync, error) {
 
-	return Sync{opts, defaultAPIToken, refFetcher}
+	sync := Sync{opts, defaultAPIToken, refFetcher, nil}
+	accessToken, err := sync.authToken()
+	if err != nil {
+		return Sync{}, fmt.Errorf("Getting auth token: %s", err.Error())
+	}
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: accessToken},
+	)
+	tc := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(tc)
+	sync.client = client
+	return sync, nil
 }
 
 func (d Sync) Desc() (string, error) {
@@ -53,7 +69,7 @@ func (d Sync) Desc() (string, error) {
 	return desc, nil
 }
 
-func (d Sync) URL() (string, error) {
+func (d Sync) url() (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
 
 	switch {
@@ -191,18 +207,29 @@ func (d Sync) matchesAssetName(name string) (bool, error) {
 }
 
 func (d Sync) fetchTagSelection() (string, error) {
-	authToken, err := d.authToken()
-	if err != nil {
-		return "", err
+	opt := &github.RepositoryListByOrgOptions{
+		ListOptions: github.ListOptions{PerPage: 10},
 	}
-	tagList, err := d.downloadTags(authToken)
-	if err != nil {
-		return "", fmt.Errorf("Downloading tags info: %s", err)
+
+	tags := []string{}
+	for {
+		tagList, resp, err := d.client.Repositories.ListTags(context.Background(), strings.Split(d.opts.Slug, "/")[0], strings.Split(d.opts.Slug, "/")[1], &github.ListOptions{})
+		if err != nil {
+			return "", fmt.Errorf("Downloading tags info: %s", err)
+		}
+		for _, tag := range tagList {
+			if tag != nil && tag.Name != nil {
+				tags = append(tags, *tag.Name)
+			} else {
+				return "", fmt.Errorf("Name not found for downloaded tag: %v", tag)
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
 	}
-	tags := make([]string, len(tagList))
-	for _, tag := range tagList {
-		tags = append(tags, tag.Name)
-	}
+
 	tag, err := ctlver.HighestConstrainedVersion(tags, *d.opts.TagSelection)
 	if err != nil {
 		return "", fmt.Errorf("Failed to find tag matching tagSelection %v : %s", d.opts.TagSelection.Semver, err)
@@ -210,40 +237,21 @@ func (d Sync) fetchTagSelection() (string, error) {
 	return tag, err
 }
 
-func (d Sync) downloadTags(authToken string) ([]TagAPI, error) {
-	tagAPI := []TagAPI{}
-	// CAUTION! Paginaton not implemented, more than 100 results not supported
-	// Results seem to be sorted lexically in reverse (i.e. highest semver first),
-	// rather than by descending date / commit order (as in the API)
-	url := fmt.Sprintf("https://api.github.com/repos/%s/tags?per_page=100", d.opts.Slug)
-	respBytes, err := d.downloadAPIResponse(url, authToken)
-	if err != nil {
-		return tagAPI, err
-	}
-	err = json.Unmarshal(respBytes, &tagAPI)
-	if err != nil {
-		return tagAPI, err
-	}
-
-	return tagAPI, nil
-}
-
 func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 	releaseAPI := ReleaseAPI{}
 
-	url, err := d.URL()
+	url, err := d.url()
 	if err != nil {
 		return releaseAPI, fmt.Errorf("getting release URL: %s", err)
 	}
 	respBytes, err := d.downloadAPIResponse(url, authToken)
 	if err != nil {
-		errMsg := err.Error()
-		return releaseAPI, fmt.Errorf("error downloading release details from %s : %s", url, errMsg)
+		return releaseAPI, fmt.Errorf("Downloading release details from %s : %s", url, err.Error())
 	}
 
 	err = json.Unmarshal(respBytes, &releaseAPI)
 	if err != nil {
-		return releaseAPI, fmt.Errorf("error parsing response from: %s error: %s", url, err.Error())
+		return releaseAPI, fmt.Errorf("Parsing response from: %s error: %s", url, err.Error())
 	}
 
 	return releaseAPI, nil
@@ -392,27 +400,6 @@ func (d Sync) authToken() (string, error) {
 
 	return token, nil
 }
-
-type TagAPI struct {
-	Name string
-}
-
-/*
-Example response:
-
-[
-	{
-		"name": "0.0.1",
-		"zipball_url": "https://api.github.com/repos/%s/zipball/refs/tags/0.05",
-		"tarball_url": "https://api.github.com/repos/%s/tarball/refs/tags/0.05",
-		"commit": {
-			"sha": "{COMMIT_SHA}",
-			"url": "https://api.github.com/repos/%s/commits/{COMMIT_ID}"
-		},
-		"node_id": "{{  NODE_ID }}"
-	}
-]
-*/
 
 type ReleaseAPI struct {
 	URL    string `json:"url"`
