@@ -7,6 +7,8 @@ require (
 	github.com/cppforlife/cobrautil v0.0.0-20200514214827-bb86e6965d72
 	github.com/cppforlife/go-cli-ui v0.0.0-20180806172124-5c4f53402506
 	github.com/ghodss/yaml v1.0.0
+	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/k14s/semver/v4 v4.0.1-0.20210701191048-266d47ac6115
 	github.com/kr/pretty v0.2.0 // indirect
@@ -18,10 +20,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4 // indirect
-	golang.org/x/text v0.3.3 // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
+	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	k8s.io/apimachinery v0.17.2
 	k8s.io/code-generator v0.17.2
