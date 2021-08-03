@@ -33,6 +33,7 @@ type DirectoryContents struct {
 	Path string `json:"path"`
 
 	Git           *DirectoryContentsGit           `json:"git,omitempty"`
+	Hg            *DirectoryContentsHg            `json:"hg,omitempty"`
 	HTTP          *DirectoryContentsHTTP          `json:"http,omitempty"`
 	Image         *DirectoryContentsImage         `json:"image,omitempty"`
 	ImgpkgBundle  *DirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
@@ -65,6 +66,20 @@ type DirectoryContentsGit struct {
 }
 
 type DirectoryContentsGitVerification struct {
+	PublicKeysSecretRef *DirectoryContentsLocalRef `json:"publicKeysSecretRef,omitempty"`
+}
+
+type DirectoryContentsHg struct {
+	URL          string                           `json:"url,omitempty"`
+	Ref          string                           `json:"ref,omitempty"`
+	RefSelection *ctlver.VersionSelection         `json:"refSelection,omitempty"`
+	Verification *DirectoryContentsHgVerification `json:"verification,omitempty"`
+	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
+	// +optional
+	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
+}
+
+type DirectoryContentsHgVerification struct {
 	PublicKeysSecretRef *DirectoryContentsLocalRef `json:"publicKeysSecretRef,omitempty"`
 }
 
@@ -199,6 +214,9 @@ func (c DirectoryContents) Validate() error {
 
 	if c.Git != nil {
 		srcTypes = append(srcTypes, "git")
+	}
+	if c.Hg != nil {
+		srcTypes = append(srcTypes, "hg")
 	}
 	if c.HTTP != nil {
 		srcTypes = append(srcTypes, "http")

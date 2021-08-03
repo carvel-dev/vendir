@@ -13,6 +13,7 @@ import (
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlgit "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/git"
+	ctlhg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/hg"
 	ctlghr "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
 	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
 	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
@@ -71,6 +72,18 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 
 			lockDirContents.Git = &lock
+
+		case contents.Hg != nil:
+			hgSync := ctlhg.NewSync(*contents.Hg, NewInfoLog(d.ui), syncOpts.RefFetcher)
+
+			d.ui.PrintLinef("Fetching: %s + %s (hg from %s)", d.opts.Path, contents.Path, hgSync.Desc())
+
+			lock, err := hgSync.Sync(stagingDstPath, stagingDir.TempArea())
+			if err != nil {
+				return lockConfig, fmt.Errorf("Syncing directory '%s' with hg contents: %s", contents.Path, err)
+			}
+
+			lockDirContents.Hg = &lock
 
 		case contents.HTTP != nil:
 			d.ui.PrintLinef("Fetching: %s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
