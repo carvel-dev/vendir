@@ -8,19 +8,18 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/bmatcuk/doublestar"
 	"github.com/google/go-github/github"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 	"golang.org/x/oauth2"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Sync struct {
@@ -211,13 +210,13 @@ func (d Sync) matchesAssetName(name string) (bool, error) {
 }
 
 func (d Sync) fetchTagSelection() (string, error) {
-	opt := &github.RepositoryListByOrgOptions{
-		ListOptions: github.ListOptions{PerPage: 10},
-	}
-
+	listOpt := github.ListOptions{PerPage: 40}
 	tags := []string{}
+	ownerName := strings.Split(d.opts.Slug, "/")[0]
+	repoName := strings.Split(d.opts.Slug, "/")[1]
+
 	for {
-		tagList, resp, err := d.client.Repositories.ListTags(context.Background(), strings.Split(d.opts.Slug, "/")[0], strings.Split(d.opts.Slug, "/")[1], &github.ListOptions{})
+		tagList, resp, err := d.client.Repositories.ListTags(context.Background(), ownerName, repoName, &listOpt)
 		if err != nil {
 			errMsg := err.Error()
 			switch resp.StatusCode {
@@ -238,7 +237,7 @@ func (d Sync) fetchTagSelection() (string, error) {
 		if resp.NextPage == 0 {
 			break
 		}
-		opt.Page = resp.NextPage
+		listOpt.Page = resp.NextPage
 	}
 
 	tag, err := ctlver.HighestConstrainedVersion(tags, *d.opts.TagSelection)
