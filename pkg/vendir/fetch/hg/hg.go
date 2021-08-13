@@ -48,7 +48,8 @@ func (t *Hg) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (HgInfo, error
 
 	info := HgInfo{}
 
-	out, _, err := t.run([]string{"id", "-i"}, nil, dstPath)
+	// add --debug for full changeset id instead of short
+	out, _, err := t.run([]string{"id", "-i", "--debug"}, nil, dstPath)
 	if err != nil {
 		return HgInfo{}, err
 	}

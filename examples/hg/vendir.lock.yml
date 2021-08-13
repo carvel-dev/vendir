@@ -1,0 +1,17 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - hg:
+      changeSetTitle: Prevent wrapping filenames to preserve whitespace
+      sha: 180c776fe29448afa8c756ab572bab7a1cf17a06
+    path: exact-sha
+  - hg:
+      changeSetTitle: Display draft and obsolete changesets in the log
+      sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
+    path: tag
+  - hg:
+      changeSetTitle: '.builds/alpine.yml: upgrade to 3.14'
+      sha: 24906043b09ea11bc9a3bee491ef2f845e96b464
+    path: branch
+  path: vendor
+kind: LockConfig

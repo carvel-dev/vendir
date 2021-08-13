@@ -1,0 +1,189 @@
+@import "base";
+
+.filter-repos {
+  .btn {
+    height: 1.9rem;
+  }
+}
+
+.repo-nav {
+  margin-left: 1rem;
+}
+
+.header-extension {
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+  background: #ddd;
+}
+
+pre {
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+}
+
+dt {
+  overflow-wrap: break-word;
+}
+
+.tree-list {
+  display: grid;
+  // mode name
+  grid-template-columns: auto 1fr fit-content(40em) auto auto;
+
+  svg {
+    color: #777;
+  }
+
+  .size {
+    text-align: right;
+  }
+
+  .name.file a {
+    color: $gray-900;
+  }
+
+  .mode, .commit, .commit a, .date, .size {
+    color: $gray-700;
+  }
+
+  & > div {
+    padding: 0.1rem 0.5rem;
+    background: transparent;
+
+    &.id {
+      text-align: right;
+    }
+
+    &.comments {
+      text-align: center;
+    }
+
+    @for $i from 1 through 5 {
+      &:nth-child(5n+#{$i}) {
+        grid-column-start: $i;
+      }
+
+      // Striped rows
+      &:nth-child(10n+#{$i}) {
+        background: rgba(0,0,0,.05);
+      }
+    }
+  }
+}
+
+.code-view {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto;
+
+  .lines {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    border-right: 1px solid #444;
+    text-align: right;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    background: #eee;
+  }
+
+  .highlight {
+    grid-column-start: 2;
+    grid-row-start: 1;
+    padding-left: 1rem;
+    background: transparent;
+    overflow-x: hidden;
+
+    pre {
+      background: transparent;
+    }
+  }
+
+  .ruler {
+    background: transparent;
+    grid-column-start: 2;
+    grid-row-start: 1;
+    display: block;
+    padding-left: calc(1rem + 4px);
+    height: 100%;
+    pointer-events: none;
+
+    pre {
+      background: transparent;
+    }
+
+    & > span {
+      height: 100%;
+      display: inline-block;
+      border-right: 1px solid $gray-200;
+    }
+  }
+}
+
+.ref {
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.1rem 0.2rem;
+
+  &.branch {
+    border-color: darken($info, 20);
+    background: $info;
+    color: $white;
+  }
+
+  &.tag {
+    border-color: darken($primary, 20);
+    background: $primary;
+    color: $white;
+  }
+
+  &.tag.annotated {
+    border-color: darken($success, 20);
+    background: $success;
+    color: $white;
+  }
+}
+
+.idextra {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 1em;
+  padding: 0.1rem 0.4rem;
+}
+
+.diff {
+  .text-danger {
+    color: darken($danger, 10) !important;
+  }
+
+  .text-success {
+    color: darken($success, 10) !important;
+  }
+}
+
+.asp-obsolete>.commit-decorator {
+  height: 0.5rem;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(#000000,.1),
+    rgba(#000000,.1) 1em,
+    rgba(#000000,0) 1em,
+    rgba(#000000,0) 2em
+  );
+  margin: -0.5rem -0.5rem 0.5rem -0.5rem !important;
+  padding: 0.5rem 0.5rem 0 0.5rem;
+}
+
+.asp-draft>.commit-decorator {
+  height: 0.5rem;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(#fed900,.6),
+    rgba(#fed900,.6) 1em,
+    rgba(#000000,0) 1em,
+    rgba(#000000,0) 2em
+  );
+  margin: -0.5rem -0.5rem 0.5rem -0.5rem !important;
+  padding: 0.5rem 0.5rem 0 0.5rem;
+}
+

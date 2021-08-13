@@ -70,10 +70,8 @@ type DirectoryContentsGitVerification struct {
 }
 
 type DirectoryContentsHg struct {
-	URL          string                           `json:"url,omitempty"`
-	Ref          string                           `json:"ref,omitempty"`
-	RefSelection *ctlver.VersionSelection         `json:"refSelection,omitempty"`
-	Verification *DirectoryContentsHgVerification `json:"verification,omitempty"`
+	URL string `json:"url,omitempty"`
+	Ref string `json:"ref,omitempty"`
 	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
@@ -287,6 +285,8 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 	switch {
 	case c.Git != nil:
 		return c.Git.Lock(lockConfig.Git)
+	case c.Hg != nil:
+		return c.Hg.Lock(lockConfig.Hg)
 	case c.HTTP != nil:
 		return c.HTTP.Lock(lockConfig.HTTP)
 	case c.Image != nil:
@@ -314,6 +314,17 @@ func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error 
 	}
 	if len(lockConfig.SHA) == 0 {
 		return fmt.Errorf("Expected git SHA to be non-empty")
+	}
+	c.Ref = lockConfig.SHA
+	return nil
+}
+
+func (c *DirectoryContentsHg) Lock(lockConfig *LockDirectoryContentsHg) error {
+	if lockConfig == nil {
+		return fmt.Errorf("Expected hg lock configuration to be non-empty")
+	}
+	if len(lockConfig.SHA) == 0 {
+		return fmt.Errorf("Expected hg SHA to be non-empty")
 	}
 	c.Ref = lockConfig.SHA
 	return nil
