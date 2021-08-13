@@ -12,6 +12,7 @@ type LockDirectoryContents struct {
 	Path string `json:"path"`
 
 	Git           *LockDirectoryContentsGit           `json:"git,omitempty"`
+	Hg            *LockDirectoryContentsHg            `json:"hg,omitempty"`
 	HTTP          *LockDirectoryContentsHTTP          `json:"http,omitempty"`
 	Image         *LockDirectoryContentsImage         `json:"image,omitempty"`
 	ImgpkgBundle  *LockDirectoryContentsImgpkgBundle  `json:"imgpkgBundle,omitempty"`
@@ -26,6 +27,12 @@ type LockDirectoryContentsGit struct {
 	SHA         string   `json:"sha"`
 	Tags        []string `json:"tags,omitempty"`
 	CommitTitle string   `json:"commitTitle"`
+}
+
+type LockDirectoryContentsHg struct {
+	SHA            string   `json:"sha"`
+	Tags           []string `json:"tags,omitempty"`
+	ChangeSetTitle string   `json:"changeSetTitle"`
 }
 
 type LockDirectoryContentsHTTP struct{}
