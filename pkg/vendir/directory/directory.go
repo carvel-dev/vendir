@@ -96,9 +96,11 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.HTTP = &lock
 
 		case contents.Image != nil:
-			d.ui.PrintLinef("Fetching: %s + %s (image from %s)", d.opts.Path, contents.Path, contents.Image.URL)
+			imageSync := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher)
 
-			lock, err := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher).Sync(stagingDstPath)
+			d.ui.PrintLinef("Fetching: %s + %s (image from %s)", d.opts.Path, contents.Path, imageSync.Desc())
+
+			lock, err := imageSync.Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with image contents: %s", contents.Path, err)
 			}
@@ -106,9 +108,11 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.Image = &lock
 
 		case contents.ImgpkgBundle != nil:
-			d.ui.PrintLinef("Fetching: %s + %s (imgpkgBundle from %s)", d.opts.Path, contents.Path, contents.ImgpkgBundle.Image)
+			imgpkgBundleSync := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher)
 
-			lock, err := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher).Sync(stagingDstPath)
+			d.ui.PrintLinef("Fetching: %s + %s (imgpkgBundle from %s)", d.opts.Path, contents.Path, imgpkgBundleSync.Desc())
+
+			lock, err := imgpkgBundleSync.Sync(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with imgpkgBundle contents: %s", contents.Path, err)
 			}
