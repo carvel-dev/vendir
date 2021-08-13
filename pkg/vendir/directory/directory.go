@@ -116,9 +116,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.ImgpkgBundle = &lock
 
 		case contents.GithubRelease != nil:
-			sync := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
+			sync, err := ctlghr.NewSync(*contents.GithubRelease, syncOpts.GithubAPIToken, syncOpts.RefFetcher)
+			if err != nil {
+				return lockConfig, err
+			}
 
-			desc, _, _ := sync.DescAndURL()
+			desc, _ := sync.Desc()
 			d.ui.PrintLinef("Fetching: %s + %s (github release %s)", d.opts.Path, contents.Path, desc)
 
 			lock, err := sync.Sync(stagingDstPath, stagingDir.TempArea())
