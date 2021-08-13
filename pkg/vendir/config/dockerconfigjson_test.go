@@ -4,27 +4,36 @@
 package config_test
 
 import (
-	"reflect"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	. "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 )
 
-func TestSecretToBasicAuthSecretNoop(t *testing.T) {
+func TestSecretToRegistryAuthSecretsNoop(t *testing.T) {
 	s1 := Secret{Data: map[string][]byte{"test": []byte("abc")}}
 
-	result, err := s1.ToBasicAuthSecret()
-	if err != nil {
-		t.Fatalf("Expected nil err, but was: %s", err)
-	}
+	result, err := s1.ToRegistryAuthSecrets()
+	require.NoError(t, err)
 
-	if !reflect.DeepEqual(s1, result) {
-		t.Fatalf("Expected same secret to be returned")
-	}
+	require.Equal(t, []Secret{s1}, result, "Expected same secret to be returned")
 }
 
-func TestSecretToBasicAuthSecretWithDockerConfigJson(t *testing.T) {
+func TestSecretToRegistryAuthSecretsWithDockerConfigJsonZeroRegistries(t *testing.T) {
+	s1 := Secret{
+		Type: "kubernetes.io/dockerconfigjson",
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(`{"auths":{}}`),
+		},
+	}
+
+	result, err := s1.ToRegistryAuthSecrets()
+	require.NoError(t, err)
+
+	require.Len(t, result, 0)
+}
+
+func TestSecretToRegistryAuthSecretsWithDockerConfigJson(t *testing.T) {
 	s1 := Secret{
 		Type: "kubernetes.io/dockerconfigjson",
 		Data: map[string][]byte{
@@ -32,24 +41,19 @@ func TestSecretToBasicAuthSecretWithDockerConfigJson(t *testing.T) {
 		},
 	}
 
-	expectedS := Secret{
+	result, err := s1.ToRegistryAuthSecrets()
+	require.NoError(t, err)
+
+	require.Equal(t, []Secret{{
 		Data: map[string][]byte{
+			"hostname": []byte("registry.io"),
 			"username": []byte("user"),
 			"password": []byte("pass"),
 		},
-	}
-
-	result, err := s1.ToBasicAuthSecret()
-	if err != nil {
-		t.Fatalf("Expected nil err, but was: %s", err)
-	}
-
-	if !reflect.DeepEqual(result, expectedS) {
-		t.Fatalf("Expected secret to be turned into username/password secret")
-	}
+	}}, result)
 }
 
-func TestSecretToBasicAuthSecretWithDockerConfigJsonTooManyRegistries(t *testing.T) {
+func TestSecretToRegistryAuthSecretsWithDockerConfigJsonMultipleRegistries(t *testing.T) {
 	s1 := Secret{
 		Type: "kubernetes.io/dockerconfigjson",
 		Data: map[string][]byte{
@@ -57,12 +61,20 @@ func TestSecretToBasicAuthSecretWithDockerConfigJsonTooManyRegistries(t *testing
 		},
 	}
 
-	_, err := s1.ToBasicAuthSecret()
-	if err == nil {
-		t.Fatalf("Expected non-nil err")
-	}
+	result, err := s1.ToRegistryAuthSecrets()
+	require.NoError(t, err)
 
-	if !strings.Contains(err.Error(), "Expected exactly one registry configuration within a secret") {
-		t.Fatalf("Expected one registry configuration error, but found err: %s", err)
-	}
+	require.Equal(t, []Secret{{
+		Data: map[string][]byte{
+			"hostname": []byte("foo"),
+			"username": []byte(""),
+			"password": []byte(""),
+		},
+	}, {
+		Data: map[string][]byte{
+			"hostname": []byte("registry.io"),
+			"username": []byte("user"),
+			"password": []byte("pass"),
+		},
+	}}, result)
 }

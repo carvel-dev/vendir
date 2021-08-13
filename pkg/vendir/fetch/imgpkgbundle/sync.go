@@ -3,14 +3,13 @@
 package imgpkgbundle
 
 import (
-	"bytes"
 	"fmt"
-	"os/exec"
 	"regexp"
 	"strings"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
 )
 
 type Sync struct {
@@ -35,28 +34,16 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 		return lockConf, fmt.Errorf("Expected non-empty Image")
 	}
 
+	imgpkg := ctlimg.NewImgpkg(t.opts.SecretRef, t.refFetcher, nil)
+
 	args := []string{"pull", "-b", t.opts.Image, "-o", dstPath, "--tty=true"}
-
-	args, err := t.addAuthArgs(args)
-	if err != nil {
-		return lockConf, err
-	}
-
 	args = t.addDangerousArgs(args)
 	args = t.addGeneralArgs(args)
 
-	var stdoutBs, stderrBs bytes.Buffer
-
-	cmd := exec.Command("imgpkg", args...)
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
-
-	err = cmd.Run()
+	stdoutStr, err := imgpkg.Run(args)
 	if err != nil {
-		return lockConf, fmt.Errorf("Imgpkg: %s (stderr: %s)", err, stderrBs.String())
+		return lockConf, err
 	}
-
-	stdoutStr := stdoutBs.String()
 
 	matches := imgpkgPulledImageRef.FindStringSubmatch(stdoutStr)
 	if len(matches) != 2 {
@@ -69,41 +56,6 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 	lockConf.Image = matches[1]
 
 	return lockConf, nil
-}
-
-func (t *Sync) addAuthArgs(args []string) ([]string, error) {
-	var authArgs []string
-
-	if t.opts.SecretRef != nil {
-		secret, err := t.refFetcher.GetSecret(t.opts.SecretRef.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		secret, err = secret.ToBasicAuthSecret()
-		if err != nil {
-			return nil, err
-		}
-
-		for name, val := range secret.Data {
-			switch name {
-			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
-				authArgs = append(authArgs, []string{"--registry-username", string(val)}...)
-			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
-				authArgs = append(authArgs, []string{"--registry-password", string(val)}...)
-			case ctlconf.SecretToken:
-				authArgs = append(authArgs, []string{"--registry-token", string(val)}...)
-			default:
-				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
-			}
-		}
-	}
-
-	if len(authArgs) == 0 {
-		authArgs = []string{"--registry-anon"}
-	}
-
-	return append(args, authArgs...), nil
 }
 
 func (t *Sync) addDangerousArgs(args []string) []string {

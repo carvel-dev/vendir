@@ -14,14 +14,19 @@ type RefFetcher interface {
 	GetConfigMap(string) (ctlconf.ConfigMap, error)
 }
 
-type NoopRefFetcher struct{}
+type SingleSecretRefFetcher struct {
+	Secret *ctlconf.Secret
+}
 
-var _ RefFetcher = NoopRefFetcher{}
+var _ RefFetcher = SingleSecretRefFetcher{}
 
-func (f NoopRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
+func (f SingleSecretRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
+	if f.Secret != nil && f.Secret.Metadata.Name == name {
+		return *f.Secret, nil
+	}
 	return ctlconf.Secret{}, fmt.Errorf("Not found")
 }
 
-func (f NoopRefFetcher) GetConfigMap(name string) (ctlconf.ConfigMap, error) {
+func (f SingleSecretRefFetcher) GetConfigMap(name string) (ctlconf.ConfigMap, error) {
 	return ctlconf.ConfigMap{}, fmt.Errorf("Not found")
 }

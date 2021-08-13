@@ -10,7 +10,9 @@ const (
 	SecretK8sCoreV1SSHAuthPrivateKey = "ssh-privatekey"
 	SecretSSHAuthKnownHosts          = "ssh-knownhosts" // not part of k8s
 
-	SecretToken = "token"
+	SecretRegistryHostnameKey   = "hostname"
+	SecretRegistryBearerToken   = "token"
+	SecretRegistryIdentityToken = "identity-token"
 
 	SecretGithubAPIToken = "token"
 )
