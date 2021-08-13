@@ -10,5 +10,8 @@ directories:
   - image:
       url: index.docker.io/dkalinin/consul-helm@sha256:d1cdbd46561a144332f0744302d45f27583fc0d75002cba473d840f46630c9f7
     path: docker.io/dkalinin/consul-helm-by-digest
+  - image:
+      url: index.docker.io/k14stest/vendir-image-tag-selection@sha256:38d108cf628966120ac3405037e389b52497981dce816eb5aada22fe9f2be7f3
+    path: tag-selection
   path: vendor
 kind: LockConfig

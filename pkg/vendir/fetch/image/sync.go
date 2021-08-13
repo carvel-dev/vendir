@@ -10,15 +10,20 @@ import (
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type Sync struct {
-	opts       ctlconf.DirectoryContentsImage
-	refFetcher ctlfetch.RefFetcher
+	opts   ctlconf.DirectoryContentsImage
+	imgpkg *Imgpkg
 }
 
 func NewSync(opts ctlconf.DirectoryContentsImage, refFetcher ctlfetch.RefFetcher) *Sync {
-	return &Sync{opts, refFetcher}
+	imgpkgOpts := ImgpkgOpts{
+		SecretRef:              opts.SecretRef,
+		DangerousSkipTLSVerify: opts.DangerousSkipTLSVerify,
+	}
+	return &Sync{opts, NewImgpkg(imgpkgOpts, refFetcher)}
 }
 
 var (
@@ -30,16 +35,12 @@ var (
 func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) {
 	lockConf := ctlconf.LockDirectoryContentsImage{}
 
-	if len(t.opts.URL) == 0 {
-		return lockConf, fmt.Errorf("Expected non-empty URL")
+	url, err := t.resolveURL()
+	if err != nil {
+		return lockConf, err
 	}
 
-	imgpkg := NewImgpkg(t.opts.SecretRef, t.refFetcher, nil)
-
-	args := []string{"pull", "-i", t.opts.URL, "-o", dstPath, "--tty=true"}
-	args = t.addDangerousArgs(args)
-
-	stdoutStr, err := imgpkg.Run(args)
+	stdoutStr, err := t.imgpkg.Run([]string{"pull", "-i", url, "-o", dstPath, "--tty=true"})
 	if err != nil {
 		return lockConf, err
 	}
@@ -57,9 +58,26 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) 
 	return lockConf, nil
 }
 
-func (t *Sync) addDangerousArgs(args []string) []string {
-	if t.opts.DangerousSkipTLSVerify {
-		args = append(args, "--registry-verify-certs=false")
+func (t *Sync) resolveURL() (string, error) {
+	if len(t.opts.URL) == 0 {
+		return "", fmt.Errorf("Expected non-empty URL")
 	}
-	return args
+
+	if t.opts.TagSelection != nil {
+		tags, err := t.imgpkg.Tags(t.opts.URL)
+		if err != nil {
+			return "", err
+		}
+
+		selectedTag, err := ctlver.HighestConstrainedVersion(tags, *t.opts.TagSelection)
+		if err != nil {
+			return "", fmt.Errorf("Determining tag selection: %s", err)
+		}
+
+		// In case URL erroneously contains tag or digest,
+		// pull operation will fail, so no need to do any checks here.
+		return t.opts.URL + ":" + selectedTag, nil
+	}
+
+	return t.opts.URL, nil
 }
