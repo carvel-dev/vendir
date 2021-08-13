@@ -10,15 +10,20 @@ import (
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type Sync struct {
-	opts       ctlconf.DirectoryContentsImgpkgBundle
-	refFetcher ctlfetch.RefFetcher
+	opts   ctlconf.DirectoryContentsImgpkgBundle
+	imgpkg *ctlimg.Imgpkg
 }
 
 func NewSync(opts ctlconf.DirectoryContentsImgpkgBundle, refFetcher ctlfetch.RefFetcher) *Sync {
-	return &Sync{opts, refFetcher}
+	imgpkgOpts := ctlimg.ImgpkgOpts{
+		SecretRef:              opts.SecretRef,
+		DangerousSkipTLSVerify: opts.DangerousSkipTLSVerify,
+	}
+	return &Sync{opts, ctlimg.NewImgpkg(imgpkgOpts, refFetcher)}
 }
 
 var (
@@ -30,17 +35,17 @@ var (
 func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, error) {
 	lockConf := ctlconf.LockDirectoryContentsImgpkgBundle{}
 
-	if len(t.opts.Image) == 0 {
-		return lockConf, fmt.Errorf("Expected non-empty Image")
+	image, err := t.resolveImage()
+	if err != nil {
+		return lockConf, err
 	}
 
-	imgpkg := ctlimg.NewImgpkg(t.opts.SecretRef, t.refFetcher, nil)
+	args := []string{"pull", "-b", image, "-o", dstPath, "--tty=true"}
+	if t.opts.Recursive {
+		args = append(args, "--recursive")
+	}
 
-	args := []string{"pull", "-b", t.opts.Image, "-o", dstPath, "--tty=true"}
-	args = t.addDangerousArgs(args)
-	args = t.addGeneralArgs(args)
-
-	stdoutStr, err := imgpkg.Run(args)
+	stdoutStr, err := t.imgpkg.Run(args)
 	if err != nil {
 		return lockConf, err
 	}
@@ -58,16 +63,26 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 	return lockConf, nil
 }
 
-func (t *Sync) addDangerousArgs(args []string) []string {
-	if t.opts.DangerousSkipTLSVerify {
-		args = append(args, "--registry-verify-certs=false")
+func (t *Sync) resolveImage() (string, error) {
+	if len(t.opts.Image) == 0 {
+		return "", fmt.Errorf("Expected non-empty image")
 	}
-	return args
-}
 
-func (t *Sync) addGeneralArgs(args []string) []string {
-	if t.opts.Recursive {
-		args = append(args, "--recursive")
+	if t.opts.TagSelection != nil {
+		tags, err := t.imgpkg.Tags(t.opts.Image)
+		if err != nil {
+			return "", err
+		}
+
+		selectedTag, err := ctlver.HighestConstrainedVersion(tags, *t.opts.TagSelection)
+		if err != nil {
+			return "", fmt.Errorf("Determining tag selection: %s", err)
+		}
+
+		// In case image erroneously contains tag or digest,
+		// pull operation will fail, so no need to do any checks here.
+		return t.opts.Image + ":" + selectedTag, nil
 	}
-	return args
+
+	return t.opts.Image, nil
 }

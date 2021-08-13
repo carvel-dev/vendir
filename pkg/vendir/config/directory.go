@@ -93,7 +93,9 @@ type DirectoryContentsHTTP struct {
 
 type DirectoryContentsImage struct {
 	// Example: username/app1-config:v0.1.0
-	URL string `json:"url,omitempty"`
+	URL          string                   `json:"url,omitempty"`
+	TagSelection *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
 	// TODO support docker config formated secret
@@ -105,7 +107,9 @@ type DirectoryContentsImage struct {
 
 type DirectoryContentsImgpkgBundle struct {
 	// Example: username/app1-config:v0.1.0
-	Image string `json:"image,omitempty"`
+	Image        string                   `json:"image,omitempty"`
+	TagSelection *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
 	// TODO support docker config formated secret
