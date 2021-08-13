@@ -32,6 +32,17 @@ var (
 	imgpkgPulledImageRef = regexp.MustCompile("(?m)^Pulling image '(.+)'$")
 )
 
+func (t Sync) Desc() string {
+	url := "?"
+	if len(t.opts.URL) > 0 {
+		url = t.opts.URL
+		if t.opts.TagSelection != nil {
+			url += ":tag=" + t.opts.TagSelection.Description()
+		}
+	}
+	return url
+}
+
 func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) {
 	lockConf := ctlconf.LockDirectoryContentsImage{}
 
