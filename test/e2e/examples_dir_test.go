@@ -14,8 +14,8 @@ func TestExamplesDir(t *testing.T) {
 	_ = env.Helm3Binary
 
 	tests := []example{
-
 		{Name: "git"},
+		{Name: "hg"},
 		{Name: "http"},
 		{Name: "image"},
 		{Name: "imgpkgBundle"},

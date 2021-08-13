@@ -40,7 +40,7 @@ func TestExampleGitAndManual(t *testing.T) {
 	}
 
 	// add file that shouldnt exist
-	err = ioutil.WriteFile(path+"/vendor/github.com/cloudfoundry/extra/extra", []byte("extra"), 0700)
+	err = ioutil.WriteFile(path+"/vendor/github.com/cloudfoundry/extra/extra", []byte("extra"), 0600)
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}

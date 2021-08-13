@@ -55,7 +55,7 @@ func (c LockConfig) WriteToFile(path string) error {
 		return fmt.Errorf("Marshaling lock config: %s", err)
 	}
 
-	err = ioutil.WriteFile(path, bs, 0700)
+	err = ioutil.WriteFile(path, bs, 0600)
 	if err != nil {
 		return fmt.Errorf("Writing lock config: %s", err)
 	}
