@@ -11,6 +11,8 @@ const (
 	SecretSSHAuthKnownHosts          = "ssh-knownhosts" // not part of k8s
 
 	SecretToken = "token"
+
+	SecretGithubAPIToken = "token"
 )
 
 // There structs have minimal used set of fields from their K8s representations.
