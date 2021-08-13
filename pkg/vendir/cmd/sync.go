@@ -29,6 +29,8 @@ type SyncOptions struct {
 
 	Directories []string
 	Locked      bool
+
+	Chdir string
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -46,10 +48,20 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
+
+	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
+
 	return cmd
 }
 
 func (o *SyncOptions) Run() error {
+	if len(o.Chdir) > 0 {
+		err := os.Chdir(o.Chdir)
+		if err != nil {
+			return fmt.Errorf("Running chdir: %s", err)
+		}
+	}
+
 	conf, secrets, configMaps, err := ctlconf.NewConfigFromFiles(o.Files)
 	if err != nil {
 		return o.configReadHintErrMsg(err, o.Files)
