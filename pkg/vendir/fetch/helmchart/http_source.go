@@ -63,7 +63,7 @@ func setEnv(helmHomeDir string) []string {
 }
 
 func (t *HTTPSource) init(helmHomeDir string) error {
-	args := []string{"init", "--client-only"}
+	args := []string{"init", "--client-only", "--stable-repo-url", "https://charts.helm.sh/stable"}
 
 	var stdoutBs, stderrBs bytes.Buffer
 
