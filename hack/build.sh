@@ -14,4 +14,7 @@ go mod tidy
 go build $repro_flags -o vendir ./cmd/vendir/...
 ./vendir version
 
+# compile tests, but do not run them: https://github.com/golang/go/issues/15513#issuecomment-839126426
+go test --exec=echo ./... >/dev/null
+
 echo "Success"
