@@ -70,6 +70,11 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 	}
 
 	lockConf.Image = matches[1]
+	if len(t.opts.PreresolvedTag()) > 0 {
+		lockConf.Tag = t.opts.PreresolvedTag()
+	} else {
+		lockConf.Tag = ctlimg.NewGuessedRefParts(image).Tag
+	}
 
 	return lockConf, nil
 }
