@@ -17,8 +17,9 @@ var (
 	// false or true based on the stdout's file descriptor referring to a terminal
 	// or not. This is a global option and affects all colors. For more control
 	// over each color block use the methods DisableColor() individually.
-	NoColor = os.Getenv("TERM") == "dumb" ||
-		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
+	// To force color display, set the variable FORCE_COLOR = "1"
+	NoColor = noColorWithEnvVars(os.Getenv("TERM") == "dumb" ||
+		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd())))
 
 	// Output defines the standard output of the print functions. By default
 	// os.Stdout is used.
@@ -32,6 +33,17 @@ var (
 	colorsCache   = make(map[Attribute]*Color)
 	colorsCacheMu sync.Mutex // protects colorsCache
 )
+
+func noColorWithEnvVars(noColor bool) bool {
+	switch os.Getenv("FORCE_COLOR") {
+	case "0": // disable color
+		return true
+	case "1", "2", "3": // enable color
+		return false
+	default:
+		return noColor
+	}
+}
 
 // Color defines a custom color object which is defined by SGR parameters.
 type Color struct {
