@@ -142,3 +142,5 @@ func (v Semvers) All() []string {
 	}
 	return verStrs
 }
+
+func (v Semvers) Len() int { return len(v.versions) }
