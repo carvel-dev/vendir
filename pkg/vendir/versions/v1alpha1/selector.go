@@ -3,12 +3,21 @@
 
 package v1alpha1
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func HighestConstrainedVersion(versions []string, config VersionSelection) (string, error) {
 	switch {
 	case config.Semver != nil:
-		matchedVers := NewRelaxedSemversNoErr(versions).FilterPrereleases(config.Semver.Prereleases)
+		var details []string
+
+		matchedVers := NewRelaxedSemversNoErr(versions)
+		details = append(details, fmt.Sprintf("all=%d", matchedVers.Len()))
+
+		matchedVers = matchedVers.FilterPrereleases(config.Semver.Prereleases)
+		details = append(details, fmt.Sprintf("after-prereleases-filter=%d", matchedVers.Len()))
 
 		if len(config.Semver.Constraints) > 0 {
 			var err error
@@ -16,11 +25,13 @@ func HighestConstrainedVersion(versions []string, config VersionSelection) (stri
 			if err != nil {
 				return "", fmt.Errorf("Selecting versions: %s", err)
 			}
+			details = append(details, fmt.Sprintf("after-constraints-filter=%d", matchedVers.Len()))
 		}
 
 		highestVersion, found := matchedVers.Highest()
 		if !found {
-			return "", fmt.Errorf("Expected to find at least one version, but did not")
+			errFmt := "Expected to find at least one version, but did not (details: %s)"
+			return "", fmt.Errorf(errFmt, strings.Join(details, " -> "))
 		}
 		return highestVersion, nil
 
