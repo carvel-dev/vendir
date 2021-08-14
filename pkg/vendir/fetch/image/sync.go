@@ -65,6 +65,11 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) 
 	}
 
 	lockConf.URL = matches[1]
+	if len(t.opts.PreresolvedTag()) > 0 {
+		lockConf.Tag = t.opts.PreresolvedTag()
+	} else {
+		lockConf.Tag = NewGuessedRefParts(url).Tag
+	}
 
 	return lockConf, nil
 }

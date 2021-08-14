@@ -93,8 +93,10 @@ type DirectoryContentsHTTP struct {
 
 type DirectoryContentsImage struct {
 	// Example: username/app1-config:v0.1.0
-	URL          string                   `json:"url,omitempty"`
-	TagSelection *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+	URL string `json:"url,omitempty"`
+
+	TagSelection   *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+	preresolvedTag string                   `json:"-"`
 
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
@@ -105,10 +107,14 @@ type DirectoryContentsImage struct {
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 }
 
+func (c DirectoryContentsImage) PreresolvedTag() string { return c.preresolvedTag }
+
 type DirectoryContentsImgpkgBundle struct {
 	// Example: username/app1-config:v0.1.0
-	Image        string                   `json:"image,omitempty"`
-	TagSelection *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+	Image string `json:"image,omitempty"`
+
+	TagSelection   *ctlver.VersionSelection `json:"tagSelection,omitempty"`
+	preresolvedTag string                   `json:"-"`
 
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
@@ -119,6 +125,8 @@ type DirectoryContentsImgpkgBundle struct {
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 	Recursive              bool `json:"recursive,omitempty"`
 }
+
+func (c DirectoryContentsImgpkgBundle) PreresolvedTag() string { return c.preresolvedTag }
 
 type DirectoryContentsGithubRelease struct {
 	Slug         string                   `json:"slug"` // e.g. organization/repository
@@ -349,6 +357,8 @@ func (c *DirectoryContentsImage) Lock(lockConfig *LockDirectoryContentsImage) er
 		return fmt.Errorf("Expected image URL to be non-empty")
 	}
 	c.URL = lockConfig.URL
+	c.TagSelection = nil // URL is fully resolved already
+	c.preresolvedTag = lockConfig.Tag
 	return nil
 }
 
@@ -360,6 +370,8 @@ func (c *DirectoryContentsImgpkgBundle) Lock(lockConfig *LockDirectoryContentsIm
 		return fmt.Errorf("Expected imgpkg bundle Image to be non-empty")
 	}
 	c.Image = lockConfig.Image
+	c.TagSelection = nil // URL is fully resolved already
+	c.preresolvedTag = lockConfig.Tag
 	return nil
 }
 
