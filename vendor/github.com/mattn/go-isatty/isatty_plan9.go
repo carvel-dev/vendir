@@ -1,18 +1,18 @@
-// +build solaris
-// +build !appengine
+// +build plan9
 
 package isatty
 
 import (
-	"golang.org/x/sys/unix"
+	"syscall"
 )
 
 // IsTerminal returns true if the given file descriptor is a terminal.
-// see: http://src.illumos.org/source/xref/illumos-gate/usr/src/lib/libbc/libc/gen/common/isatty.c
 func IsTerminal(fd uintptr) bool {
-	var termio unix.Termio
-	err := unix.IoctlSetTermio(int(fd), unix.TCGETA, &termio)
-	return err == nil
+	path, err := syscall.Fd2path(int(fd))
+	if err != nil {
+		return false
+	}
+	return path == "/dev/cons" || path == "/mnt/term/dev/cons"
 }
 
 // IsCygwinTerminal return true if the file descriptor is a cygwin or msys2

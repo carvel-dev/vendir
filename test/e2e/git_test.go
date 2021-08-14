@@ -120,7 +120,10 @@ directories:
 		if err == nil {
 			t.Fatalf("Expected to err when commit is signed by stranger")
 		}
-		if !strings.Contains(err.Error(), "Expected to find commit signature: Expected to find section 'PGP SIGNATURE', but did not") {
+		if !strings.Contains(err.Error(), "Expected to find commit signature:") {
+			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
+		}
+		if !strings.Contains(err.Error(), "Expected to find section 'PGP SIGNATURE', but did not") {
 			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
 		}
 	})
@@ -131,7 +134,10 @@ directories:
 		if err == nil {
 			t.Fatalf("Expected to err when commit is signed by stranger")
 		}
-		if !strings.Contains(err.Error(), "Expected to find tag signature: Expected to find section 'PGP SIGNATURE', but did not") {
+		if !strings.Contains(err.Error(), "Expected to find tag signature:") {
+			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
+		}
+		if !strings.Contains(err.Error(), "Expected to find section 'PGP SIGNATURE', but did not") {
 			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
 		}
 	})
