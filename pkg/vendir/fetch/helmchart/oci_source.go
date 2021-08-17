@@ -181,6 +181,11 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 			return nil, nil, err
 		}
 
+		if len(secrets) > 1 {
+			// If there are more than 1, then which one would we pick?
+			return nil, nil, fmt.Errorf("Expected 0 or 1 registry auth credential, but found %d", len(secrets))
+		}
+
 		for _, secret := range secrets {
 			for name, val := range secret.Data {
 				switch name {
@@ -196,8 +201,6 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 					return nil, nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 				}
 			}
-			// Only single set of credentials is supported
-			break
 		}
 	}
 
