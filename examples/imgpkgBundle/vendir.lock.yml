@@ -6,6 +6,7 @@ directories:
     path: docker.io/ewrenn/consul-helm-naked
   - imgpkgBundle:
       image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
+      tag: v1
     path: docker.io/ewrenn/consul-helm-by-tag
   - imgpkgBundle:
       image: index.docker.io/ewrenn/consul-helm-bundle@sha256:15777f0007ee10fb9b2e0ed55107751188f3f3a11bae81c122ff4f11c9d67d15
@@ -13,5 +14,9 @@ directories:
   - imgpkgBundle:
       image: index.docker.io/k8slt/vendir-test-recursive-bundle@sha256:4d58d662d3f6e858fb3f989214482405ac13974d98f3f0695bd36e3fc36d3f81
     path: docker.io/k8slt/vendir-test-recursive-bundle
+  - imgpkgBundle:
+      image: index.docker.io/k14stest/vendir-imgpkgbundle-tag-selection@sha256:b6b25061e66aafcd8a8e5f08742c5bbb3fe24f0fb835dee22a868f188ba886e9
+      tag: 2.0.0
+    path: tag-selection
   path: vendor
 kind: LockConfig

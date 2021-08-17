@@ -4,9 +4,9 @@
 package v1alpha1_test
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
@@ -22,7 +22,7 @@ func TestSemverOrder(t *testing.T) {
 		"0.0.1-rc.0",
 	}).Sorted().All()
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"0.0.1-pre.1",
 		"0.0.1-pre.10",
 		"0.0.1-rc.0",
@@ -31,11 +31,7 @@ func TestSemverOrder(t *testing.T) {
 		"2.0.0-10+meta.10",
 		"2.0.0",
 		"v2.0.0",
-	}
-
-	if !reflect.DeepEqual(result, expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result, expectedOrder)
-	}
+	}, result)
 }
 
 func TestSemverFilter(t *testing.T) {
@@ -48,20 +44,14 @@ func TestSemverFilter(t *testing.T) {
 		"2.0.0",
 		"0.0.1-rc.0",
 	}).Sorted().FilterConstraints(">0.0.5 <5.0.0")
-	if err != nil {
-		t.Fatalf("Expected filtering to succeed: %s", err)
-	}
+	require.NoError(t, err)
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"0.1.0",
 		"2.0.0-10",
 		"2.0.0-10+meta.10", // prerelease is included
 		"2.0.0",
-	}
-
-	if !reflect.DeepEqual(result.All(), expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
-	}
+	}, result.All())
 }
 
 func TestSemverWithoutPrereleases(t *testing.T) {
@@ -75,14 +65,10 @@ func TestSemverWithoutPrereleases(t *testing.T) {
 		"0.0.1-rc.0",
 	}).FilterPrereleases(nil)
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"0.1.0",
 		"2.0.0",
-	}
-
-	if !reflect.DeepEqual(result.All(), expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
-	}
+	}, result.All())
 }
 
 func TestSemverWithPrereleases(t *testing.T) {
@@ -98,7 +84,7 @@ func TestSemverWithPrereleases(t *testing.T) {
 		"0.0.1-rc.0",
 	}).FilterPrereleases(preConf)
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"2.0.0-10+meta.10",
 		"0.0.1-pre.10",
 		"0.0.1-pre.1",
@@ -106,11 +92,7 @@ func TestSemverWithPrereleases(t *testing.T) {
 		"2.0.0-10",
 		"2.0.0",
 		"0.0.1-rc.0",
-	}
-
-	if !reflect.DeepEqual(result.All(), expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
-	}
+	}, result.All())
 }
 
 func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
@@ -126,16 +108,12 @@ func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
 		"0.0.1-rc.0",
 	}).Sorted().FilterPrereleases(preConf)
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"0.0.1-alpha.1",
 		"0.0.1-rc.0",
 		"0.1.0",
 		"2.0.0",
-	}
-
-	if !reflect.DeepEqual(result.All(), expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
-	}
+	}, result.All())
 }
 
 func TestSemverWithBuildMetadata(t *testing.T) {
@@ -152,7 +130,7 @@ func TestSemverWithBuildMetadata(t *testing.T) {
 		"2.0.0",
 	}).Sorted().All()
 
-	expectedOrder := []string{
+	require.Equal(t, []string{
 		"1.0.0-pre+foo",
 		"1.0.0",
 		"1.0.0+1",
@@ -163,11 +141,7 @@ func TestSemverWithBuildMetadata(t *testing.T) {
 		"1.1.0",
 		"1.1.0+aaaa",
 		"2.0.0",
-	}
-
-	if !reflect.DeepEqual(result, expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result, expectedOrder)
-	}
+	}, result)
 }
 
 func TestSemverWithBuildMetadataAndConstraint(t *testing.T) {
@@ -180,16 +154,7 @@ func TestSemverWithBuildMetadataAndConstraint(t *testing.T) {
 		"1.0.0+ab1.foo",
 		"1.0.0-pre+foo",
 	}).Sorted().FilterConstraints(">1.0.0+ab1.foo")
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Fatalf("Received error when filtering: %v", err)
-	}
-
-	expectedOrder := []string{
-		"1.0.0+z1",
-	}
-
-	if !reflect.DeepEqual(result.All(), expectedOrder) {
-		t.Fatalf("Expected result '%#v' to equal '%#v'", result.All(), expectedOrder)
-	}
+	require.Equal(t, []string{"1.0.0+z1"}, result.All())
 }

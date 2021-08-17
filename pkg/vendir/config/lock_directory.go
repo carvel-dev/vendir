@@ -39,10 +39,12 @@ type LockDirectoryContentsHTTP struct{}
 
 type LockDirectoryContentsImage struct {
 	URL string `json:"url"`
+	Tag string `json:"tag,omitempty"`
 }
 
 type LockDirectoryContentsImgpkgBundle struct {
 	Image string `json:"image"`
+	Tag   string `json:"tag,omitempty"`
 }
 
 type LockDirectoryContentsGithubRelease struct {

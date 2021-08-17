@@ -8,27 +8,35 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
-type Imgpkg struct {
-	secretRef  *ctlconf.DirectoryContentsLocalRef
-	refFetcher ctlfetch.RefFetcher
-	cmdRunFunc func(*exec.Cmd) error
+type ImgpkgOpts struct {
+	SecretRef              *ctlconf.DirectoryContentsLocalRef
+	DangerousSkipTLSVerify bool
+
+	CmdRunFunc func(*exec.Cmd) error
 }
 
-func NewImgpkg(secretRef *ctlconf.DirectoryContentsLocalRef,
-	refFetcher ctlfetch.RefFetcher, cmdRunFunc func(*exec.Cmd) error) *Imgpkg {
+type Imgpkg struct {
+	opts       ImgpkgOpts
+	refFetcher ctlfetch.RefFetcher
+}
 
-	if cmdRunFunc == nil {
-		cmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
+func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
+	if opts.CmdRunFunc == nil {
+		opts.CmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
 	}
-	return &Imgpkg{secretRef, refFetcher, cmdRunFunc}
+	return &Imgpkg{opts, refFetcher}
 }
 
 func (t *Imgpkg) Run(args []string) (string, error) {
+	args = append([]string{}, args...) // copy
+	args = t.addDangerousArgs(args)
+
 	authEnv, err := t.authEnv()
 	if err != nil {
 		return "", err
@@ -41,7 +49,7 @@ func (t *Imgpkg) Run(args []string) (string, error) {
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
-	err = t.cmdRunFunc(cmd)
+	err = t.opts.CmdRunFunc(cmd)
 	if err != nil {
 		return "", fmt.Errorf("Imgpkg: %s (stderr: %s)", err, stderrBs.String())
 	}
@@ -49,11 +57,24 @@ func (t *Imgpkg) Run(args []string) (string, error) {
 	return stdoutBs.String(), nil
 }
 
+func (t *Imgpkg) Tags(repo string) ([]string, error) {
+	out, err := t.Run([]string{"tag", "list", "-i", repo, "--column=name", "--digests=false"})
+	if err != nil {
+		return nil, fmt.Errorf("Fetching image tags: %s", err)
+	}
+
+	out = strings.TrimSpace(out)
+	// not sure why there are tabs; remove in older versions
+	out = strings.Replace(out, "\t", "", -1)
+
+	return strings.Split(out, "\n"), nil
+}
+
 func (t *Imgpkg) authEnv() ([]string, error) {
 	var authEnv []string
 
-	if t.secretRef != nil {
-		secret, err := t.refFetcher.GetSecret(t.secretRef.Name)
+	if t.opts.SecretRef != nil {
+		secret, err := t.refFetcher.GetSecret(t.opts.SecretRef.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -104,4 +125,11 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 	}
 
 	return authEnv, nil
+}
+
+func (t *Imgpkg) addDangerousArgs(args []string) []string {
+	if t.opts.DangerousSkipTLSVerify {
+		args = append(args, "--registry-verify-certs=false")
+	}
+	return args
 }

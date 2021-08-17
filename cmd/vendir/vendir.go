@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	uierrs "github.com/cppforlife/go-cli-ui/errors"
 	"github.com/cppforlife/go-cli-ui/ui"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/cmd"
 )
@@ -29,7 +30,7 @@ func main() {
 
 	err := command.Execute()
 	if err != nil {
-		confUI.ErrorLinef("Error: %v", err)
+		confUI.ErrorLinef("vendir: Error: %v", uierrs.NewMultiLineError(err))
 		os.Exit(1)
 	}
 

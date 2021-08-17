@@ -31,10 +31,7 @@ func (d Sync) Desc() string {
 	case len(d.opts.Ref) > 0:
 		ref = d.opts.Ref
 	case d.opts.RefSelection != nil:
-		switch {
-		case d.opts.RefSelection.Semver != nil:
-			ref = fmt.Sprintf("[%s]", d.opts.RefSelection.Semver.Constraints)
-		}
+		ref = "ref=" + d.opts.RefSelection.Description()
 	}
 	return fmt.Sprintf("%s@%s", d.opts.URL, ref)
 }

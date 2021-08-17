@@ -25,3 +25,10 @@ directories:
     imgpkgBundle:
       image: index.docker.io/k8slt/vendir-test-recursive-bundle@sha256:4d58d662d3f6e858fb3f989214482405ac13974d98f3f0695bd36e3fc36d3f81
       recursive: true
+
+  - path: tag-selection
+    imgpkgBundle:
+      image: k14stest/vendir-imgpkgbundle-tag-selection
+      tagSelection:
+        semver:
+          constraints: ">1.0.0 <3.0.0"
