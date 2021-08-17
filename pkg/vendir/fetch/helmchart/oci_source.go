@@ -176,21 +176,28 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 			return nil, nil, err
 		}
 
-		secret, err = secret.ToBasicAuthSecret()
+		secrets, err := secret.ToRegistryAuthSecrets()
 		if err != nil {
 			return nil, nil, err
 		}
 
-		for name, val := range secret.Data {
-			switch name {
-			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
-				authArgs = append(authArgs, []string{"--username", string(val)}...)
-			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
-				authArgs = append(authArgs, []string{"--password-stdin"}...)
-				passwordStdin = strings.NewReader(string(val))
-			default:
-				return nil, nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+		for _, secret := range secrets {
+			for name, val := range secret.Data {
+				switch name {
+				case ctlconf.SecretRegistryHostnameKey:
+					// do nothing for now
+					// TODO match secret by hostname?
+				case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
+					authArgs = append(authArgs, []string{"--username", string(val)}...)
+				case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
+					authArgs = append(authArgs, []string{"--password-stdin"}...)
+					passwordStdin = strings.NewReader(string(val))
+				default:
+					return nil, nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+				}
 			}
+			// Only single set of credentials is supported
+			break
 		}
 	}
 

@@ -18,6 +18,7 @@ require (
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/spf13/cobra v1.1.3
+	github.com/stretchr/testify v1.4.0
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914

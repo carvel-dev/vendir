@@ -5,7 +5,7 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
+	"sort"
 )
 
 type secretDockerConfigJSON struct {
@@ -17,7 +17,9 @@ type secretDockerConfigJSONAuth struct {
 	Password string
 }
 
-func (s Secret) ToBasicAuthSecret() (Secret, error) {
+// ToRegistryAuthSecrets splits secret into multiple secrets
+// if secret of type dockerconfigjson; otherwise returns same secret.
+func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 	const (
 		// Constants from Kubernetes core v1
 		typeDockerConfigJSON = "kubernetes.io/dockerconfigjson"
@@ -25,28 +27,42 @@ func (s Secret) ToBasicAuthSecret() (Secret, error) {
 	)
 
 	if s.Type != typeDockerConfigJSON {
-		return s, nil // return itself
+		return []Secret{s}, nil // return itself
 	}
 
 	var data secretDockerConfigJSON
 
 	err := json.Unmarshal(s.Data[dockerConfigJSONKey], &data)
 	if err != nil {
-		return Secret{}, err
+		return nil, err
 	}
 
-	if len(data.Auths) != 1 {
-		return Secret{}, fmt.Errorf("Expected exactly one registry configuration within a secret")
-	}
+	var secrets []Secret
 
-	for _, auth := range data.Auths {
-		return Secret{
+	// Sort hostnames so that secrets always come out in deterministic order
+	var hostnames []string
+	for hostname := range data.Auths {
+		hostnames = append(hostnames, hostname)
+	}
+	sort.Strings(hostnames)
+
+	for _, hostname := range hostnames {
+		auth, found := data.Auths[hostname]
+		if !found {
+			panic("Internal inconsistency: hostname missing")
+		}
+
+		secrets = append(secrets, Secret{
+			Metadata: s.Metadata,
+			// Careful adding new keys here, since consumers of these secrets
+			// might be returning errors for any unexpected keys found
 			Data: map[string][]byte{
+				SecretRegistryHostnameKey:           []byte(hostname),
 				SecretK8sCorev1BasicAuthUsernameKey: []byte(auth.Username),
 				SecretK8sCorev1BasicAuthPasswordKey: []byte(auth.Password),
 			},
-		}, nil
+		})
 	}
 
-	panic("Unreachable")
+	return secrets, nil
 }
