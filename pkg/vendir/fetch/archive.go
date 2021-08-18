@@ -32,10 +32,15 @@ func (t Archive) Unpack(dstPath string) (bool, error) {
 		t.tryTar,
 	}
 
+	globMatches, err := filepath.Glob(t.path)
+	if err != nil {
+		return false, err
+	}
+
 	for _, f := range contentExtractorFuncs {
-		final, err := f(t.path, dstPath)
-		if final {
-			return true, err
+		for _, match := range globMatches {
+			extractPath := filepath.Join(dstPath, t.parseGlob(match))
+			_, err = f(match, extractPath)
 		}
 	}
 
@@ -43,7 +48,16 @@ func (t Archive) Unpack(dstPath string) (bool, error) {
 		return true, t.tryPlain(t.path, dstPath)
 	}
 
-	return false, nil
+	return true, nil
+}
+
+func (t Archive) parseGlob(glob string) string {
+	extractPath := filepath.Base(glob[0 : len(glob)-len(filepath.Ext(glob))])
+	if strings.Contains(extractPath, ".") {
+		extractPath = strings.Split(extractPath, ".")[0]
+	}
+
+	return extractPath
 }
 
 func (t Archive) writeIntoFile(srcFile io.Reader, dstPath, additionalPath string) error {
