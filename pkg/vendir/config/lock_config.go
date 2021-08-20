@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+// LockConfig outputs a vendir.lock with shas for reproducible vendir-ing.
 type LockConfig struct {
 	APIVersion  string          `json:"apiVersion"`
 	Kind        string          `json:"kind"`
