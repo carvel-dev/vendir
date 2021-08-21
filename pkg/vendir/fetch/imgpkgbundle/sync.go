@@ -10,7 +10,7 @@ import (
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
 type Sync struct {

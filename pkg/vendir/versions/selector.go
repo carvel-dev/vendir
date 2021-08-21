@@ -1,14 +1,16 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package versions
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
-func HighestConstrainedVersion(versions []string, config VersionSelection) (string, error) {
+func HighestConstrainedVersion(versions []string, config v1alpha1.VersionSelection) (string, error) {
 	switch {
 	case config.Semver != nil:
 		var details []string

@@ -1,7 +1,7 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package versions
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	semver "github.com/k14s/semver/v4"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type Semvers struct {
@@ -88,7 +89,7 @@ func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 	return Semvers{matchingVersions}, nil
 }
 
-func (v Semvers) FilterPrereleases(prereleases *VersionSelectionSemverPrereleases) Semvers {
+func (v Semvers) FilterPrereleases(prereleases *v1alpha1.VersionSelectionSemverPrereleases) Semvers {
 	if prereleases == nil {
 		// Exclude all prereleases
 		var result []SemverWrap

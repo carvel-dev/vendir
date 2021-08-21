@@ -1,13 +1,14 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1_test
+package versions_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 func TestSemverOrder(t *testing.T) {
@@ -72,7 +73,7 @@ func TestSemverWithoutPrereleases(t *testing.T) {
 }
 
 func TestSemverWithPrereleases(t *testing.T) {
-	preConf := &versions.VersionSelectionSemverPrereleases{}
+	preConf := &v1alpha1.VersionSelectionSemverPrereleases{}
 
 	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",
@@ -96,7 +97,7 @@ func TestSemverWithPrereleases(t *testing.T) {
 }
 
 func TestSemverWithPrereleaseIdentifiers(t *testing.T) {
-	preConf := &versions.VersionSelectionSemverPrereleases{Identifiers: []string{"alpha", "rc"}}
+	preConf := &v1alpha1.VersionSelectionSemverPrereleases{Identifiers: []string{"alpha", "rc"}}
 
 	result := versions.NewRelaxedSemversNoErr([]string{
 		"2.0.0-10+meta.10",

@@ -8,18 +8,19 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/bmatcuk/doublestar"
-	"github.com/google/go-github/github"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
-	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/bmatcuk/doublestar"
+	"github.com/google/go-github/github"
+	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	"golang.org/x/oauth2"
 )
 
 type Sync struct {
