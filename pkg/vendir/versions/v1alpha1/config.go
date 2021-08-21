@@ -10,19 +10,22 @@ import (
 )
 
 // +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type VersionSelection struct {
-	Semver *VersionSelectionSemver `json:"semver,omitempty"`
+	Semver *VersionSelectionSemver `json:"semver,omitempty" protobuf:"bytes,1,opt,name=semver"`
 }
 
 // +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type VersionSelectionSemver struct {
-	Constraints string                             `json:"constraints,omitempty"`
-	Prereleases *VersionSelectionSemverPrereleases `json:"prereleases,omitempty"`
+	Constraints string                             `json:"constraints,omitempty" protobuf:"bytes,1,opt,name=constraints"`
+	Prereleases *VersionSelectionSemverPrereleases `json:"prereleases,omitempty" protobuf:"bytes,2,opt,name=prereleases"`
 }
 
 // +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type VersionSelectionSemverPrereleases struct {
-	Identifiers []string `json:"identifiers,omitempty"`
+	Identifiers []string `json:"identifiers,omitempty" protobuf:"bytes,1,opt,name=identifiers"`
 }
 
 func (p VersionSelectionSemverPrereleases) IdentifiersAsMap() map[string]struct{} {
