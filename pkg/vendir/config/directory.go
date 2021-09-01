@@ -89,6 +89,8 @@ type DirectoryContentsHTTP struct {
 	// Secret may include one or more keys: username, password
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
+	// +optional
+	DisableUnpack bool `json:"disableUnpack,omitempty"`
 }
 
 type DirectoryContentsImage struct {
