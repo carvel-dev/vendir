@@ -4,8 +4,11 @@
 package config
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"sort"
+	"strings"
 )
 
 type secretDockerConfigJSON struct {
@@ -15,6 +18,7 @@ type secretDockerConfigJSON struct {
 type secretDockerConfigJSONAuth struct {
 	Username string
 	Password string
+	Auth     string
 }
 
 // ToRegistryAuthSecrets splits secret into multiple secrets
@@ -50,6 +54,20 @@ func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 		auth, found := data.Auths[hostname]
 		if !found {
 			panic("Internal inconsistency: hostname missing")
+		}
+
+		if len(auth.Password) == 0 && len(auth.Auth) > 0 {
+			decodedAuth, err := base64.StdEncoding.DecodeString(auth.Auth)
+			if err != nil {
+				return nil, fmt.Errorf("Decoding auth field: %s", err)
+			}
+
+			pieces := strings.SplitN(string(decodedAuth), ":", 2)
+			if len(pieces) != 2 {
+				return nil, fmt.Errorf("Expected auth field to have 'username:password' format, but did not")
+			}
+			auth.Username = pieces[0]
+			auth.Password = pieces[1]
 		}
 
 		secrets = append(secrets, Secret{
