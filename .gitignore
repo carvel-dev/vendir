@@ -1,5 +1,6 @@
 /vendir
 /vendir-darwin-amd64
+/vendir-darwin-arm64
 /vendir-linux-amd64
 /vendir-windows-amd64.exe
 /vendir-linux-arm64
