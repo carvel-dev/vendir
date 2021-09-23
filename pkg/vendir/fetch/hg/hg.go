@@ -88,7 +88,11 @@ func (t *Hg) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		return err
 	}
 
-	var authRc string
+	var hgRc string
+
+	if t.opts.Evolve {
+		hgRc = fmt.Sprintf("%s", "[extensions]\nevolve =\ntopic =")
+	}
 
 	if authOpts.Username != nil && authOpts.Password != nil {
 		if !strings.HasPrefix(hgURL, "https://") {
@@ -99,11 +103,12 @@ func (t *Hg) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 			return fmt.Errorf("Parsing hg remote url: %s", err)
 		}
 
-		authRc = fmt.Sprintf(`[auth]
+		hgRc = fmt.Sprintf(`%s
+[auth]
 hgauth.prefix = https://%s
 hgauth.username = %s
 hgauth.password = %s
-`, hgCredsURL.Host, *authOpts.Username, *authOpts.Password)
+`, hgRc, hgCredsURL.Host, *authOpts.Username, *authOpts.Password)
 
 	}
 
@@ -134,25 +139,25 @@ hgauth.password = %s
 			sshCmd = append(sshCmd, "-o", "StrictHostKeyChecking=no")
 		}
 
-		authRc = fmt.Sprintf("%s\n[ui]\nssh = %s\n", authRc, strings.Join(sshCmd, " "))
+		hgRc = fmt.Sprintf("%s\n[ui]\nssh = %s\n", hgRc, strings.Join(sshCmd, " "))
 	}
 
-	if (authOpts.Username != nil && authOpts.Password != nil) || authOpts.IsPresent() {
-		credsHgRcPath := filepath.Join(authDir, "hgrc")
-		err = ioutil.WriteFile(credsHgRcPath, []byte(authRc), 0600)
+	if len(hgRc) > 0 {
+		hgRcPath := filepath.Join(authDir, "hgrc")
+		err = ioutil.WriteFile(hgRcPath, []byte(hgRc), 0600)
 		if err != nil {
-			return fmt.Errorf("Writing %s: %s", credsHgRcPath, err)
+			return fmt.Errorf("Writing %s: %s", hgRcPath, err)
 		}
-		env = append(env, "HGRCPATH="+credsHgRcPath)
+		env = append(env, "HGRCPATH="+hgRcPath)
 	}
 
-	hgrcPath := filepath.Join(dstPath, ".hg", "hgrc")
+	repoHgRcPath := filepath.Join(dstPath, ".hg", "hgrc")
 
-	hgRc := fmt.Sprintf("[paths]\ndefault = %s\n", hgURL)
+	repoHgRc := fmt.Sprintf("[paths]\ndefault = %s\n", hgURL)
 
-	err = ioutil.WriteFile(hgrcPath, []byte(hgRc), 0600)
+	err = ioutil.WriteFile(repoHgRcPath, []byte(repoHgRc), 0600)
 	if err != nil {
-		return fmt.Errorf("Writing %s: %s", hgrcPath, err)
+		return fmt.Errorf("Writing %s: %s", repoHgRcPath, err)
 	}
 
 	return t.runMultiple([][]string{
