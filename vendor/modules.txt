@@ -40,8 +40,8 @@ github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.5
 ## explicit
 github.com/go-openapi/swag
-# github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
-## explicit
+# github.com/gogo/protobuf v1.3.2
+## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/plugin/compare
 github.com/gogo/protobuf/plugin/defaultcheck
@@ -140,8 +140,8 @@ github.com/stretchr/testify/require
 ## explicit
 github.com/vito/go-interact/interact
 github.com/vito/go-interact/interact/terminal
-# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-## explicit; go 1.11
+# golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
+## explicit; go 1.17
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/armor
@@ -154,7 +154,7 @@ golang.org/x/crypto/ssh/terminal
 ## explicit; go 1.12
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20200822124328-c89045814202
+# golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 ## explicit; go 1.11
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -166,11 +166,15 @@ golang.org/x/net/idna
 ## explicit; go 1.11
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
-## explicit; go 1.12
+# golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
+## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
+## explicit; go 1.11
+golang.org/x/term
 # golang.org/x/text v0.3.3
 ## explicit; go 1.11
 golang.org/x/text/secure/bidirule
@@ -178,8 +182,8 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/tools v0.0.0-20200825202427-b303f430e36d
-## explicit; go 1.11
+# golang.org/x/tools v0.0.0-20210106214847-113979e3529a
+## explicit; go 1.12
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/imports
