@@ -10,8 +10,8 @@ directories:
       sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
     path: tag
   - hg:
-      changeSetTitle: '.builds/alpine.yml: upgrade to 3.14'
-      sha: 24906043b09ea11bc9a3bee491ef2f845e96b464
+      changeSetTitle: Correctly set 'pkgver' in Debian build manifest
+      sha: 70074fdce7a252d8433e41b9ad569f5a2bfb6cba
     path: branch
   path: vendor
 kind: LockConfig
