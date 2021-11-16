@@ -70,8 +70,9 @@ type DirectoryContentsGitVerification struct {
 }
 
 type DirectoryContentsHg struct {
-	URL string `json:"url,omitempty"`
-	Ref string `json:"ref,omitempty"`
+	URL    string `json:"url,omitempty"`
+	Ref    string `json:"ref,omitempty"`
+	Evolve bool   `json:"evolve,omitempty"`
 	// Secret may include one or more keys: ssh-privatekey, ssh-knownhosts
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
