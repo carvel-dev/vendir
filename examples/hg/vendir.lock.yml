@@ -10,8 +10,8 @@ directories:
       sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
     path: tag
   - hg:
-      changeSetTitle: Correctly set 'pkgver' in Debian build manifest
-      sha: 70074fdce7a252d8433e41b9ad569f5a2bfb6cba
+      changeSetTitle: Added tag 0.28.2 for changeset 5dcd87d74f3d
+      sha: 48bce5d042f26467e409d1ddde51c242d1440e1a
     path: branch
   path: vendor
 kind: LockConfig
