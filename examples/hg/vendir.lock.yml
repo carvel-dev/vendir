@@ -10,8 +10,8 @@ directories:
       sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
     path: tag
   - hg:
-      changeSetTitle: Added tag 0.28.2 for changeset 5dcd87d74f3d
-      sha: 48bce5d042f26467e409d1ddde51c242d1440e1a
+      changeSetTitle: Added tag 0.29.1 for changeset e8a9ba706283
+      sha: bdea3054577c87880047e6de66bd3a7a27406719
     path: branch
   path: vendor
 kind: LockConfig
