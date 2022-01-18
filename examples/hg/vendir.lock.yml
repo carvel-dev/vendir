@@ -9,9 +9,5 @@ directories:
       changeSetTitle: Display draft and obsolete changesets in the log
       sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
     path: tag
-  - hg:
-      changeSetTitle: Added tag 0.29.2 for changeset 206047531f7f
-      sha: 70f49da65c3af3497b6e1a445b8db8321dccf406
-    path: branch
   path: vendor
 kind: LockConfig
