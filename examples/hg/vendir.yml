@@ -16,10 +16,3 @@ directories:
       ref: 0.11.0
     includePaths:
     - scss/main.scss
-
-  - path: branch
-    hg:
-      url: https://hg.sr.ht/~sircmpwn/hg.sr.ht
-      ref: default
-    includePaths:
-    - scss/main.scss
