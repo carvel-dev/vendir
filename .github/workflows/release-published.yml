@@ -1,0 +1,31 @@
+name: Checks after any release is published
+on:
+  release:
+    types: ['published']
+
+jobs:
+  validate-github-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          only: vendir
+          vendir: ${{ github.event.release.tag_name }}
+      - run: |
+          vendir version
+          version=`vendir version`
+          tag="${{ github.event.release.tag_name }}"
+          tool_version="$(echo $version | sed 's/^.*[^0-9]\([0-9]*\.[0-9]*\.[0-9]*\).*$/\1/')"
+          if [[ "v${tool_version}" == "${tag}" ]];
+          then
+            echo "Version match with $tag"
+            exit 0
+          else
+            echo "Versions do not match v$tool_version != $tag"
+            exit 1
+          fi
+      - run: |
+          curl -X POST https://api.github.com/repos/vmware-tanzu/carvel-release-scripts/dispatches \
+          -H 'Accept: application/vnd.github.everest-preview+json' \
+          -u ${{ secrets.carvel_bot_access_token }} \
+          --data '{"event_type": "vendir_released", "client_payload": { "tagName": "${{ github.event.release.tag_name }}", "repo": "${{ github.repository }}", "toolName": "vendir" }}'
