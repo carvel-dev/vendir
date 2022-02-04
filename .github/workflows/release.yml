@@ -74,6 +74,7 @@ jobs:
             console.log(checksums)
 
             return `${checksums['vendir-darwin-amd64']}  ./vendir-darwin-amd64
+            ${checksums['vendir-darwin-arm64']}  ./vendir-darwin-arm64
             ${checksums['vendir-linux-amd64']}  ./vendir-linux-amd64
             ${checksums['vendir-linux-arm64']}  ./vendir-linux-arm64
             ${checksums['vendir-windows-amd64.exe']}  ./vendir-windows-amd64.exe`
