@@ -31,6 +31,8 @@ func TestExamplesDir(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.Check(t)
+		t.Run(test.Name, func(t *testing.T) {
+			test.Check(t)
+		})
 	}
 }
