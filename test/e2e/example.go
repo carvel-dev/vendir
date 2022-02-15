@@ -30,8 +30,18 @@ func (et example) Check(t *testing.T) {
 }
 
 func (et example) check(t *testing.T, vendir Vendir) error {
+	tmpDir, err := os.MkdirTemp("", "vendir-test-")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	_, _, err = execGit([]string{"clone", ".", tmpDir}, "../..")
+	if err != nil {
+		t.Fatalf("failed to copy repo to temp dir: %v", err)
+	}
+
 	dir := "examples/" + et.Name
-	path := "../../" + dir
+	path := tmpDir + "/" + dir
 
 	vendorPath := path + "/vendor"
 
