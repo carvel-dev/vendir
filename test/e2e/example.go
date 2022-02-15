@@ -37,7 +37,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 
 	vendorDir, err := os.Stat(vendorPath)
 	if err != nil {
-		return fmt.Errorf("Expected no err for stat")
+		return fmt.Errorf("Expected no err for stat: %v", err)
 	}
 	if !vendorDir.IsDir() {
 		return fmt.Errorf("Expected to be dir")
