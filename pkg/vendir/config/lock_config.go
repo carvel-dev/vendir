@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // LockConfig outputs a vendir.lock with shas for reproducible vendir-ing.

@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	"sigs.k8s.io/yaml"
 )
 
 type Sync struct {
