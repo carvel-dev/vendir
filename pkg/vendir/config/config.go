@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
+	"sigs.k8s.io/yaml"
 )
 
 const (
