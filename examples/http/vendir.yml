@@ -11,3 +11,8 @@ directories:
     http:
       url: https://dk-shared-assets.s3.amazonaws.com/k8s-simple-app-example-master.zip
       sha256: "82685cca45be6b93deb929debe1513cc73110af2f1d4a00b9d0f18f20a104a98"
+
+  - path: k8s-simple-app-archived
+    http:
+      url: https://dk-shared-assets.s3.amazonaws.com/k8s-simple-app-example-master.zip
+      disableUnpack: true

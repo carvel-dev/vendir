@@ -10,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
@@ -44,16 +46,25 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 		return lockConf, fmt.Errorf("Downloading URL: %s", err)
 	}
 
-	incomingTmpPath, err := tempArea.NewTempDir("http")
+	incomingTmpPath := filepath.Dir(tmpFile.Name())
+	archivePath := filepath.Join(incomingTmpPath, path.Base(t.opts.URL))
+	err = os.Rename(tmpFile.Name(), archivePath)
 	if err != nil {
 		return lockConf, err
 	}
 
-	defer os.RemoveAll(incomingTmpPath)
+	if !t.opts.DisableUnpack {
+		incomingTmpPath, err = tempArea.NewTempDir("http")
+		if err != nil {
+			return lockConf, err
+		}
 
-	_, err = ctlfetch.NewArchive(tmpFile.Name(), true, t.opts.URL).Unpack(incomingTmpPath)
-	if err != nil {
-		return lockConf, fmt.Errorf("Unpacking archive: %s", err)
+		defer os.RemoveAll(incomingTmpPath)
+
+		_, err = ctlfetch.NewArchive(archivePath, true, t.opts.URL).Unpack(incomingTmpPath)
+		if err != nil {
+			return lockConf, fmt.Errorf("Unpacking archive: %s", err)
+		}
 	}
 
 	err = ctlfetch.MoveDir(incomingTmpPath, dstPath)
