@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,8 @@ type SyncOptions struct {
 	Directories []string
 	Locked      bool
 
-	Chdir string
+	Chdir                       string
+	AllowAllSymlinkDestinations bool
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -50,6 +52,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
+	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
 
 	return cmd
 }
@@ -125,6 +128,31 @@ func (o *SyncOptions) Run() error {
 		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
+		}
+		absRoot, err := filepath.Abs(dirConf.Path)
+		if err != nil {
+			return err
+		}
+		if !o.AllowAllSymlinkDestinations {
+			err = filepath.WalkDir(dirConf.Path, func(path string, info fs.DirEntry, err error) error {
+				if info.Type()&os.ModeSymlink == os.ModeSymlink {
+					resolvedPath, err := filepath.EvalSymlinks(path)
+					if err != nil {
+						return fmt.Errorf("Unable to resolve symlink: %w", err)
+					}
+					absPath, err := filepath.Abs(resolvedPath)
+					if err != nil {
+						return err
+					}
+					if !strings.HasPrefix(absPath, absRoot) {
+						return fmt.Errorf("Invalid symlink found to outside parent directory: %q", absPath)
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		newLockConfig.Directories = append(newLockConfig.Directories, dirLockConf)
