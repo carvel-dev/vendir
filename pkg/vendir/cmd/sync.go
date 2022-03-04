@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -129,27 +128,8 @@ func (o *SyncOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
-		absRoot, err := filepath.Abs(dirConf.Path)
-		if err != nil {
-			return err
-		}
 		if !o.AllowAllSymlinkDestinations {
-			err = filepath.WalkDir(dirConf.Path, func(path string, info fs.DirEntry, err error) error {
-				if info.Type()&os.ModeSymlink == os.ModeSymlink {
-					resolvedPath, err := filepath.EvalSymlinks(path)
-					if err != nil {
-						return fmt.Errorf("Unable to resolve symlink: %w", err)
-					}
-					absPath, err := filepath.Abs(resolvedPath)
-					if err != nil {
-						return err
-					}
-					if !strings.HasPrefix(absPath, absRoot) {
-						return fmt.Errorf("Invalid symlink found to outside parent directory: %q", absPath)
-					}
-				}
-				return nil
-			})
+			err = ctldir.ValidateSymlinks(dirConf.Path)
 			if err != nil {
 				return err
 			}
