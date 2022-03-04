@@ -4,7 +4,6 @@
 package directory
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,7 +17,7 @@ func TestValidateSymlinks(t *testing.T) {
 	wd := filepath.Join(root, "wd")
 	validFilePath := filepath.Join(wd, "file")
 
-	sibling := filepath.Join(root, "sibling")
+	sibling := filepath.Join(root, "wd2")
 	siblingFilePath := filepath.Join(sibling, "file")
 
 	for _, path := range []string{wd, sibling} {
@@ -74,7 +73,7 @@ func TestValidateSymlinks(t *testing.T) {
 	for _, tt := range tests {
 		test := func(t *testing.T) {
 			newName := filepath.Join(wd, "symlink")
-			fmt.Printf("target: %q\n", tt.target)
+			t.Logf("target: %q\n", tt.target)
 			err := os.Symlink(tt.target, newName)
 			if err != nil {
 				t.Fatalf("creating symlink: %v", err)
