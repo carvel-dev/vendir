@@ -2,8 +2,6 @@
 
 set -e -x -u
 
-./hack/build.sh
-
 function get_latest_git_tag {
   git describe --tags | grep -Eo 'v[0-9]+\.[0-9]+\.[0-9]+'
 }
