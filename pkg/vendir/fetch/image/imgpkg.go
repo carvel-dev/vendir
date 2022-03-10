@@ -120,10 +120,6 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 		}
 	}
 
-	if len(authEnv) == 0 {
-		authEnv = []string{"IMGPKG_ANON=true"}
-	}
-
 	return authEnv, nil
 }
 
