@@ -21,9 +21,7 @@ func TestImgpkgAuth(t *testing.T) {
 			Data: map[string][]byte{},
 		})
 
-		requireImgpkgEnv(t, []string{
-			"IMGPKG_ANON=true",
-		}, ranCmd.Env)
+		requireImgpkgEnv(t, nil, ranCmd.Env)
 	})
 
 	t.Run("with filled plain secret", func(t *testing.T) {
@@ -64,9 +62,7 @@ func TestImgpkgAuth(t *testing.T) {
 			},
 		})
 
-		requireImgpkgEnv(t, []string{
-			"IMGPKG_ANON=true",
-		}, ranCmd.Env)
+		requireImgpkgEnv(t, nil, ranCmd.Env)
 	})
 
 	t.Run("with filled dockerconfigjson secret", func(t *testing.T) {
@@ -107,7 +103,7 @@ func TestImgpkgAuth(t *testing.T) {
 		_, err := imgpkg.Run([]string{})
 		require.NoError(t, err)
 
-		requireImgpkgEnv(t, []string{"IMGPKG_ANON=true"}, ranCmd.Env)
+		requireImgpkgEnv(t, nil, ranCmd.Env)
 	})
 }
 
