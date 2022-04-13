@@ -37,3 +37,13 @@ directories:
         eirini.tgz: b535d9434300e79d11d42acc417148d09054aa32808dab5f12264d3af59ad548
       unpackArchive:
         path: eirini.tgz
+
+  # templates http url with release tag
+  - path: github.com/kubernetes/kubectl
+    githubRelease:
+      slug: kubernetes/kubernetes
+      tagSelection:
+        semver:
+          constraints: "~v1.23.x"
+      http:
+        url: https://dl.k8s.io/release/{tag}/bin/linux/amd64/kubectl

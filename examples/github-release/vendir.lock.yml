@@ -13,5 +13,8 @@ directories:
   - githubRelease:
       url: https://api.github.com/repos/cloudfoundry/eirini-release/releases/23064766
     path: github.com/cloudfoundry-incubator/eirini-release
+  - githubRelease:
+      url: https://api.github.com/repos/kubernetes/kubernetes/releases/54824547
+    path: github.com/kubernetes/kubectl
   path: vendor
 kind: LockConfig
