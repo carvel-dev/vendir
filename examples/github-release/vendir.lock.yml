@@ -5,10 +5,10 @@ directories:
       url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
     path: github.com/k14s/kapp-controller
   - githubRelease:
-      url: https://api.github.com/repos/pivotal/kpack/releases/22747441
-    path: github.com/pivotal/kpack
+      url: https://api.github.com/repos/cert-manager/cert-manager/releases/63665514
+    path: github.com/cert-manager/cert-manager
   - githubRelease:
-      url: https://api.github.com/repos/pivotal/kpack/releases/24689610
+      url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/64149930
     path: specific-asset-checksum-checked
   - githubRelease:
       url: https://api.github.com/repos/cloudfoundry/eirini-release/releases/23064766
