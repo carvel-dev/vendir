@@ -19,6 +19,8 @@ jobs:
       with:
         path: src/github.com/${{ github.repository }}
     - name: Run Tests
+      env:
+        VENDIR_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -e -x
         export GOPATH=$(echo `pwd`/../../../../)

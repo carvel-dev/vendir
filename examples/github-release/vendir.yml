@@ -11,20 +11,23 @@ directories:
       tag: v0.1.0
 
   # skips checkum validation
-  - path: github.com/pivotal/kpack
+  - path: github.com/cert-manager/cert-manager
     githubRelease:
-      slug: pivotal/kpack
-      tag: v0.0.6
+      slug: cert-manager/cert-manager
+      tag: v1.8.0
       disableAutoChecksumValidation: true
+      assetNames: ["cert-manager.yaml"]
     includePaths:
-    - release-0.0.6.yaml
+    - cert-manager.yaml
 
   # checkum validation only for one asset
   - path: specific-asset-checksum-checked
     githubRelease:
-      slug: pivotal/kpack
-      tag: v0.0.7
-      assetNames: ["release-*.yaml"]
+      slug: k14s/kapp-controller
+      tag: v0.35.0
+      checksums:
+        release.yml: 3abf5ddaa12eee028c60f30f3aa2bf066702cfed281adb65cf6d422bc83d0d35
+      assetNames: ["release.yml"]
 
   # unpacks archive included in the release
   - path: github.com/cloudfoundry-incubator/eirini-release
