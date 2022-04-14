@@ -73,7 +73,6 @@ func TestValidateSymlinks(t *testing.T) {
 	for _, tt := range tests {
 		test := func(t *testing.T) {
 			newName := filepath.Join(wd, "symlink")
-			t.Logf("target: %q\n", tt.target)
 			err := os.Symlink(tt.target, newName)
 			if err != nil {
 				t.Fatalf("creating symlink: %v", err)
