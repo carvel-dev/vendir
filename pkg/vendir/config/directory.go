@@ -147,6 +147,9 @@ type DirectoryContentsGithubRelease struct {
 	// Secret may include one key: token
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
+
+	// +optional
+	HTTP *DirectoryContentsHTTP `json:"http,omitempty"`
 }
 
 type DirectoryContentsHelmChart struct {

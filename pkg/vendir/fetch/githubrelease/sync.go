@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-github/github"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
 	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 	"golang.org/x/oauth2"
 )
@@ -115,47 +116,54 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 		return lockConf, fmt.Errorf("Downloading release info: %s", err)
 	}
 
-	fileChecksums := map[string]string{}
-	matchedAssets := []ReleaseAssetAPI{}
-
-	for _, asset := range releaseAPI.Assets {
-		matched, err := d.matchesAssetName(asset.Name)
+	if d.opts.HTTP != nil {
+		_, err = d.syncHTTP(incomingTmpPath, tempArea, releaseAPI)
 		if err != nil {
-			return lockConf, fmt.Errorf("Matching asset name '%s': %s", asset.Name, err)
+			return lockConf, fmt.Errorf("Fetching http asset: %s", err)
 		}
-		if matched {
-			matchedAssets = append(matchedAssets, asset)
-		}
-	}
-
-	if len(d.opts.Checksums) > 0 {
-		fileChecksums = d.opts.Checksums
 	} else {
-		if !d.opts.DisableAutoChecksumValidation {
-			fileChecksums, err = ReleaseNotesChecksums{}.Find(matchedAssets, releaseAPI.Body)
+		fileChecksums := map[string]string{}
+		matchedAssets := []ReleaseAssetAPI{}
+
+		for _, asset := range releaseAPI.Assets {
+			matched, err := d.matchesAssetName(asset.Name)
 			if err != nil {
-				return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
+				return lockConf, fmt.Errorf("Matching asset name '%s': %s", asset.Name, err)
+			}
+			if matched {
+				matchedAssets = append(matchedAssets, asset)
 			}
 		}
-	}
 
-	for _, asset := range matchedAssets {
-		path := filepath.Join(incomingTmpPath, asset.Name)
-
-		err = d.downloadFile(asset.URL, path, authToken)
-		if err != nil {
-			return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
+		if len(d.opts.Checksums) > 0 {
+			fileChecksums = d.opts.Checksums
+		} else {
+			if !d.opts.DisableAutoChecksumValidation {
+				fileChecksums, err = ReleaseNotesChecksums{}.Find(matchedAssets, releaseAPI.Body)
+				if err != nil {
+					return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
+				}
+			}
 		}
 
-		err = d.checkFileSize(path, asset.Size)
-		if err != nil {
-			return lockConf, fmt.Errorf("Checking asset '%s' size: %s", asset.Name, err)
-		}
+		for _, asset := range matchedAssets {
+			path := filepath.Join(incomingTmpPath, asset.Name)
 
-		if len(fileChecksums) > 0 {
-			err = d.checkFileChecksum(path, fileChecksums[asset.Name])
+			err = d.downloadFile(asset.URL, path, authToken)
 			if err != nil {
-				return lockConf, fmt.Errorf("Checking asset '%s' checksum: %s", asset.Name, err)
+				return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
+			}
+
+			err = d.checkFileSize(path, asset.Size)
+			if err != nil {
+				return lockConf, fmt.Errorf("Checking asset '%s' size: %s", asset.Name, err)
+			}
+
+			if len(fileChecksums) > 0 {
+				err = d.checkFileChecksum(path, fileChecksums[asset.Name])
+				if err != nil {
+					return lockConf, fmt.Errorf("Checking asset '%s' checksum: %s", asset.Name, err)
+				}
 			}
 		}
 	}
@@ -192,6 +200,14 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	lockConf.URL = releaseAPI.URL
 
 	return lockConf, nil
+}
+
+func (d Sync) syncHTTP(incomingTmpPath string, tempArea ctlfetch.TempArea, releaseAPI ReleaseAPI) (ctlconf.LockDirectoryContentsHTTP, error) {
+	replacer := strings.NewReplacer("{tag}", releaseAPI.Tag)
+	d.opts.HTTP.URL = replacer.Replace(d.opts.HTTP.URL)
+
+	httpFetcher := ctlhttp.NewSync(*d.opts.HTTP, d.refFetcher)
+	return httpFetcher.Sync(incomingTmpPath, tempArea)
 }
 
 func (d Sync) matchesAssetName(name string) (bool, error) {
@@ -413,6 +429,7 @@ func (d Sync) authToken() (string, error) {
 }
 
 type ReleaseAPI struct {
+	Tag    string `json:"tag_name"`
 	URL    string `json:"url"`
 	Body   string
 	Assets []ReleaseAssetAPI
