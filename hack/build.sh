@@ -6,7 +6,7 @@ VERSION="${1:-0.0.0+develop}"
 
 # makes builds reproducible
 export CGO_ENABLED=0
-LDFLAGS="-X github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version.Version=$VERSION -buildid="
+LDFLAGS="-X github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version.Version=$VERSION"
 repro_flags="-trimpath -mod=vendor"
 
 go mod vendor

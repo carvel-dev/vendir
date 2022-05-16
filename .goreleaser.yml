@@ -23,7 +23,6 @@ builds:
       - -trimpath
 
     ldflags:
-      - -buildid=
       - -X github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version.Version={{ .Version }}
 
 archives:
