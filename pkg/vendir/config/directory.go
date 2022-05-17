@@ -389,6 +389,7 @@ func (c *DirectoryContentsGithubRelease) Lock(lockConfig *LockDirectoryContentsG
 		return fmt.Errorf("Expected github release URL to be non-empty")
 	}
 	c.URL = lockConfig.URL
+	c.Tag = lockConfig.Tag
 	return nil
 }
 
