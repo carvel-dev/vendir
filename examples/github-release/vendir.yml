@@ -45,6 +45,7 @@ directories:
   - path: github.com/kubernetes/kubectl
     githubRelease:
       slug: kubernetes/kubernetes
+      disableAutoChecksumValidation: true
       tagSelection:
         semver:
           constraints: "~v1.23.x"
