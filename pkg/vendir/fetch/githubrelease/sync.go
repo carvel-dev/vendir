@@ -198,6 +198,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 	}
 
 	lockConf.URL = releaseAPI.URL
+	lockConf.Tag = releaseAPI.Tag
 
 	return lockConf, nil
 }

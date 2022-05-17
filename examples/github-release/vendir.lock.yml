@@ -2,18 +2,23 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - githubRelease:
+      tag: v0.1.0
       url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
     path: github.com/k14s/kapp-controller
   - githubRelease:
+      tag: v1.8.0
       url: https://api.github.com/repos/cert-manager/cert-manager/releases/63665514
     path: github.com/cert-manager/cert-manager
   - githubRelease:
+      tag: v0.35.0
       url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/64149930
     path: specific-asset-checksum-checked
   - githubRelease:
+      tag: v1.2.0
       url: https://api.github.com/repos/cloudfoundry/eirini-release/releases/23064766
     path: github.com/cloudfoundry-incubator/eirini-release
   - githubRelease:
+      tag: v1.23.0
       url: https://api.github.com/repos/kubernetes/kubernetes/releases/54824547
     path: github.com/kubernetes/kubectl
   path: vendor
