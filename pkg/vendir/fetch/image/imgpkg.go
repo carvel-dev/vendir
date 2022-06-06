@@ -18,7 +18,8 @@ type ImgpkgOpts struct {
 	SecretRef              *ctlconf.DirectoryContentsLocalRef
 	DangerousSkipTLSVerify bool
 
-	CmdRunFunc func(*exec.Cmd) error
+	CmdRunFunc  func(*exec.Cmd) error
+	EnvironFunc func() []string
 }
 
 type Imgpkg struct {
@@ -30,6 +31,11 @@ func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
 	if opts.CmdRunFunc == nil {
 		opts.CmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
 	}
+
+	if opts.EnvironFunc == nil {
+		opts.EnvironFunc = os.Environ
+	}
+
 	return &Imgpkg{opts, refFetcher}
 }
 
@@ -45,7 +51,7 @@ func (t *Imgpkg) Run(args []string) (string, error) {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command("imgpkg", args...)
-	cmd.Env = append(os.Environ(), authEnv...)
+	cmd.Env = append(t.opts.EnvironFunc(), authEnv...)
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
