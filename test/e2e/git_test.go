@@ -141,6 +141,19 @@ directories:
 			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
 		}
 	})
+
+	logger.Section("clones submodule by default", func() {
+		ref := "git-submodule"
+		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
+		if err != nil {
+			t.Fatalf("Expected to not err: %s", err)
+		}
+
+		_, err = os.Stat(filepath.Join(dstPath, "vendor", "test", "carvel-vendir"))
+		if err != nil {
+			t.Fatalf("Expected to not err: %s", err)
+		}
+	})
 }
 
 func readFile(t *testing.T, path string) string {
