@@ -62,7 +62,8 @@ type DirectoryContentsGit struct {
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 	// +optional
-	LFSSkipSmudge bool `json:"lfsSkipSmudge,omitempty"`
+	LFSSkipSmudge      bool `json:"lfsSkipSmudge,omitempty"`
+	SkipInitSubmodules bool `json:"skipInitSubmodules,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {

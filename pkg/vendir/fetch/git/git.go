@@ -168,15 +168,19 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		}
 	}
 
-	argss = [][]string{
-		// TODO following causes rev-parse HEAD to fail:
-		// {"checkout", t.opts.Ref, "--recurse-submodules", "."},
-		{"-c", "advice.detachedHead=false", "checkout", ref},
-		{"submodule", "update", "--init", "--recursive"},
-		// TODO shallow clones?
+	_, _, err = t.run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath)
+	if err != nil {
+		return err
 	}
 
-	return t.runMultiple(argss, env, dstPath)
+	if !t.opts.SkipInitSubmodules {
+		_, _, err = t.run([]string{"submodule", "update", "--init", "--recursive"}, env, dstPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (t *Git) resolveRef(dstPath string) (string, error) {
