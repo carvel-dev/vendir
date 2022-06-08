@@ -23,6 +23,11 @@ func TestInvalidSymlink(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
+	tmpDir, err = filepath.EvalSymlinks(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to read link tmpdir: %v", err)
+	}
+
 	symlinkDir := filepath.Join(tmpDir, "symlink-dir")
 	err = os.Mkdir(symlinkDir, os.ModePerm)
 	if err != nil {

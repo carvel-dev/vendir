@@ -14,6 +14,13 @@ func TestValidateSymlinks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create tmpdir: %v", err)
 	}
+	defer os.RemoveAll(root)
+
+	root, err = filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatalf("failed to read link tmpdir: %v", err)
+	}
+
 	wd := filepath.Join(root, "wd")
 	validFilePath := filepath.Join(wd, "file")
 
@@ -32,7 +39,6 @@ func TestValidateSymlinks(t *testing.T) {
 		}
 		file.Close()
 	}
-	defer os.RemoveAll(root)
 
 	tests := []struct {
 		name    string

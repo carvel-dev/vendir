@@ -40,10 +40,3 @@ Please join us during our online community meetings. Details can be found on our
 You can chat with us on Kubernetes Slack in the #carvel channel and follow us on Twitter at @carvel_dev.
 
 Check out which organizations are using and contributing to Carvel: [Adopter's list](https://github.com/vmware-tanzu/carvel/blob/master/ADOPTERS.md)
-
-## Development
-
-```bash
-./hack/build.sh
-./hack/test-all.sh
-```

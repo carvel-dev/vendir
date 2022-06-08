@@ -95,7 +95,8 @@ func TestImgpkgAuth(t *testing.T) {
 
 		imgpkg := ctlimg.NewImgpkg(
 			ctlimg.ImgpkgOpts{
-				CmdRunFunc: func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
+				CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
+				EnvironFunc: func() []string { return []string{} },
 			},
 			ctlfetch.SingleSecretRefFetcher{},
 		)
@@ -114,8 +115,9 @@ func runImgpkgWithSecret(t *testing.T, secret ctlconf.Secret) *exec.Cmd {
 
 	imgpkg := ctlimg.NewImgpkg(
 		ctlimg.ImgpkgOpts{
-			SecretRef:  &ctlconf.DirectoryContentsLocalRef{Name: "secret"},
-			CmdRunFunc: func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
+			SecretRef:   &ctlconf.DirectoryContentsLocalRef{Name: "secret"},
+			CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
+			EnvironFunc: func() []string { return []string{} },
 		},
 		ctlfetch.SingleSecretRefFetcher{&secret},
 	)

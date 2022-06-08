@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGitVerification(t *testing.T) {
@@ -95,51 +97,40 @@ directories:
 	logger.Section("signed stranger commit", func() {
 		ref := strings.TrimSpace(readFile(t, filepath.Join(gitSrcPath, "git-meta/signed-stranger-commit.txt")))
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
-		if err == nil {
-			t.Fatalf("Expected to err when commit is signed by stranger")
-		}
-		if !strings.Contains(err.Error(), "openpgp: signature made by unknown entity") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
+		assert.Error(t, err, "Expected to err when commit is signed by stranger")
+		assert.ErrorContains(t, err, "openpgp: signature made by unknown entity", "Expected err to indicate stranger signing failure")
 	})
 
 	logger.Section("signed stranger tag", func() {
 		ref := "signed-stranger-tag"
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
-		if err == nil {
-			t.Fatalf("Expected to err when commit is signed by stranger")
-		}
-		if !strings.Contains(err.Error(), "openpgp: signature made by unknown entity") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
+		assert.Error(t, err, "Expected to err when commit is signed by stranger")
+		assert.ErrorContains(t, err, "openpgp: signature made by unknown entity", "Expected err to indicate stranger signing failure")
 	})
 
 	logger.Section("unsigned commit", func() {
 		ref := strings.TrimSpace(readFile(t, filepath.Join(gitSrcPath, "git-meta/unsigned-commit.txt")))
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
-		if err == nil {
-			t.Fatalf("Expected to err when commit is signed by stranger")
-		}
-		if !strings.Contains(err.Error(), "Expected to find commit signature:") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
-		if !strings.Contains(err.Error(), "Expected to find section 'PGP SIGNATURE', but did not") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
+		assert.Error(t, err, "Expected to err when commit is signed by stranger")
+		assert.ErrorContains(t, err, "Expected to find commit signature:", "Expected err to indicate stranger signing failure")
+		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but did not", "Expected err to indicate stranger signing failure")
 	})
 
 	logger.Section("unsigned tag", func() {
 		ref := "unsigned-tag"
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
-		if err == nil {
-			t.Fatalf("Expected to err when commit is signed by stranger")
-		}
-		if !strings.Contains(err.Error(), "Expected to find tag signature:") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
-		if !strings.Contains(err.Error(), "Expected to find section 'PGP SIGNATURE', but did not") {
-			t.Fatalf("Expected err to indicate stranger signing failure, err was: '%s'", err)
-		}
+		assert.Error(t, err, "Expected to err when commit is signed by stranger")
+		assert.ErrorContains(t, err, "Expected to find tag signature:", "Expected err to indicate stranger signing failure")
+		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but did not", "Expected err to indicate stranger signing failure")
+	})
+
+	logger.Section("clones submodule by default", func() {
+		ref := "git-submodule"
+		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
+		assert.NoError(t, err)
+
+		_, err = os.Stat(filepath.Join(dstPath, "vendor", "test", "carvel-vendir"))
+		assert.NoError(t, err)
 	})
 }
 
