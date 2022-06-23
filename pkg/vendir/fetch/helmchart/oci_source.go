@@ -31,10 +31,8 @@ directories:
 
 ...will result in...
 
-$ export HELM_EXPERIMENTAL_OCI=1
 $ helm registry login registry.corp.com/projects/charts
-$ helm chart pull     registry.corp.com/projects/charts/grafana:5.2.10
-$ helm chart export   registry.corp.com/projects/charts/grafana:5.2.10
+$ helm pull     registry.corp.com/projects/charts/grafana --version 5.2.10 --untar --untardir <path>
 
 Handy command to run registry with certs:
 
@@ -84,14 +82,9 @@ func (t *OCISource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		return err
 	}
 
-	ref := fmt.Sprintf("%s/%s:%s", repo, t.opts.Name, t.opts.Version)
+	ref := fmt.Sprintf("oci://%s/%s", repo, t.opts.Name)
 
-	err = t.pull(ref, helmHomeDir)
-	if err != nil {
-		return err
-	}
-
-	err = t.export(ref, dstPath, helmHomeDir)
+	err = t.pull(ref, helmHomeDir, dstPath)
 	if err != nil {
 		return err
 	}
@@ -117,7 +110,7 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = []string{"HOME=" + helmHomeDir, "HELM_EXPERIMENTAL_OCI=1"}
+	cmd.Env = []string{"HOME=" + helmHomeDir}
 	cmd.Stdin = cmdStdin
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
@@ -130,37 +123,19 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 	return nil
 }
 
-func (t *OCISource) pull(ref, helmHomeDir string) error {
-	args := []string{"chart", "pull", ref}
+func (t *OCISource) pull(ref, helmHomeDir, dstPath string) error {
+	args := []string{"pull", ref, "--version", t.opts.Version, "--untar", "--untardir", dstPath}
 
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = []string{"HOME=" + helmHomeDir, "HELM_EXPERIMENTAL_OCI=1"}
+	cmd.Env = []string{"HOME=" + helmHomeDir}
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("Helm chart pull: %s (stderr: %s)", err, stderrBs.String())
-	}
-
-	return nil
-}
-
-func (t *OCISource) export(ref, dstPath, helmHomeDir string) error {
-	args := []string{"chart", "export", ref, "--destination", dstPath}
-
-	var stdoutBs, stderrBs bytes.Buffer
-
-	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = []string{"HOME=" + helmHomeDir, "HELM_EXPERIMENTAL_OCI=1"}
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Helm chart export: %s (stderr: %s)", err, stderrBs.String())
 	}
 
 	return nil

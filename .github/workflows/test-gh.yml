@@ -31,6 +31,11 @@ jobs:
         mkdir -p /tmp/bin
         export PATH=/tmp/bin:$PATH
 
+        # ytt
+        wget -O- https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.41.0/ytt-linux-amd64 > /tmp/bin/ytt && \
+          echo "5027def0ee7c08c3426dac2c19974fb736e16fddb2ea4ed2456940a2c4266491  /tmp/bin/ytt" | shasum -c - && \
+          chmod +x /tmp/bin/ytt
+
         # imgpkg
         wget -O- https://github.com/k14s/imgpkg/releases/download/v0.7.0/imgpkg-linux-amd64 > /tmp/bin/imgpkg && \
           echo "bb90881c2c03cad4d50b2f0881d1330d341a37bb55bd8fff50bf228f7cfcf3d2  /tmp/bin/imgpkg" | shasum -c - && \
@@ -43,8 +48,8 @@ jobs:
           mv /tmp/helm2-unpacked/linux-amd64/helm /tmp/bin/helm2
 
         # helm 3
-        wget -O- https://get.helm.sh/helm-v3.3.1-linux-amd64.tar.gz > /tmp/helm3.tgz && \
-          echo "81e3974927b4f76e9f679d1f6d6b45748f8c84081a571741d48b2902d816e14c  /tmp/helm3.tgz" | shasum -c - && \
+        wget -O- https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz > /tmp/helm3.tgz && \
+          echo "8408c91e846c5b9ba15eb6b1a5a79fc22dd4d33ac6ea63388e5698d1b2320c8b  /tmp/helm3.tgz" | shasum -c - && \
           mkdir /tmp/helm3-unpacked && tar -C /tmp/helm3-unpacked -xzvf /tmp/helm3.tgz && \
           mv /tmp/helm3-unpacked/linux-amd64/helm /tmp/bin/helm3
 

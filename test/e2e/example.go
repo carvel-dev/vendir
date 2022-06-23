@@ -4,16 +4,20 @@
 package e2e
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 )
 
 type example struct {
-	Name       string
-	Env        []string
-	OnlyLocked bool
-	SkipRemove bool
+	Name              string
+	Env               []string
+	OnlyLocked        bool
+	SkipRemove        bool
+	YttVendirYamlArgs []string
 }
 
 func (et example) Check(t *testing.T) {
@@ -42,6 +46,23 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 
 	dir := "examples/" + et.Name
 	path := tmpDir + "/" + dir
+
+	if len(et.YttVendirYamlArgs) > 0 {
+		vendirYaml := filepath.Join(path, "vendir.yml")
+		abs, err := filepath.Abs(vendirYaml)
+		if err != nil {
+			return err
+		}
+		out, _, err := execYtt(append(et.YttVendirYamlArgs, "-f", abs))
+
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(abs, []byte(out), os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
 
 	vendorPath := path + "/vendor"
 
@@ -85,4 +106,34 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	}
 
 	return nil
+}
+
+func execYtt(args []string) (string, string, error) {
+	var stdoutBs, stderrBs bytes.Buffer
+
+	cmd := exec.Command("ytt", args...)
+	cmd.Stdout = &stdoutBs
+	cmd.Stderr = &stderrBs
+
+	err := cmd.Run()
+	if err != nil {
+		return "", "", fmt.Errorf("ytt %s: %s (stderr: %s)", args, err, stderrBs.String())
+	}
+
+	return stdoutBs.String(), stderrBs.String(), nil
+}
+
+func execHelm3(args []string) (string, string, error) {
+	var stdoutBs, stderrBs bytes.Buffer
+
+	cmd := exec.Command("helm3", args...)
+	cmd.Stdout = &stdoutBs
+	cmd.Stderr = &stderrBs
+
+	err := cmd.Run()
+	if err != nil {
+		return "", "", fmt.Errorf("helm3 %s: %s (stderr: %s)", args, err, stderrBs.String())
+	}
+
+	return stdoutBs.String(), stderrBs.String(), nil
 }

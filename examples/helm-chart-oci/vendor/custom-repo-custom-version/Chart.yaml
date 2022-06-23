@@ -1,0 +1,22 @@
+annotations:
+  category: Infrastructure
+apiVersion: v1
+appVersion: 1.8.0
+description: Contour Ingress controller for Kubernetes
+home: https://projectcontour.io
+icon: https://bitnami.com/assets/stacks/contour/img/contour-stack-220x234.png
+keywords:
+- ingress
+- envoy
+- contour
+maintainers:
+- name: cellebyte
+  url: https://github.com/Cellebyte
+- email: containers@bitnami.com
+  name: Bitnami
+name: contour
+sources:
+- https://github.com/projectcontour/contour
+- https://github.com/envoyproxy/envoy
+- https://github.com/bitnami/bitnami-docker-contour
+version: 1.2.1
