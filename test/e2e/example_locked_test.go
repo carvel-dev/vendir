@@ -47,7 +47,7 @@ func TestExampleLocked(t *testing.T) {
 		t.Fatalf("Expected no err")
 	}
 
-	gitOut := gitDiffExamplesDir(t, dir)
+	gitOut := gitDiffExamplesDir(t, dir, "../../")
 	if gitOut == "" {
 		t.Fatalf("Expected diff, but was: >>>%s<<<", gitOut)
 	}
@@ -60,7 +60,7 @@ func TestExampleLocked(t *testing.T) {
 		t.Fatalf("Expected no err")
 	}
 
-	gitOut = gitDiffExamplesDir(t, dir)
+	gitOut = gitDiffExamplesDir(t, dir, "../../")
 	if gitOut != "" {
 		t.Fatalf("Expected no diff, but was: >>>%s<<<", gitOut)
 	}

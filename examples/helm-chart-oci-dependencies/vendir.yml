@@ -1,0 +1,13 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: custom-repo-custom-version
+    helmChart:
+      name: chartwithdependencies
+      version: 0.1.0
+      repository:
+        url: #@ "oci://{}/helmcharts".format(data.values.registryURL)

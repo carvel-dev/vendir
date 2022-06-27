@@ -68,6 +68,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm2Binary}},
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "helm-chart-oci", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}, YttVendirYamlArgs: []string{"-v", fmt.Sprintf("registryURL=%s", localRegistryAddress)}},
+		{Name: "helm-chart-oci-dependencies", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}, YttVendirYamlArgs: []string{"-v", fmt.Sprintf("registryURL=%s", localRegistryAddress)}},
 		{Name: "github-release"},
 		{Name: "entire-dir"},
 		{Name: "inline"},

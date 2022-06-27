@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type example struct {
@@ -38,6 +40,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
+
 	defer os.RemoveAll(tmpDir)
 	_, _, err = execGit([]string{"clone", ".", tmpDir}, "../..")
 	if err != nil {
@@ -50,18 +53,20 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	if len(et.YttVendirYamlArgs) > 0 {
 		vendirYaml := filepath.Join(path, "vendir.yml")
 		abs, err := filepath.Abs(vendirYaml)
-		if err != nil {
-			return err
-		}
-		out, _, err := execYtt(append(et.YttVendirYamlArgs, "-f", abs))
+		require.NoError(t, err)
 
-		if err != nil {
-			return err
-		}
+		out, _, err := execYtt(append(et.YttVendirYamlArgs, "-f", abs))
+		require.NoError(t, err)
+
 		err = os.WriteFile(abs, []byte(out), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		require.NoError(t, err)
+
+		_, _, err = execGit([]string{"config", "--global", "user.email", "you@example.com"}, tmpDir)
+		require.NoError(t, err)
+		_, _, err = execGit([]string{"config", "--global", "user.name", "Your Name"}, tmpDir)
+		require.NoError(t, err)
+		_, _, err = execGit([]string{"commit", "-am", "render vendir.yaml"}, tmpDir)
+		require.NoError(t, err)
 	}
 
 	vendorPath := path + "/vendor"
@@ -89,7 +94,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		}
 
 		// This assumes that example's vendor directory is committed to git
-		gitOut := gitDiffExamplesDir(t, dir)
+		gitOut := gitDiffExamplesDir(t, dir, "../../")
 		if gitOut != "" {
 			return fmt.Errorf("Expected no diff, but was: >>>%s<<<", gitOut)
 		}
@@ -100,7 +105,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		return fmt.Errorf("Expected no err for sync locked")
 	}
 
-	gitOut := gitDiffExamplesDir(t, dir)
+	gitOut := gitDiffExamplesDir(t, path, tmpDir)
 	if gitOut != "" {
 		return fmt.Errorf("Expected no diff, but was: >>>%s<<<", gitOut)
 	}

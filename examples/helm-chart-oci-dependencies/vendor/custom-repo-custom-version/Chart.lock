@@ -1,0 +1,6 @@
+dependencies:
+- name: contour
+  repository: oci://localhost:51643/helmcharts
+  version: 7.10.1
+digest: sha256:43e1d71483900f8d28a4d221bf3649df3acba552537717c8016b329dceafb405
+generated: "2022-06-27T14:31:16.011852-07:00"
