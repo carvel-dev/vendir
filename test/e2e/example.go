@@ -6,6 +6,7 @@ package e2e
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +16,11 @@ import (
 )
 
 type example struct {
-	Name              string
-	Env               []string
-	OnlyLocked        bool
-	SkipRemove        bool
-	YttVendirYamlArgs []string
+	Name                  string
+	Env                   []string
+	OnlyLocked            bool
+	SkipRemove            bool
+	VendirYamlReplaceVals []string
 }
 
 func (et example) Check(t *testing.T) {
@@ -50,15 +51,19 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	dir := "examples/" + et.Name
 	path := tmpDir + "/" + dir
 
-	if len(et.YttVendirYamlArgs) > 0 {
+	if len(et.VendirYamlReplaceVals) > 0 {
 		vendirYaml := filepath.Join(path, "vendir.yml")
 		abs, err := filepath.Abs(vendirYaml)
 		require.NoError(t, err)
 
-		out, _, err := execYtt(append(et.YttVendirYamlArgs, "-f", abs))
+		yamlContents, err := ioutil.ReadFile(abs)
 		require.NoError(t, err)
+		for _, replaceVal := range et.VendirYamlReplaceVals {
+			splitReplaceVal := bytes.Split([]byte(replaceVal), []byte{','})
+			yamlContents = bytes.ReplaceAll(yamlContents, splitReplaceVal[0], splitReplaceVal[1])
+		}
 
-		err = os.WriteFile(abs, []byte(out), os.ModePerm)
+		err = os.WriteFile(abs, yamlContents, os.ModePerm)
 		require.NoError(t, err)
 
 		_, _, err = execGit([]string{"config", "--global", "user.email", "you@example.com"}, tmpDir)
@@ -111,21 +116,6 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	}
 
 	return nil
-}
-
-func execYtt(args []string) (string, string, error) {
-	var stdoutBs, stderrBs bytes.Buffer
-
-	cmd := exec.Command("ytt", args...)
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
-
-	err := cmd.Run()
-	if err != nil {
-		return "", "", fmt.Errorf("ytt %s: %s (stderr: %s)", args, err, stderrBs.String())
-	}
-
-	return stdoutBs.String(), stderrBs.String(), nil
 }
 
 func execHelm3(args []string) (string, string, error) {

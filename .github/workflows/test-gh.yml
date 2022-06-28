@@ -31,11 +31,6 @@ jobs:
         mkdir -p /tmp/bin
         export PATH=/tmp/bin:$PATH
 
-        # ytt
-        wget -O- https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.41.0/ytt-linux-amd64 > /tmp/bin/ytt && \
-          echo "5027def0ee7c08c3426dac2c19974fb736e16fddb2ea4ed2456940a2c4266491  /tmp/bin/ytt" | shasum -c - && \
-          chmod +x /tmp/bin/ytt
-
         # imgpkg
         wget -O- https://github.com/k14s/imgpkg/releases/download/v0.7.0/imgpkg-linux-amd64 > /tmp/bin/imgpkg && \
           echo "bb90881c2c03cad4d50b2f0881d1330d341a37bb55bd8fff50bf228f7cfcf3d2  /tmp/bin/imgpkg" | shasum -c - && \
