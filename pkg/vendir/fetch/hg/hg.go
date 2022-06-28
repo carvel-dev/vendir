@@ -48,8 +48,8 @@ func (t *Hg) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (HgInfo, error
 
 	info := HgInfo{}
 
-	// add --debug for full changeset id instead of short
-	out, _, err := t.run([]string{"id", "-i", "--debug"}, nil, dstPath)
+	// use hg log to retrieve full cset sha
+	out, _, err := t.run([]string{"log", "-r", ".", "-T", "{node}"}, nil, dstPath)
 	if err != nil {
 		return HgInfo{}, err
 	}
