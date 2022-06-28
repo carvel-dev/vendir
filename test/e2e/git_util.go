@@ -10,13 +10,13 @@ import (
 	"testing"
 )
 
-func gitDiffExamplesDir(t *testing.T, path string) string {
-	_, _, err := execGit([]string{"add", "--all", "--", path}, "../../")
+func gitDiffExamplesDir(t *testing.T, path string, cmdDir string) string {
+	_, _, err := execGit([]string{"add", "--all", "--", path}, cmdDir)
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}
 
-	diffOut, _, err := execGit([]string{"diff", "--cached", "--", path}, "../../")
+	diffOut, _, err := execGit([]string{"diff", "--cached", "--", path}, cmdDir)
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}
