@@ -137,3 +137,16 @@ func (t *Sync) findChartDir(chartsPath string) (string, error) {
 	}
 	return filepath.Join(chartsPath, dirNames[0]), nil
 }
+
+func helmEnv(helmHomeDir string) []string {
+	// Previous discussion around env vars propagation:
+	//   https://github.com/vmware-tanzu/carvel-vendir/issues/164
+	// Example: without propagating few env vars, asdf pkg mgr cannot execute helm binary
+	return append(os.Environ(), []string{
+		"HOME=" + helmHomeDir,
+		"TEMP=" + helmHomeDir,
+		"HELM_CACHE_HOME=" + helmHomeDir,
+		"HELM_CONFIG_HOME=" + helmHomeDir,
+		"HELM_DATA_HOME=" + helmHomeDir,
+	}...)
+}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
@@ -43,32 +42,13 @@ func (t *HTTPSource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	return t.fetch(helmHomeDir, dstPath)
 }
 
-func setEnv(helmHomeDir string) []string {
-	re := regexp.MustCompile(`(?i)\A(https?|no)_proxy=.*`)
-	env := []string{
-		"HOME=" + helmHomeDir,
-		"TEMP=" + helmHomeDir,
-		"HELM_CACHE_HOME=" + helmHomeDir,
-		"HELM_CONFIG_HOME=" + helmHomeDir,
-		"HELM_DATA_HOME=" + helmHomeDir,
-	}
-	for _, e := range os.Environ() {
-		if re.MatchString(e) {
-			env = append(env, e)
-		}
-	}
-	// TODO: what about all those other variables ?
-	// https://helm.sh/docs/helm/helm/
-	return env
-}
-
 func (t *HTTPSource) init(helmHomeDir string) error {
 	args := []string{"init", "--client-only", "--stable-repo-url", "https://charts.helm.sh/stable"}
 
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = setEnv(helmHomeDir)
+	cmd.Env = helmEnv(helmHomeDir)
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
@@ -126,7 +106,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 			var stdoutBs, stderrBs bytes.Buffer
 
 			cmd := exec.Command(t.helmBinary, repoAddArgs...)
-			cmd.Env = setEnv(helmHomeDir)
+			cmd.Env = helmEnv(helmHomeDir)
 			cmd.Stdout = &stdoutBs
 			cmd.Stderr = &stderrBs
 
@@ -149,8 +129,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, fetchArgs...)
-	cmd.Env = setEnv(helmHomeDir)
-
+	cmd.Env = helmEnv(helmHomeDir)
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
