@@ -110,7 +110,7 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = []string{"HOME=" + helmHomeDir}
+	cmd.Env = helmEnv(helmHomeDir)
 	cmd.Stdin = cmdStdin
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
@@ -129,7 +129,7 @@ func (t *OCISource) pull(ref, helmHomeDir, dstPath string) error {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command(t.helmBinary, args...)
-	cmd.Env = []string{"HOME=" + helmHomeDir}
+	cmd.Env = helmEnv(helmHomeDir)
 	cmd.Stdout = &stdoutBs
 	cmd.Stderr = &stderrBs
 
