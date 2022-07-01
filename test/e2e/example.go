@@ -66,9 +66,10 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		err = os.WriteFile(abs, yamlContents, os.ModePerm)
 		require.NoError(t, err)
 
-		_, _, err = execGit([]string{"config", "--global", "user.email", "you@example.com"}, tmpDir)
+		// Do not use --global to avoid creation of $HOME/.gitconfig
+		_, _, err = execGit([]string{"config", "user.email", "you@example.com"}, tmpDir)
 		require.NoError(t, err)
-		_, _, err = execGit([]string{"config", "--global", "user.name", "Your Name"}, tmpDir)
+		_, _, err = execGit([]string{"config", "user.name", "Your Name"}, tmpDir)
 		require.NoError(t, err)
 		_, _, err = execGit([]string{"commit", "-am", "render vendir.yaml"}, tmpDir)
 		require.NoError(t, err)
