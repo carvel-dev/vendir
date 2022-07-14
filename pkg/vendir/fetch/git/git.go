@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
@@ -148,7 +149,14 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		{"config", "credential.helper", "store --file " + gitCredsPath},
 		{"remote", "add", "origin", gitURL},
 		{"config", "remote.origin.tagOpt", "--tags"},
-		{"fetch", "origin"},
+	}
+
+	{
+		fetchArgs := []string{"fetch", "origin"}
+		if t.opts.Depth > 0 {
+			fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
+		}
+		argss = append(argss, fetchArgs)
 	}
 
 	err = t.runMultiple(argss, env, dstPath)

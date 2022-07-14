@@ -61,6 +61,7 @@ func TestExamplesDir(t *testing.T) {
 
 	tests := []example{
 		{Name: "git"},
+		{Name: "git-shallow"},
 		{Name: "hg"},
 		{Name: "http"},
 		{Name: "image"},

@@ -64,6 +64,7 @@ type DirectoryContentsGit struct {
 	// +optional
 	LFSSkipSmudge      bool `json:"lfsSkipSmudge,omitempty"`
 	SkipInitSubmodules bool `json:"skipInitSubmodules,omitempty"`
+	Depth              int  `json:"depth,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {

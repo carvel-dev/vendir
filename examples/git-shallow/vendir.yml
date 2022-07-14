@@ -1,0 +1,22 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: branch
+    git:
+      url: https://github.com/vmware-tanzu/carvel-ytt
+      ref: v0.27.x
+      depth: 1
+    includePaths:
+    - README.md
+    - pkg/version/version.go
+
+  - path: deeper-sha
+    git:
+      url: https://github.com/vmware-tanzu/carvel-ytt
+      ref: 5d06e4025f13e1230be4df632b915a4233e0694d
+      depth: 2
+    includePaths:
+    - README.md
+    - pkg/version/version.go
