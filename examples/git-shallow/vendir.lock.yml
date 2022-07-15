@@ -1,0 +1,15 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: set version to 0.27.2
+      sha: 2b297f5e8bdd3f0704d5b14786df46d20bdfd8fa
+      tags:
+      - v0.27.2
+    path: branch
+  - git:
+      commitTitle: 'Merge pull request #141 from jtigger/convert-scalers-to-matchers...'
+      sha: 5d06e4025f13e1230be4df632b915a4233e0694d
+    path: deeper-sha
+  path: vendor
+kind: LockConfig
