@@ -112,6 +112,16 @@ func (v Semvers) FilterPrereleases(prereleases *v1alpha1.VersionSelectionSemverP
 	return Semvers{result}
 }
 
+func (v Semvers) Filter(f func(string) bool) Semvers {
+	var result []SemverWrap // it's a wrap
+	for _, ver := range v.versions {
+		if f(ver.Original) {
+			result = append(result, ver)
+		}
+	}
+	return Semvers{result}
+}
+
 func (Semvers) shouldKeepPrerelease(ver semver.Version, preIdentifiersAsMap map[string]struct{}) bool {
 	if len(preIdentifiersAsMap) == 0 {
 		return true
