@@ -4,8 +4,10 @@
 package versions_test
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
@@ -158,4 +160,34 @@ func TestSemverWithBuildMetadataAndConstraint(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, []string{"1.0.0+z1"}, result.All())
+}
+
+func TestHighestVersionWithConstraints(t *testing.T) {
+	vs := []string{
+		"2.0.3",
+		"0.0.1",
+		"0.3.1",
+		"0.3.0",
+		"2.0.0",
+		"2.3.0",
+		"0.0.1",
+	}
+
+	constraint := func(verStr string) bool {
+		return !strings.Contains(verStr, "3")
+	}
+
+	answer, err := versions.HighestConstrainedVersionWithAdditionalConstraints(vs,
+		v1alpha1.VersionSelection{Semver: &v1alpha1.VersionSelectionSemver{Constraints: ">0.1.0"}},
+		[]versions.ConstraintCallback{versions.ConstraintCallback{Constraint: constraint, Name: "myConstraint"}})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2.0.0", answer)
+
+	answer, err = versions.HighestConstrainedVersionWithAdditionalConstraints(vs,
+		v1alpha1.VersionSelection{Semver: &v1alpha1.VersionSelectionSemver{Constraints: ">2.1.0"}},
+		[]versions.ConstraintCallback{versions.ConstraintCallback{Constraint: constraint, Name: "myConstraint"}})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "myConstraint")
+
 }
