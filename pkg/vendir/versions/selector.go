@@ -10,16 +10,30 @@ import (
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
+type ConstraintCallback struct {
+	Constraint func(string) bool
+	Name       string
+}
+
 func HighestConstrainedVersion(versions []string, config v1alpha1.VersionSelection) (string, error) {
+	return HighestConstrainedVersionWithAdditionalConstraints(versions, config, []ConstraintCallback{})
+}
+
+func HighestConstrainedVersionWithAdditionalConstraints(versions []string, config v1alpha1.VersionSelection, additionalConstraints []ConstraintCallback) (string, error) {
 	switch {
 	case config.Semver != nil:
 		var details []string
 
-		matchedVers := NewRelaxedSemversNoErr(versions)
+		matchedVers := NewRelaxedSemversNoErr(versions) // this is secretly just all the possible versions, we haven't matched anything yet.
 		details = append(details, fmt.Sprintf("all=%d", matchedVers.Len()))
 
 		matchedVers = matchedVers.FilterPrereleases(config.Semver.Prereleases)
 		details = append(details, fmt.Sprintf("after-prereleases-filter=%d", matchedVers.Len()))
+
+		for _, check := range additionalConstraints {
+			matchedVers = matchedVers.Filter(check.Constraint)
+			details = append(details, fmt.Sprintf("after-%s=%d", check.Name, matchedVers.Len()))
+		}
 
 		if len(config.Semver.Constraints) > 0 {
 			var err error
