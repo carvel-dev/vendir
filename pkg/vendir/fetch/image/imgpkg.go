@@ -9,7 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
@@ -37,6 +40,71 @@ func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
 	}
 
 	return &Imgpkg{opts, refFetcher}
+}
+
+// FetchImage Downloads the OCI Image to the provided destination
+func (t *Imgpkg) FetchImage(imageRef, destination string) (string, error) {
+	return t.fetch(imageRef, destination, false)
+}
+
+// FetchBundle Downloads the Bundle to the provided destination
+func (t *Imgpkg) FetchBundle(imageRef, destination string) (string, error) {
+	return t.fetch(imageRef, destination, true)
+}
+
+// FetchBundleRecursively Download the Bundle and all the nested Bundles to the provided destination
+func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, error) {
+	envVariables, err := t.authEnv()
+	if err != nil {
+		return "", err
+	}
+
+	status, err := v1.PullRecursive(imageRef, destination, v1.PullOpts{
+		Logger:   &Logger{buf: bytes.NewBufferString("")},
+		AsImage:  false,
+		IsBundle: true,
+	}, registry.Opts{
+		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
+		Insecure:              false,
+		ResponseHeaderTimeout: 30 * time.Second,
+		RetryCount:            5,
+		EnvironFunc: func() []string {
+			return envVariables
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return status.ImageRef, nil
+}
+
+func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, error) {
+	envVariables, err := t.authEnv()
+	if err != nil {
+		return "", err
+	}
+
+	status, err := v1.Pull(imageRef, destination, v1.PullOpts{
+		Logger:   &Logger{buf: bytes.NewBufferString("")},
+		AsImage:  !isBundle,
+		IsBundle: isBundle,
+	}, registry.Opts{
+		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
+		Insecure:              false,
+		ResponseHeaderTimeout: 30 * time.Second,
+		RetryCount:            5,
+		EnvironFunc: func() []string {
+			return envVariables
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return status.ImageRef, nil
 }
 
 func (t *Imgpkg) Run(args []string) (string, error) {
@@ -135,3 +203,29 @@ func (t *Imgpkg) addDangerousArgs(args []string) []string {
 	}
 	return args
 }
+
+// Logger provided to the imgpkg API calls
+type Logger struct {
+	buf *bytes.Buffer
+}
+
+// Errorf Writes error messages to the buffer
+func (l *Logger) Errorf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Warnf Writes warning messages to the buffer
+func (l *Logger) Warnf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Logf Writes messages to the buffer
+func (l *Logger) Logf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Debugf does nothing
+func (l *Logger) Debugf(string, ...interface{}) {}
+
+// Tracef does nothing
+func (l *Logger) Tracef(string, ...interface{}) {}
