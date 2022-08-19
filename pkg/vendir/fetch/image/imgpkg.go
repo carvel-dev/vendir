@@ -11,10 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
 	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 )
 
 type ImgpkgOpts struct {
@@ -28,9 +30,10 @@ type ImgpkgOpts struct {
 type Imgpkg struct {
 	opts       ImgpkgOpts
 	refFetcher ctlfetch.RefFetcher
+	cache      ctlcache.Cache
 }
 
-func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
+func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher, c ctlcache.Cache) *Imgpkg {
 	if opts.CmdRunFunc == nil {
 		opts.CmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
 	}
@@ -39,7 +42,7 @@ func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
 		opts.EnvironFunc = os.Environ
 	}
 
-	return &Imgpkg{opts, refFetcher}
+	return &Imgpkg{opts, refFetcher, c}
 }
 
 // FetchImage Downloads the OCI Image to the provided destination
@@ -54,6 +57,15 @@ func (t *Imgpkg) FetchBundle(imageRef, destination string) (string, error) {
 
 // FetchBundleRecursively Download the Bundle and all the nested Bundles to the provided destination
 func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, error) {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return "", err
+	}
+
+	if _, hit := t.cache.Hit(ref.Identifier()); hit {
+		return imageRef, t.cache.CopyFrom(ref.Identifier(), destination)
+	}
+
 	envVariables, err := t.authEnv()
 	if err != nil {
 		return "", err
@@ -77,10 +89,26 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 		return "", err
 	}
 
+	if status.Cacheable {
+		err := t.cache.Save(ref.Identifier(), destination)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	return status.ImageRef, nil
 }
 
 func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, error) {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return "", err
+	}
+
+	if _, hit := t.cache.Hit(ref.Identifier()); hit {
+		return imageRef, t.cache.CopyFrom(ref.Identifier(), destination)
+	}
+
 	envVariables, err := t.authEnv()
 	if err != nil {
 		return "", err
@@ -102,6 +130,13 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 
 	if err != nil {
 		return "", err
+	}
+
+	if status.Cacheable {
+		err := t.cache.Save(ref.Identifier(), destination)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return status.ImageRef, nil

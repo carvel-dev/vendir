@@ -64,8 +64,10 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "git-shallow"},
 		{Name: "hg"},
 		{Name: "http"},
-		{Name: "image"},
-		{Name: "imgpkgBundle"},
+		{Description: "Running tests on image example folder WITHOUT caching", Name: "image", EnableCaching: false},
+		{Description: "Running tests on imgpkgBundle example folder WITHOUT caching", Name: "imgpkgBundle", EnableCaching: false},
+		{Description: "Running tests on image example folder with caching", Name: "image", EnableCaching: true},
+		{Description: "Running tests on imgpkgBundle example folder with caching", Name: "imgpkgBundle", EnableCaching: true},
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm2Binary}},
 		{Name: "helm-chart", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "helm-chart-oci", Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}, VendirYamlReplaceVals: []string{fmt.Sprintf("REPLACE_ME_REGISTRY_ADDR,%s", localRegistryAddress)}},
@@ -80,7 +82,12 @@ func TestExamplesDir(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
+		testName := test.Description
+		if testName == "" {
+			testName = test.Name
+		}
+
+		t.Run(testName, func(t *testing.T) {
 			test.Check(t)
 		})
 	}
