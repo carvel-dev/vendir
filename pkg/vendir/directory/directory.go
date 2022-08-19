@@ -12,6 +12,7 @@ import (
 	dircopy "github.com/otiai10/copy"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 	ctlgit "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/git"
 	ctlghr "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/githubrelease"
 	ctlhelmc "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/helmchart"
@@ -35,6 +36,7 @@ type SyncOpts struct {
 	RefFetcher     ctlfetch.RefFetcher
 	GithubAPIToken string
 	HelmBinary     string
+	Cache          ctlcache.Cache
 }
 
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
@@ -96,7 +98,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.HTTP = &lock
 
 		case contents.Image != nil:
-			imageSync := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher)
+			imageSync := ctlimg.NewSync(*contents.Image, syncOpts.RefFetcher, syncOpts.Cache)
 
 			d.ui.PrintLinef("Fetching: %s + %s (image from %s)", d.opts.Path, contents.Path, imageSync.Desc())
 
@@ -108,7 +110,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.Image = &lock
 
 		case contents.ImgpkgBundle != nil:
-			imgpkgBundleSync := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher)
+			imgpkgBundleSync := ctlimgpkgbundle.NewSync(*contents.ImgpkgBundle, syncOpts.RefFetcher, syncOpts.Cache)
 
 			d.ui.PrintLinef("Fetching: %s + %s (imgpkgBundle from %s)", d.opts.Path, contents.Path, imgpkgBundleSync.Desc())
 

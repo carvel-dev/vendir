@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctldir "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/directory"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 )
 
 const (
@@ -120,6 +121,7 @@ func (o *SyncOptions) Run() error {
 		RefFetcher:     ctldir.NewNamedRefFetcher(secrets, configMaps),
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
+		Cache:          ctlcache.NewCache(os.Getenv("VENDIR_CACHE_DIR")),
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 

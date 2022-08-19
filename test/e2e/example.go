@@ -16,11 +16,13 @@ import (
 )
 
 type example struct {
+	Description           string
 	Name                  string
 	Env                   []string
 	OnlyLocked            bool
 	SkipRemove            bool
 	VendirYamlReplaceVals []string
+	EnableCaching         bool
 }
 
 func (et example) Check(t *testing.T) {
@@ -91,6 +93,12 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		if err != nil {
 			return fmt.Errorf("Expected no err for remove all")
 		}
+	}
+
+	if et.EnableCaching {
+		cachingPath, err := os.MkdirTemp("", "vendir-caching-test")
+		require.NoError(t, err)
+		et.Env = append(et.Env, "VENDIR_CACHE_DIR="+cachingPath)
 	}
 
 	if !et.OnlyLocked {

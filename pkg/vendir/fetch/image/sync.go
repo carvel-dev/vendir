@@ -8,6 +8,7 @@ import (
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
 
@@ -16,12 +17,12 @@ type Sync struct {
 	imgpkg *Imgpkg
 }
 
-func NewSync(opts ctlconf.DirectoryContentsImage, refFetcher ctlfetch.RefFetcher) *Sync {
+func NewSync(opts ctlconf.DirectoryContentsImage, refFetcher ctlfetch.RefFetcher, c ctlcache.Cache) *Sync {
 	imgpkgOpts := ImgpkgOpts{
 		SecretRef:              opts.SecretRef,
 		DangerousSkipTLSVerify: opts.DangerousSkipTLSVerify,
 	}
-	return &Sync{opts, NewImgpkg(imgpkgOpts, refFetcher)}
+	return &Sync{opts, NewImgpkg(imgpkgOpts, refFetcher, c)}
 }
 
 func (t Sync) Desc() string {
