@@ -127,16 +127,19 @@ func TestImgpkgAuth(t *testing.T) {
 	t.Run("without a secret", func(t *testing.T) {
 		var ranCmd *exec.Cmd
 
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
 		imgpkg := ctlimg.NewImgpkg(
 			ctlimg.ImgpkgOpts{
 				CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
 				EnvironFunc: func() []string { return []string{} },
 			},
 			ctlfetch.SingleSecretRefFetcher{},
-			ctlcache.NewCache(""),
+			cache,
 		)
 
-		_, err := imgpkg.Run([]string{})
+		_, err = imgpkg.Run([]string{})
 		require.NoError(t, err)
 
 		requireImgpkgEnv(t, nil, ranCmd.Env)
@@ -212,6 +215,8 @@ func runImgpkgWithSecret(t *testing.T, secret ctlconf.Secret) *exec.Cmd {
 
 	var ranCmd *exec.Cmd
 
+	cache, err := ctlcache.NewCache("", "1Mi")
+	require.NoError(t, err)
 	imgpkg := ctlimg.NewImgpkg(
 		ctlimg.ImgpkgOpts{
 			SecretRef:   &ctlconf.DirectoryContentsLocalRef{Name: "secret"},
@@ -219,10 +224,10 @@ func runImgpkgWithSecret(t *testing.T, secret ctlconf.Secret) *exec.Cmd {
 			EnvironFunc: func() []string { return []string{} },
 		},
 		ctlfetch.SingleSecretRefFetcher{&secret},
-		ctlcache.NewCache(""),
+		cache,
 	)
 
-	_, err := imgpkg.Run([]string{})
+	_, err = imgpkg.Run([]string{})
 	require.NoError(t, err)
 
 	return ranCmd

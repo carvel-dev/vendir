@@ -116,12 +116,20 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintLinef("Config with locks")
 		o.ui.PrintBlock(configBs)
 	}
+	maxCacheableContentSize := os.Getenv("VENDIR_MAX_CACHE_SIZE")
+	if maxCacheableContentSize == "" {
+		maxCacheableContentSize = "1Mi"
+	}
 
+	cache, err := ctlcache.NewCache(os.Getenv("VENDIR_CACHE_DIR"), maxCacheableContentSize)
+	if err != nil {
+		return fmt.Errorf("Unable to create cache: %s", err)
+	}
 	syncOpts := ctldir.SyncOpts{
 		RefFetcher:     ctldir.NewNamedRefFetcher(secrets, configMaps),
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
-		Cache:          ctlcache.NewCache(os.Getenv("VENDIR_CACHE_DIR")),
+		Cache:          cache,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
