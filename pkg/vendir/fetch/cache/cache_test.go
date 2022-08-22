@@ -48,7 +48,8 @@ func TestHit(t *testing.T) {
 			cacheFolder, err := os.MkdirTemp("", "vendir-cache-hit-test")
 			require.NoError(t, err)
 			defer os.RemoveAll(cacheFolder)
-			subject := cache.NewCache(cacheFolder)
+			subject, err := cache.NewCache(cacheFolder, "10Mi")
+			require.NoError(t, err)
 
 			if test.isPresent {
 				err = os.MkdirAll(filepath.Join(cacheFolder, test.expectedPath), 0700)
@@ -72,7 +73,8 @@ func TestSave(t *testing.T) {
 		cacheFolder, err := os.MkdirTemp("", "vendir-cache-save-test")
 		require.NoError(t, err)
 		defer os.RemoveAll(cacheFolder)
-		subject := cache.NewCache(cacheFolder)
+		subject, err := cache.NewCache(cacheFolder, "10Mi")
+		require.NoError(t, err)
 
 		src, err := os.MkdirTemp("", "source")
 		require.NoError(t, err)
@@ -103,7 +105,8 @@ func TestSave(t *testing.T) {
 		cacheFolder, err := os.MkdirTemp("", "vendir-cache-save-test")
 		require.NoError(t, err)
 		defer os.RemoveAll(cacheFolder)
-		subject := cache.NewCache(cacheFolder)
+		subject, err := cache.NewCache(cacheFolder, "10Mi")
+		require.NoError(t, err)
 
 		src, err := os.MkdirTemp("", "source")
 		require.NoError(t, err)
@@ -125,6 +128,29 @@ func TestSave(t *testing.T) {
 		require.True(t, hit)
 		require.NoFileExists(t, filepath.Join(folder, "file1.txt"))
 		require.FileExists(t, filepath.Join(folder, "file2.txt"))
+	})
+
+	t.Run("when folder size is bigger than the maximum cache size it will not cache", func(t *testing.T) {
+		cacheFolder, err := os.MkdirTemp("", "vendir-cache-save-test")
+		require.NoError(t, err)
+		defer os.RemoveAll(cacheFolder)
+		subject, err := cache.NewCache(cacheFolder, "1.4Ki")
+		require.NoError(t, err)
+
+		src, err := os.MkdirTemp("", "source")
+		require.NoError(t, err)
+		defer os.RemoveAll(src)
+		createRandomFile(t, filepath.Join(src, "file1.txt"), 500, 0555)
+		createRandomFile(t, filepath.Join(src, "file2.txt"), 500, 0400)
+		err = os.Mkdir(filepath.Join(src, "folder1"), 0700)
+		require.NoError(t, err)
+		createRandomFile(t, filepath.Join(src, "folder1", "file3.txt"), 500, 0555)
+
+		err = subject.Save("image", "to-save", src)
+		require.NoError(t, err)
+		folder, hit := subject.Has("image", "to-save")
+		require.False(t, hit)
+		require.Equal(t, "", folder)
 	})
 }
 

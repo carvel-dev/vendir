@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache/resources"
 )
 
 // Cache functionality
@@ -22,16 +24,21 @@ type Cache interface {
 
 // FolderCache cache storing the information into a folder in the OS
 type FolderCache struct {
-	folder string
+	folder  string
+	maxSize resources.Quantity
 }
 
 // NewCache creates a new cache
 // When cacheFolder is empty this constructor will provide a noop cache
-func NewCache(cacheFolder string) Cache {
+func NewCache(cacheFolder string, maxContentCacheableSize string) (Cache, error) {
 	if cacheFolder == "" {
-		return &NoCache{}
+		return &NoCache{}, nil
 	}
-	return &FolderCache{folder: cacheFolder}
+	q, err := resources.ParseQuantity(maxContentCacheableSize)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to process maximum amount allowed to cache: %s", err)
+	}
+	return &FolderCache{folder: cacheFolder, maxSize: q}, nil
 }
 
 // Has checks if a particular entry in the cache is present
@@ -56,6 +63,16 @@ func (c FolderCache) Has(artifactType string, id string) (string, bool) {
 // Save the folder from src in the cache using id
 // If the cache entry exists it will remove it and create a new one
 func (c FolderCache) Save(artifactType string, id string, src string) error {
+	contentSize, err := c.dirSize(src)
+	if err != nil {
+		return fmt.Errorf("Unable to find size of folder to be cached: %s", err)
+	}
+
+	// When the content size is bigger than the maximum allowed amount it should not try to save into the cache
+	if contentSize > c.maxSize.Value() {
+		return nil
+	}
+
 	cachedContent, hit := c.Has(artifactType, id)
 	if hit {
 		err := os.RemoveAll(cachedContent)
@@ -64,11 +81,7 @@ func (c FolderCache) Save(artifactType string, id string, src string) error {
 		}
 	}
 
-	folder := filepath.Join(c.folder, c.idToFolder(artifactType, id))
-	err := os.MkdirAll(folder, 0700)
-	if err != nil {
-		return err
-	}
+	folder := filepath.Join(c.folder, c.idToFolder(artifactType,id))
 	return c.copyFolder(src, folder)
 }
 
@@ -82,8 +95,31 @@ func (c FolderCache) CopyFrom(artifactType string, id string, dst string) error 
 	return c.copyFolder(src, dst)
 }
 
+func (c FolderCache) dirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
+
 func (c FolderCache) copyFolder(src string, dst string) error {
+	err := os.MkdirAll(dst, 0700)
+	if err != nil {
+		return err
+	}
+
 	return filepath.Walk(src, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if path == src {
 			return nil
 		}
