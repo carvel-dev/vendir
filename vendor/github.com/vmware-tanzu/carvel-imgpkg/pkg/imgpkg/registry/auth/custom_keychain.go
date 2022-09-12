@@ -13,12 +13,28 @@ import (
 
 var _ regauthn.Keychain = CustomRegistryKeychain{}
 
+// IAASKeychain defines the type IAAS Keychain names
+type IAASKeychain string
+
+var (
+	// GKEKeychain GKE keychain name
+	GKEKeychain IAASKeychain = "gke"
+	// AKSKeychain AKS keychain name
+	AKSKeychain IAASKeychain = "aks"
+	// ECRKeychain ECR keychain name
+	ECRKeychain IAASKeychain = "ecr"
+	// GithubKeychain Github keychain name
+	GithubKeychain IAASKeychain = "github"
+)
+
 // KeychainOpts Contains credentials (passed down via flags) used by custom keychain to auth with a registry
 type KeychainOpts struct {
-	Username string
-	Password string
-	Token    string
-	Anon     bool
+	Username                string
+	Password                string
+	Token                   string
+	Anon                    bool
+	EnableIaasAuthProviders bool
+	ActiveKeychains         []IAASKeychain
 }
 
 // NewSingleAuthKeychain Builds a SingleAuthKeychain struct

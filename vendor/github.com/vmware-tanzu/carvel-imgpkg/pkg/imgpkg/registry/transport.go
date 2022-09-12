@@ -78,7 +78,8 @@ func (r *MultiRoundTripperStorage) RoundTripper(repo regname.Repository, scope s
 
 // CreateRoundTripper Creates a new RoundTripper
 // scope field has the following format "repository:/org/suborg/repo_name:pull,push"
-//   for more information check https://github.com/distribution/distribution/blob/263da70ea6a4e96f61f7a6770273ec6baac38941/docs/spec/auth/token.md#requesting-a-token
+//
+//	for more information check https://github.com/distribution/distribution/blob/263da70ea6a4e96f61f7a6770273ec6baac38941/docs/spec/auth/token.md#requesting-a-token
 func (r *MultiRoundTripperStorage) CreateRoundTripper(reg regname.Registry, auth authn.Authenticator, scope string) (http.RoundTripper, error) {
 	r.readWriteAccess.Lock()
 	defer r.readWriteAccess.Unlock()
@@ -130,7 +131,8 @@ func (r SingleTripperStorage) BaseRoundTripper() http.RoundTripper {
 
 // CreateRoundTripper Creates a new RoundTripper
 // scope field has the following format "repository:/org/suborg/repo_name:pull,push"
-//   for more information check https://github.com/distribution/distribution/blob/263da70ea6a4e96f61f7a6770273ec6baac38941/docs/spec/auth/token.md#requesting-a-token
+//
+//	for more information check https://github.com/distribution/distribution/blob/263da70ea6a4e96f61f7a6770273ec6baac38941/docs/spec/auth/token.md#requesting-a-token
 func (r *SingleTripperStorage) CreateRoundTripper(reg regname.Registry, auth authn.Authenticator, scope string) (http.RoundTripper, error) {
 	r.readWriteAccess.Lock()
 	defer r.readWriteAccess.Unlock()

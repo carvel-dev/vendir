@@ -11,8 +11,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth/credentialprovider"
+
 	regauthn "github.com/google/go-containerregistry/pkg/authn"
-	credentialprovider "github.com/vdemeester/k8s-pkg-credentialprovider"
 )
 
 var _ regauthn.Keychain = &EnvKeychain{}

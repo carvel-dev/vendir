@@ -6,7 +6,6 @@ package imageset
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	regname "github.com/google/go-containerregistry/pkg/name"
@@ -46,7 +45,7 @@ func (i TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string
 		// This will just follow the normal path of resume == false
 		outputFile, err = os.Open(outputPath)
 		if err == nil {
-			tmpFile, err = ioutil.TempFile("", "imgpkg-tar-imageset-")
+			tmpFile, err = os.CreateTemp("", "imgpkg-tar-imageset-")
 			if err != nil {
 				return nil, fmt.Errorf("Creating tmp folder: %s", err)
 			}

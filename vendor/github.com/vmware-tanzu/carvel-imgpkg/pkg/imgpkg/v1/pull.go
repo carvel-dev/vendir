@@ -73,30 +73,34 @@ func newBundleInfo(node bundle.GraphNode, updated bool) BundleInfo {
 }
 
 // Status Report from the Pull command
-type Status struct {
+// Deprecated: in favor of PullStatus, the name makes more sense for API.
+type Status PullStatus
+
+// PullStatus Report from the Pull command
+type PullStatus struct {
 	BundleInfo
 	IsBundle  bool `json:"-"`
 	Cacheable bool `json:"cacheable"`
 }
 
 // Pull Download the contents of the image referenced by imageRef to the folder outputPath
-func Pull(imageRef string, outputPath string, pullOptions PullOpts, registryOpts registry.Opts) (Status, error) {
+func Pull(imageRef string, outputPath string, pullOptions PullOpts, registryOpts registry.Opts) (PullStatus, error) {
 	reg, err := registry.NewSimpleRegistry(registryOpts)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 
 	bundleToPull := bundle.NewBundle(imageRef, reg)
 	isBundle, err := bundleToPull.IsBundle()
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 
 	switch {
 	case isBundle && pullOptions.AsImage: // Trying to pull the OCI Image of a Bundle
 		st, err := pullImage(imageRef, outputPath, pullOptions, reg)
 		if err != nil {
-			return Status{}, err
+			return PullStatus{}, err
 		}
 		st.IsBundle = true
 		return st, nil
@@ -105,33 +109,33 @@ func Pull(imageRef string, outputPath string, pullOptions PullOpts, registryOpts
 		return pullBundle(imageRef, bundleToPull, outputPath, pullOptions, false)
 
 	case !isBundle && pullOptions.IsBundle: // Trying to pull an Image as a Bundle
-		return Status{}, &ErrIsNotBundle{}
+		return PullStatus{}, &ErrIsNotBundle{}
 
 	case !isBundle && !pullOptions.IsBundle: // Trying to pull an OCI Image
 		return pullImage(imageRef, outputPath, pullOptions, reg)
 
 	case isBundle && !pullOptions.IsBundle: // Trying to pull a Bundle as if it where an OCI Image
-		return Status{}, &ErrIsBundle{}
+		return PullStatus{}, &ErrIsBundle{}
 	}
 
-	return Status{}, fmt.Errorf("Unknown option")
+	return PullStatus{}, fmt.Errorf("Unknown option")
 }
 
 // PullRecursive Downloads the contents of the Bundle and Nested Bundles referenced by imageRef to the folder outputPath.
 // This functions should error out when imageRef does not point to a Bundle
-func PullRecursive(imageRef string, outputPath string, pullOptions PullOpts, registryOpts registry.Opts) (Status, error) {
+func PullRecursive(imageRef string, outputPath string, pullOptions PullOpts, registryOpts registry.Opts) (PullStatus, error) {
 	reg, err := registry.NewSimpleRegistry(registryOpts)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 
 	bundleToPull := bundle.NewBundle(imageRef, reg)
 	isBundle, err := bundleToPull.IsBundle()
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 	if !isBundle {
-		return Status{}, &ErrIsNotBundle{}
+		return PullStatus{}, &ErrIsNotBundle{}
 	}
 
 	return pullBundle(imageRef, bundleToPull, outputPath, pullOptions, true)
@@ -139,19 +143,19 @@ func PullRecursive(imageRef string, outputPath string, pullOptions PullOpts, reg
 
 // pullBundle Downloads the contents of the Bundle Image referenced by imageRef to the folder outputPath.
 // This functions should error out when imageRef does not point to a Bundle
-func pullBundle(imgRef string, bundleToPull *bundle.Bundle, outputPath string, pullOptions PullOpts, pullNestedBundles bool) (Status, error) {
+func pullBundle(imgRef string, bundleToPull *bundle.Bundle, outputPath string, pullOptions PullOpts, pullNestedBundles bool) (PullStatus, error) {
 	isRootBundleRelocated, err := bundleToPull.Pull(outputPath, pullOptions.Logger, pullNestedBundles)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 
 	isCacheable, err := isCacheable(imgRef, isRootBundleRelocated)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 
 	bInfo := buildBundleInfoFromBundle(bundleToPull, isRootBundleRelocated)
-	return Status{
+	return PullStatus{
 		BundleInfo: BundleInfo{
 			ImageRef: bundleToPull.DigestRef(),
 			ImagesLock: &ImagesLockInfo{
@@ -165,25 +169,25 @@ func pullBundle(imgRef string, bundleToPull *bundle.Bundle, outputPath string, p
 	}, nil
 }
 
-func pullImage(imageRef string, outputPath string, pullOptions PullOpts, reg registry.Registry) (Status, error) {
+func pullImage(imageRef string, outputPath string, pullOptions PullOpts, reg registry.Registry) (PullStatus, error) {
 	plainImg := plainimage.NewPlainImage(imageRef, reg)
 	isImage, err := plainImg.IsImage()
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 	if !isImage {
-		return Status{}, fmt.Errorf("Unable to pull non-images, such as image indexes. (hint: provide a specific digest to the image instead)")
+		return PullStatus{}, fmt.Errorf("Unable to pull non-images, such as image indexes. (hint: provide a specific digest to the image instead)")
 	}
 
 	err = plainImg.Pull(outputPath, pullOptions.Logger)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
 	isCacheable, err := isCacheable(imageRef, true)
 	if err != nil {
-		return Status{}, err
+		return PullStatus{}, err
 	}
-	return Status{
+	return PullStatus{
 		BundleInfo: BundleInfo{
 			ImageRef: plainImg.DigestRef(),
 		},

@@ -36,10 +36,13 @@ type Opts struct {
 	Token    string
 	Anon     bool
 
+	EnableIaasAuthProviders bool
+
 	ResponseHeaderTimeout time.Duration
 	RetryCount            int
 
-	EnvironFunc func() []string
+	EnvironFunc     func() []string
+	ActiveKeychains []auth.IAASKeychain
 }
 
 // Registry Interface to access the registry
@@ -62,6 +65,7 @@ type Registry interface {
 }
 
 // ImagesReader Interface for Reading Images
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ImagesReader
 type ImagesReader interface {
 	Get(regname.Reference) (*regremote.Descriptor, error)
@@ -72,6 +76,7 @@ type ImagesReader interface {
 }
 
 // ImagesReaderWriter Interface for Reading and Writing Images
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ImagesReaderWriter
 type ImagesReaderWriter interface {
 	ImagesReader
@@ -120,10 +125,12 @@ func NewSimpleRegistryWithTransport(opts Opts, rTripper http.RoundTripper, regOp
 
 	keychain, err := Keychain(
 		auth.KeychainOpts{
-			Username: opts.Username,
-			Password: opts.Password,
-			Token:    opts.Token,
-			Anon:     opts.Anon,
+			Username:                opts.Username,
+			Password:                opts.Password,
+			Token:                   opts.Token,
+			Anon:                    opts.Anon,
+			EnableIaasAuthProviders: opts.EnableIaasAuthProviders,
+			ActiveKeychains:         opts.ActiveKeychains,
 		},
 		opts.EnvironFunc,
 	)

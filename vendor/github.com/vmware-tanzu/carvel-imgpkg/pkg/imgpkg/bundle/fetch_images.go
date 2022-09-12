@@ -10,6 +10,11 @@ import (
 	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/lockconfig"
 )
 
+// SignatureFetcher Interface to retrieve signatures associated with Images
+type SignatureFetcher interface {
+	FetchForImageRefs(images []lockconfig.ImageRef) ([]lockconfig.ImageRef, error)
+}
+
 // FetchAllImagesRefs returns a flat list of nested bundles and every image reference for a specific bundle
 func (o *Bundle) FetchAllImagesRefs(concurrency int, ui Logger, sigFetcher SignatureFetcher) ([]*Bundle, error) {
 	bundles, _, err := o.AllImagesLockRefs(concurrency, ui)
