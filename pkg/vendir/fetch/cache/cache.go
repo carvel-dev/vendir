@@ -81,7 +81,7 @@ func (c FolderCache) Save(artifactType string, id string, src string) error {
 		}
 	}
 
-	folder := filepath.Join(c.folder, c.idToFolder(artifactType,id))
+	folder := filepath.Join(c.folder, c.idToFolder(artifactType, id))
 	return c.copyFolder(src, folder)
 }
 
