@@ -21,7 +21,7 @@ type hitTest struct {
 	isPresent    bool
 }
 
-func TestHit(t *testing.T) {
+func TestHas(t *testing.T) {
 	allTests := []hitTest{
 		{
 			isPresent:    false,
@@ -31,13 +31,13 @@ func TestHit(t *testing.T) {
 		},
 		{
 			isPresent:    true,
-			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "present"),
+			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "cHJlc2VudA=="),
 			name:         "when cache exists, it returns true and the path to the folder",
 			cacheID:      "present",
 		},
 		{
 			isPresent:    true,
-			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "some-present"),
+			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "c29tZTpwcmVzZW50"),
 			name:         "when id contains : converts it to '-' on the folder",
 			cacheID:      "some:present",
 		},

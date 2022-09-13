@@ -4,6 +4,7 @@
 package cache
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/fs"
@@ -157,7 +158,7 @@ func (c FolderCache) copyFolder(src string, dst string) error {
 }
 
 func (c FolderCache) idToFolder(artifactType string, id string) string {
-	normalizedID := strings.ReplaceAll(id, ":", "-")
+	normalizedID := base64.StdEncoding.EncodeToString([]byte(id))
 	return filepath.Join(".vendir-cache", "fetcher", artifactType, normalizedID)
 
 }
