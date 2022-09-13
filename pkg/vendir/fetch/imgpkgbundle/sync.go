@@ -4,11 +4,10 @@ package imgpkgbundle
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
 	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 )
@@ -18,19 +17,13 @@ type Sync struct {
 	imgpkg *ctlimg.Imgpkg
 }
 
-func NewSync(opts ctlconf.DirectoryContentsImgpkgBundle, refFetcher ctlfetch.RefFetcher) *Sync {
+func NewSync(opts ctlconf.DirectoryContentsImgpkgBundle, refFetcher ctlfetch.RefFetcher, c ctlcache.Cache) *Sync {
 	imgpkgOpts := ctlimg.ImgpkgOpts{
 		SecretRef:              opts.SecretRef,
 		DangerousSkipTLSVerify: opts.DangerousSkipTLSVerify,
 	}
-	return &Sync{opts, ctlimg.NewImgpkg(imgpkgOpts, refFetcher)}
+	return &Sync{opts, ctlimg.NewImgpkg(imgpkgOpts, refFetcher, c)}
 }
-
-var (
-	// Example image ref in imgpkg stdout:
-	//   Pulling bundle 'index.docker.io/dkalinin/consul-helm@sha256:d1cdbd46561a144332f0744302d45f27583fc0d75002cba473d840f46630c9f7'
-	imgpkgPulledImageRef = regexp.MustCompile("(?m)^Pulling bundle '(.+)'$")
-)
 
 func (t Sync) Desc() string {
 	image := "?"
@@ -51,25 +44,20 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 		return lockConf, err
 	}
 
-	args := []string{"pull", "-b", image, "-o", dstPath, "--tty=true"}
-	if t.opts.Recursive {
-		args = append(args, "--recursive")
+	var imgRef string
+	if !t.opts.Recursive {
+		imgRef, err = t.imgpkg.FetchBundle(image, dstPath)
+		if err != nil {
+			return lockConf, err
+		}
+	} else {
+		imgRef, err = t.imgpkg.FetchBundleRecursively(image, dstPath)
+		if err != nil {
+			return lockConf, err
+		}
 	}
 
-	stdoutStr, err := t.imgpkg.Run(args)
-	if err != nil {
-		return lockConf, err
-	}
-
-	matches := imgpkgPulledImageRef.FindStringSubmatch(stdoutStr)
-	if len(matches) != 2 {
-		return lockConf, fmt.Errorf("Expected to find pulled image ref in stdout, but did not (stdout: '%s')", stdoutStr)
-	}
-	if !strings.Contains(matches[1], "@") {
-		return lockConf, fmt.Errorf("Expected ref '%s' to be in digest form, but was not", matches[1])
-	}
-
-	lockConf.Image = matches[1]
+	lockConf.Image = imgRef
 	if len(t.opts.PreresolvedTag()) > 0 {
 		lockConf.Tag = t.opts.PreresolvedTag()
 	} else {

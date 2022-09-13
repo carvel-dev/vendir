@@ -9,9 +9,19 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
+	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
+)
+
+const (
+	ImgpkgBundleArtifactType = "imgpkgBundle"
+	ImageArtifactType        = "image"
 )
 
 type ImgpkgOpts struct {
@@ -25,9 +35,10 @@ type ImgpkgOpts struct {
 type Imgpkg struct {
 	opts       ImgpkgOpts
 	refFetcher ctlfetch.RefFetcher
+	cache      ctlcache.Cache
 }
 
-func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
+func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher, c ctlcache.Cache) *Imgpkg {
 	if opts.CmdRunFunc == nil {
 		opts.CmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
 	}
@@ -36,7 +47,109 @@ func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher) *Imgpkg {
 		opts.EnvironFunc = os.Environ
 	}
 
-	return &Imgpkg{opts, refFetcher}
+	return &Imgpkg{opts, refFetcher, c}
+}
+
+// FetchImage Downloads the OCI Image to the provided destination
+func (t *Imgpkg) FetchImage(imageRef, destination string) (string, error) {
+	return t.fetch(imageRef, destination, false)
+}
+
+// FetchBundle Downloads the Bundle to the provided destination
+func (t *Imgpkg) FetchBundle(imageRef, destination string) (string, error) {
+	return t.fetch(imageRef, destination, true)
+}
+
+// FetchBundleRecursively Download the Bundle and all the nested Bundles to the provided destination
+func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, error) {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return "", err
+	}
+
+	if _, hit := t.cache.Has(ImgpkgBundleArtifactType, ref.Identifier()); hit {
+		return imageRef, t.cache.CopyFrom(ImgpkgBundleArtifactType, ref.Identifier(), destination)
+	}
+
+	envVariables, err := t.authEnv()
+	if err != nil {
+		return "", err
+	}
+
+	status, err := v1.PullRecursive(imageRef, destination, v1.PullOpts{
+		Logger:   &Logger{buf: bytes.NewBufferString("")},
+		AsImage:  false,
+		IsBundle: true,
+	}, registry.Opts{
+		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
+		Insecure:              false,
+		ResponseHeaderTimeout: 30 * time.Second,
+		RetryCount:            5,
+		EnvironFunc: func() []string {
+			return envVariables
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if status.Cacheable {
+		err := t.cache.Save(ImgpkgBundleArtifactType, ref.Identifier(), destination)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return status.ImageRef, nil
+}
+
+func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, error) {
+	artifactType := ImageArtifactType
+	if isBundle {
+		artifactType = ImgpkgBundleArtifactType
+	}
+
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return "", err
+	}
+
+	if _, hit := t.cache.Has(artifactType, ref.Identifier()); hit {
+		return imageRef, t.cache.CopyFrom(artifactType, ref.Identifier(), destination)
+	}
+
+	envVariables, err := t.authEnv()
+	if err != nil {
+		return "", err
+	}
+
+	status, err := v1.Pull(imageRef, destination, v1.PullOpts{
+		Logger:   &Logger{buf: bytes.NewBufferString("")},
+		AsImage:  !isBundle,
+		IsBundle: isBundle,
+	}, registry.Opts{
+		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
+		Insecure:              false,
+		ResponseHeaderTimeout: 30 * time.Second,
+		RetryCount:            5,
+		EnvironFunc: func() []string {
+			return envVariables
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if status.Cacheable {
+		err := t.cache.Save(artifactType, ref.Identifier(), destination)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return status.ImageRef, nil
 }
 
 func (t *Imgpkg) Run(args []string) (string, error) {
@@ -135,3 +248,32 @@ func (t *Imgpkg) addDangerousArgs(args []string) []string {
 	}
 	return args
 }
+
+// Logger provided to the imgpkg API calls
+// This logger does write to the buffer debug and trace message.
+// If we want to provide such a mechanism we should provide a way to define what is the level of messages that
+// we want to have present in the buffer
+type Logger struct {
+	buf *bytes.Buffer
+}
+
+// Errorf Writes error messages to the buffer
+func (l *Logger) Errorf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Warnf Writes warning messages to the buffer
+func (l *Logger) Warnf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Logf Writes messages to the buffer
+func (l *Logger) Logf(msg string, args ...interface{}) {
+	l.buf.Write([]byte(fmt.Sprintf(msg, args...)))
+}
+
+// Debugf does nothing
+func (l *Logger) Debugf(string, ...interface{}) {}
+
+// Tracef does nothing
+func (l *Logger) Tracef(string, ...interface{}) {}

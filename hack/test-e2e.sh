@@ -8,7 +8,13 @@ export VENDIR_BINARY_PATH=$PWD/vendir
 export GOCACHE=$(go env GOCACHE) # avoid polluting $HOME
 export HOME=$(mktemp -d -t vendir-home-dir-XXXXXXXXXX)
 
-go test ./test/e2e/ -timeout 60m -test.v $@
+GO=go
+if command -v richgo &> /dev/null
+then
+    GO=richgo
+fi
+
+$GO test ./test/e2e/ -timeout 60m -test.v $@
 
 # Directory _must_ be empty for rmdir to succeed
 # (If directory is not empty that means that vendir sync
