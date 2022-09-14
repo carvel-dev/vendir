@@ -179,15 +179,14 @@ func TestHighestVersionWithConstraints(t *testing.T) {
 
 	answer, err := versions.HighestConstrainedVersionWithAdditionalConstraints(vs,
 		v1alpha1.VersionSelection{Semver: &v1alpha1.VersionSelectionSemver{Constraints: ">0.1.0"}},
-		[]versions.ConstraintCallback{versions.ConstraintCallback{Constraint: constraint, Name: "myConstraint"}})
+		[]versions.ConstraintCallback{{Constraint: constraint, Name: "myConstraint"}})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "2.0.0", answer)
 
-	answer, err = versions.HighestConstrainedVersionWithAdditionalConstraints(vs,
+	_, err = versions.HighestConstrainedVersionWithAdditionalConstraints(vs,
 		v1alpha1.VersionSelection{Semver: &v1alpha1.VersionSelectionSemver{Constraints: ">2.1.0"}},
-		[]versions.ConstraintCallback{versions.ConstraintCallback{Constraint: constraint, Name: "myConstraint"}})
+		[]versions.ConstraintCallback{{Constraint: constraint, Name: "myConstraint"}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "myConstraint")
-
 }

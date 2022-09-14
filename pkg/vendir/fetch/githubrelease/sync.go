@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -240,7 +239,7 @@ func (d Sync) fetchTagSelection() (string, error) {
 			switch resp.StatusCode {
 			case 401, 403:
 				hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-				bs, _ := ioutil.ReadAll(resp.Body)
+				bs, _ := io.ReadAll(resp.Body)
 				errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 			}
 			return "", fmt.Errorf("Downloading tags info: %s", errMsg)
@@ -308,17 +307,17 @@ func (d Sync) downloadAPIResponse(url string, authToken string) ([]byte, error) 
 		switch resp.StatusCode {
 		case 401, 403:
 			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-			bs, _ := ioutil.ReadAll(resp.Body)
+			bs, _ := io.ReadAll(resp.Body)
 			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		case 404:
 			hintMsg := "(hint: if you are using 'latest: true', there may not be any non-pre-release releases)"
-			bs, _ := ioutil.ReadAll(resp.Body)
+			bs, _ := io.ReadAll(resp.Body)
 			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		}
 		return bs, fmt.Errorf(errMsg)
 	}
 
-	bs, err = ioutil.ReadAll(resp.Body)
+	bs, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return bs, err
 	}
@@ -350,7 +349,7 @@ func (d Sync) downloadFile(url, dstPath, authToken string) error {
 		switch resp.StatusCode {
 		case 401, 403:
 			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-			bs, _ := ioutil.ReadAll(resp.Body)
+			bs, _ := io.ReadAll(resp.Body)
 			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 		}
 		return fmt.Errorf(errMsg)

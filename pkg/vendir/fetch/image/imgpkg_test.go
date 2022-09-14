@@ -224,7 +224,7 @@ func runImgpkgWithSecret(t *testing.T, secret ctlconf.Secret) *exec.Cmd {
 			CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
 			EnvironFunc: func() []string { return []string{} },
 		},
-		ctlfetch.SingleSecretRefFetcher{&secret},
+		ctlfetch.SingleSecretRefFetcher{Secret: &secret},
 		cache,
 	)
 

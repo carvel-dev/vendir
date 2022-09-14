@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	err = filepath.WalkDir("./assets/helmcharts/", func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir("./assets/helmcharts/", func(path string, d fs.DirEntry, _ error) error {
 		if d.IsDir() {
 			return nil
 		}

@@ -6,7 +6,6 @@ package e2e
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -58,7 +57,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		abs, err := filepath.Abs(vendirYaml)
 		require.NoError(t, err)
 
-		yamlContents, err := ioutil.ReadFile(abs)
+		yamlContents, err := os.ReadFile(abs)
 		require.NoError(t, err)
 		for _, replaceVal := range et.VendirYamlReplaceVals {
 			splitReplaceVal := bytes.Split([]byte(replaceVal), []byte{','})

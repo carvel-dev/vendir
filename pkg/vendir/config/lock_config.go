@@ -5,7 +5,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"sigs.k8s.io/yaml"
@@ -26,7 +26,7 @@ func NewLockConfig() LockConfig {
 }
 
 func NewLockConfigFromFile(path string) (LockConfig, error) {
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		return LockConfig{}, fmt.Errorf("Reading lock config '%s': %s", path, err)
 	}
@@ -56,7 +56,7 @@ func (c LockConfig) WriteToFile(path string) error {
 		return fmt.Errorf("Marshaling lock config: %s", err)
 	}
 
-	err = ioutil.WriteFile(path, bs, 0600)
+	err = os.WriteFile(path, bs, 0600)
 	if err != nil {
 		return fmt.Errorf("Writing lock config: %s", err)
 	}

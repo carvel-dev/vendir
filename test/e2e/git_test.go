@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,7 +21,7 @@ func TestGitVerification(t *testing.T) {
 	logger := Logger{}
 	vendir := Vendir{t, env.BinaryPath, logger}
 
-	gitSrcPath, err := ioutil.TempDir("", "vendir-e2e-git-verify-signed-git-repo")
+	gitSrcPath, err := os.MkdirTemp("", "vendir-e2e-git-verify-signed-git-repo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +32,7 @@ func TestGitVerification(t *testing.T) {
 		t.Fatalf("Unpacking git-repo-signed asset: %s (output: '%s')", err, out)
 	}
 
-	dstPath, err := ioutil.TempDir("", "vendir-e2e-git-verify-signed-dst")
+	dstPath, err := os.MkdirTemp("", "vendir-e2e-git-verify-signed-dst")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +134,7 @@ directories:
 }
 
 func readFile(t *testing.T, path string) string {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("Reading file %s: %s", path, err)
 	}

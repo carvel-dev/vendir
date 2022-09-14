@@ -6,7 +6,6 @@ package directory
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -192,7 +191,7 @@ func (d StagingTempArea) NewTempDir(name string) (string, error) {
 }
 
 func (d StagingTempArea) NewTempFile(pattern string) (*os.File, error) {
-	return ioutil.TempFile(d.path, pattern)
+	return os.CreateTemp(d.path, pattern)
 }
 
 func copy(src, dst string) error {

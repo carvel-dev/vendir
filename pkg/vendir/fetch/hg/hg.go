@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -30,7 +29,7 @@ func NewHg(opts ctlconf.DirectoryContentsHg,
 	return &Hg{opts, infoLog, refFetcher}
 }
 
-// nolint:golint
+//nolint:revive
 type HgInfo struct {
 	SHA            string
 	ChangeSetTitle string
@@ -118,7 +117,7 @@ hgauth.password = %s
 		if authOpts.PrivateKey != nil {
 			path := filepath.Join(authDir, "private-key")
 
-			err = ioutil.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
+			err = os.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
 			if err != nil {
 				return fmt.Errorf("Writing private key: %s", err)
 			}
@@ -129,7 +128,7 @@ hgauth.password = %s
 		if authOpts.KnownHosts != nil {
 			path := filepath.Join(authDir, "known-hosts")
 
-			err = ioutil.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
+			err = os.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
 			if err != nil {
 				return fmt.Errorf("Writing known hosts: %s", err)
 			}
@@ -144,7 +143,7 @@ hgauth.password = %s
 
 	if len(hgRc) > 0 {
 		hgRcPath := filepath.Join(authDir, "hgrc")
-		err = ioutil.WriteFile(hgRcPath, []byte(hgRc), 0600)
+		err = os.WriteFile(hgRcPath, []byte(hgRc), 0600)
 		if err != nil {
 			return fmt.Errorf("Writing %s: %s", hgRcPath, err)
 		}
@@ -155,7 +154,7 @@ hgauth.password = %s
 
 	repoHgRc := fmt.Sprintf("[paths]\ndefault = %s\n", hgURL)
 
-	err = ioutil.WriteFile(repoHgRcPath, []byte(repoHgRc), 0600)
+	err = os.WriteFile(repoHgRcPath, []byte(repoHgRc), 0600)
 	if err != nil {
 		return fmt.Errorf("Writing %s: %s", repoHgRcPath, err)
 	}

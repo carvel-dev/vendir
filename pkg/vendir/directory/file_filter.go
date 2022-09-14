@@ -5,7 +5,6 @@ package directory
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -98,7 +97,7 @@ func (d FileFilter) matchAgainstPatterns(path string, patterns []string) (bool, 
 }
 
 func (d FileFilter) deleteEmptyDirs(dirPath string, topLevel bool) (bool, error) {
-	files, err := ioutil.ReadDir(dirPath)
+	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return false, err
 	}

@@ -5,7 +5,6 @@ package inline
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -99,7 +98,7 @@ func (t *Sync) writeFile(dstPath, subPath string, content string) error {
 		return fmt.Errorf("Making parent directory '%s': %s", parentDir, err)
 	}
 
-	err = ioutil.WriteFile(newPath, []byte(content), 0600)
+	err = os.WriteFile(newPath, []byte(content), 0600)
 	if err != nil {
 		return fmt.Errorf("Writing file '%s': %s", newPath, err)
 	}

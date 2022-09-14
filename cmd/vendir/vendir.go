@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -18,7 +18,7 @@ import (
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	// TODO logs
 	// TODO log flags used

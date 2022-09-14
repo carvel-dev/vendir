@@ -5,7 +5,6 @@ package directory
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,7 +98,7 @@ func (s SubPath) findAltDirs(srcPath, subPath string) ([]string, error) {
 		return nil, err
 	}
 
-	fileInfos, err := ioutil.ReadDir(newPath)
+	fileInfos, err := os.ReadDir(newPath)
 	if err != nil {
 		return nil, err
 	}
