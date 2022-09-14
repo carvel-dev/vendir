@@ -4,7 +4,7 @@
 package e2e
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -27,7 +27,7 @@ func TestUseDirectory(t *testing.T) {
 	defer reset()
 
 	checkFileContent := func(expectedContent string) {
-		file, err := ioutil.ReadFile(path + "/vendor/local-dir/file.txt")
+		file, err := os.ReadFile(path + "/vendor/local-dir/file.txt")
 		if err != nil {
 			t.Fatalf("Expected no err")
 		}

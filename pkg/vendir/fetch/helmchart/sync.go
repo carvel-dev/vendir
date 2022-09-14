@@ -5,7 +5,6 @@ package helmchart
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,7 +101,7 @@ type chartMeta struct {
 func (t *Sync) retrieveChartMeta(chartPath string) (chartMeta, error) {
 	var meta chartMeta
 
-	bs, err := ioutil.ReadFile(filepath.Join(chartPath, "Chart.yaml"))
+	bs, err := os.ReadFile(filepath.Join(chartPath, "Chart.yaml"))
 	if err != nil {
 		return meta, fmt.Errorf("Reading Chart.yaml: %s", err)
 	}
@@ -120,7 +119,7 @@ func (t *Sync) retrieveChartMeta(chartPath string) (chartMeta, error) {
 }
 
 func (t *Sync) findChartDir(chartsPath string) (string, error) {
-	files, err := ioutil.ReadDir(chartsPath)
+	files, err := os.ReadDir(chartsPath)
 	if err != nil {
 		return "", err
 	}

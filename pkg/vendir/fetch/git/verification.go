@@ -12,7 +12,7 @@ import (
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	oarmor "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/openpgparmor"
-	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp" //nolint:staticcheck
 )
 
 // Verification verifies Git commit/tag against a set of public keys

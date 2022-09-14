@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -32,7 +31,7 @@ func NewGit(opts ctlconf.DirectoryContentsGit,
 	return &Git{opts, infoLog, refFetcher}
 }
 
-// nolint:golint
+//nolint:revive
 type GitInfo struct {
 	SHA         string
 	Tags        []string
@@ -94,7 +93,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		if authOpts.PrivateKey != nil {
 			path := filepath.Join(authDir, "private-key")
 
-			err = ioutil.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
+			err = os.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
 			if err != nil {
 				return fmt.Errorf("Writing private key: %s", err)
 			}
@@ -105,7 +104,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		if authOpts.KnownHosts != nil {
 			path := filepath.Join(authDir, "known-hosts")
 
-			err = ioutil.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
+			err = os.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
 			if err != nil {
 				return fmt.Errorf("Writing known hosts: %s", err)
 			}
@@ -138,7 +137,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
 		gitCredsURL.Path = ""
 
-		err = ioutil.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
+		err = os.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
 		if err != nil {
 			return fmt.Errorf("Writing %s: %s", gitCredsPath, err)
 		}
