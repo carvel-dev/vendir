@@ -379,7 +379,7 @@ github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth/credentialprovide
 github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/signature
 github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/signature/cosign
 github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1
-# golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
+# golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 ## explicit; go 1.17
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp
