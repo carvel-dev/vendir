@@ -40,7 +40,7 @@ func TestExampleLocked(t *testing.T) {
 		t.Fatalf("Expected no err")
 	}
 
-	// add file that shouldnt exist
+	// add file that shouldn't exist
 	err = os.WriteFile(path+"/vendor/github.com/cloudfoundry/extra/extra", []byte("extra"), 0600)
 	if err != nil {
 		t.Fatalf("Expected no err")

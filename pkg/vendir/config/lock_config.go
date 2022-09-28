@@ -4,6 +4,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -142,4 +143,10 @@ func (c LockConfig) MergeContents(path string, replaceCon LockDirectoryContents)
 		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
 	}
 	return nil
+}
+
+func (c LockConfig) IsEqualTo(other LockConfig) bool {
+	myBytes, _ := c.AsBytes()
+	yourBytes, _ := other.AsBytes()
+	return bytes.Compare(myBytes, yourBytes) == 0
 }

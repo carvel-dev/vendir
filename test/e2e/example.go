@@ -113,9 +113,23 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 		}
 	}
 
+	lockFileStat, err := os.Stat(filepath.Join(path, "vendir.lock.yml"))
+	if err != nil {
+		return fmt.Errorf("Expected no err for getting lock file stats")
+	}
+
 	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: et.Env})
 	if err != nil {
 		return fmt.Errorf("Expected no err for sync locked")
+	}
+
+	newLockFileStat, err := os.Stat(filepath.Join(path, "vendir.lock.yml"))
+	if err != nil {
+		return fmt.Errorf("Expected no err for getting lock file stats")
+	}
+
+	if lockFileStat.ModTime() != newLockFileStat.ModTime() {
+		return fmt.Errorf("Expected lock file to not be updated")
 	}
 
 	gitOut := gitDiffExamplesDir(t, path, tmpDir)
