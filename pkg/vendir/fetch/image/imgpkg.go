@@ -7,8 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -28,7 +26,6 @@ type ImgpkgOpts struct {
 	SecretRef              *ctlconf.DirectoryContentsLocalRef
 	DangerousSkipTLSVerify bool
 
-	CmdRunFunc  func(*exec.Cmd) error
 	EnvironFunc func() []string
 }
 
@@ -39,10 +36,6 @@ type Imgpkg struct {
 }
 
 func NewImgpkg(opts ImgpkgOpts, refFetcher ctlfetch.RefFetcher, c ctlcache.Cache) *Imgpkg {
-	if opts.CmdRunFunc == nil {
-		opts.CmdRunFunc = func(cmd *exec.Cmd) error { return cmd.Run() }
-	}
-
 	if opts.EnvironFunc == nil {
 		opts.EnvironFunc = os.Environ
 	}
@@ -71,7 +64,7 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 		return imageRef, t.cache.CopyFrom(ImgpkgBundleArtifactType, ref.Identifier(), destination)
 	}
 
-	envVariables, err := t.authEnv()
+	opts, err := t.RegistryOpts()
 	if err != nil {
 		return "", err
 	}
@@ -80,15 +73,7 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 		Logger:   &Logger{buf: bytes.NewBufferString("")},
 		AsImage:  false,
 		IsBundle: true,
-	}, registry.Opts{
-		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
-		Insecure:              false,
-		ResponseHeaderTimeout: 30 * time.Second,
-		RetryCount:            5,
-		EnvironFunc: func() []string {
-			return envVariables
-		},
-	})
+	}, opts)
 
 	if err != nil {
 		return "", err
@@ -119,7 +104,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 		return imageRef, t.cache.CopyFrom(artifactType, ref.Identifier(), destination)
 	}
 
-	envVariables, err := t.authEnv()
+	opts, err := t.RegistryOpts()
 	if err != nil {
 		return "", err
 	}
@@ -128,15 +113,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 		Logger:   &Logger{buf: bytes.NewBufferString("")},
 		AsImage:  !isBundle,
 		IsBundle: isBundle,
-	}, registry.Opts{
-		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
-		Insecure:              false,
-		ResponseHeaderTimeout: 30 * time.Second,
-		RetryCount:            5,
-		EnvironFunc: func() []string {
-			return envVariables
-		},
-	})
+	}, opts)
 
 	if err != nil {
 		return "", err
@@ -152,41 +129,40 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 	return status.ImageRef, nil
 }
 
-func (t *Imgpkg) Run(args []string) (string, error) {
-	args = append([]string{}, args...) // copy
-	args = t.addDangerousArgs(args)
-
-	authEnv, err := t.authEnv()
+func (t *Imgpkg) Tags(repo string) ([]string, error) {
+	opts, err := t.RegistryOpts()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var stdoutBs, stderrBs bytes.Buffer
-
-	cmd := exec.Command("imgpkg", args...)
-	cmd.Env = append(t.opts.EnvironFunc(), authEnv...)
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
-
-	err = t.opts.CmdRunFunc(cmd)
+	tagsInfo, err := v1.TagList(repo, false, opts)
 	if err != nil {
-		return "", fmt.Errorf("Imgpkg: %s (stderr: %s)", err, stderrBs.String())
+		return nil, err
 	}
 
-	return stdoutBs.String(), nil
+	var tags []string
+	for _, tag := range tagsInfo.Tags {
+		tags = append(tags, tag.Tag)
+	}
+
+	return tags, nil
 }
 
-func (t *Imgpkg) Tags(repo string) ([]string, error) {
-	out, err := t.Run([]string{"tag", "list", "-i", repo, "--column=name", "--digests=false"})
+func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
+	envVariables, err := t.authEnv()
 	if err != nil {
-		return nil, fmt.Errorf("Fetching image tags: %s", err)
+		return registry.Opts{}, err
 	}
 
-	out = strings.TrimSpace(out)
-	// not sure why there are tabs; remove in older versions
-	out = strings.Replace(out, "\t", "", -1)
-
-	return strings.Split(out, "\n"), nil
+	return registry.Opts{
+		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
+		Insecure:              false,
+		ResponseHeaderTimeout: 30 * time.Second,
+		RetryCount:            5,
+		EnvironFunc: func() []string {
+			return append(envVariables, t.opts.EnvironFunc()...)
+		},
+	}, nil
 }
 
 func (t *Imgpkg) authEnv() ([]string, error) {
@@ -240,13 +216,6 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 	}
 
 	return authEnv, nil
-}
-
-func (t *Imgpkg) addDangerousArgs(args []string) []string {
-	if t.opts.DangerousSkipTLSVerify {
-		args = append(args, "--registry-verify-certs=false")
-	}
-	return args
 }
 
 // Logger provided to the imgpkg API calls

@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
 	"testing"
@@ -20,6 +19,7 @@ import (
 	regremote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
+	ctlregistry "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
@@ -51,15 +51,15 @@ func TestMain(m *testing.M) {
 
 func TestImgpkgAuth(t *testing.T) {
 	t.Run("with empty plain secret", func(t *testing.T) {
-		ranCmd := runImgpkgWithSecret(t, ctlconf.Secret{
+		opts := createRegistryOptions(t, ctlconf.Secret{
 			Data: map[string][]byte{},
 		})
 
-		requireImgpkgEnv(t, nil, ranCmd.Env)
+		requireImgpkgEnv(t, nil, opts.EnvironFunc())
 	})
 
 	t.Run("with filled plain secret", func(t *testing.T) {
-		ranCmd := runImgpkgWithSecret(t, ctlconf.Secret{
+		opts := createRegistryOptions(t, ctlconf.Secret{
 			Data: map[string][]byte{
 				"username": []byte("username"),
 				"password": []byte("password"),
@@ -69,11 +69,11 @@ func TestImgpkgAuth(t *testing.T) {
 		requireImgpkgEnv(t, []string{
 			"IMGPKG_USERNAME=username",
 			"IMGPKG_PASSWORD=password",
-		}, ranCmd.Env)
+		}, opts.EnvironFunc())
 	})
 
 	t.Run("with plain secret associated with hostname", func(t *testing.T) {
-		ranCmd := runImgpkgWithSecret(t, ctlconf.Secret{
+		opts := createRegistryOptions(t, ctlconf.Secret{
 			Data: map[string][]byte{
 				"hostname": []byte("hostname"),
 				"username": []byte("username"),
@@ -85,22 +85,22 @@ func TestImgpkgAuth(t *testing.T) {
 			"IMGPKG_REGISTRY_HOSTNAME_0=hostname",
 			"IMGPKG_REGISTRY_USERNAME_0=username",
 			"IMGPKG_REGISTRY_PASSWORD_0=password",
-		}, ranCmd.Env)
+		}, opts.EnvironFunc())
 	})
 
 	t.Run("with empty dockerconfigjson secret", func(t *testing.T) {
-		ranCmd := runImgpkgWithSecret(t, ctlconf.Secret{
+		opts := createRegistryOptions(t, ctlconf.Secret{
 			Type: "kubernetes.io/dockerconfigjson",
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte("{}"),
 			},
 		})
 
-		requireImgpkgEnv(t, nil, ranCmd.Env)
+		requireImgpkgEnv(t, nil, opts.EnvironFunc())
 	})
 
 	t.Run("with filled dockerconfigjson secret", func(t *testing.T) {
-		ranCmd := runImgpkgWithSecret(t, ctlconf.Secret{
+		opts := createRegistryOptions(t, ctlconf.Secret{
 			Type: "kubernetes.io/dockerconfigjson",
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(`{"auths":{
@@ -121,28 +121,23 @@ func TestImgpkgAuth(t *testing.T) {
 			"IMGPKG_REGISTRY_HOSTNAME_2=hostname3",
 			"IMGPKG_REGISTRY_USERNAME_2=",
 			"IMGPKG_REGISTRY_PASSWORD_2=",
-		}, ranCmd.Env)
+		}, opts.EnvironFunc())
 	})
 
 	t.Run("without a secret", func(t *testing.T) {
-		var ranCmd *exec.Cmd
-
 		cache, err := ctlcache.NewCache("", "1Mi")
 		require.NoError(t, err)
 
 		imgpkg := ctlimg.NewImgpkg(
-			ctlimg.ImgpkgOpts{
-				CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
-				EnvironFunc: func() []string { return []string{} },
-			},
+			ctlimg.ImgpkgOpts{},
 			ctlfetch.SingleSecretRefFetcher{},
 			cache,
 		)
 
-		_, err = imgpkg.Run([]string{})
+		opts, err := imgpkg.RegistryOpts()
 		require.NoError(t, err)
 
-		requireImgpkgEnv(t, nil, ranCmd.Env)
+		requireImgpkgEnv(t, nil, opts.EnvironFunc())
 	})
 }
 
@@ -210,28 +205,24 @@ func TestImgpkgCache(t *testing.T) {
 	})
 }
 
-func runImgpkgWithSecret(t *testing.T, secret ctlconf.Secret) *exec.Cmd {
+func createRegistryOptions(t *testing.T, secret ctlconf.Secret) ctlregistry.Opts {
 	secret.Metadata = ctlconf.GenericMetadata{Name: "secret"}
-
-	var ranCmd *exec.Cmd
 
 	cache, err := ctlcache.NewCache("", "10Mi")
 	require.NoError(t, err)
 
 	imgpkg := ctlimg.NewImgpkg(
 		ctlimg.ImgpkgOpts{
-			SecretRef:   &ctlconf.DirectoryContentsLocalRef{Name: "secret"},
-			CmdRunFunc:  func(cmd *exec.Cmd) error { ranCmd = cmd; return nil },
-			EnvironFunc: func() []string { return []string{} },
+			SecretRef: &ctlconf.DirectoryContentsLocalRef{Name: "secret"},
 		},
 		ctlfetch.SingleSecretRefFetcher{Secret: &secret},
 		cache,
 	)
 
-	_, err = imgpkg.Run([]string{})
+	opts, err := imgpkg.RegistryOpts()
 	require.NoError(t, err)
 
-	return ranCmd
+	return opts
 }
 
 func requireImgpkgEnv(t *testing.T, expectedEnv, actualEnv []string) {
