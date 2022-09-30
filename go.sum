@@ -858,8 +858,8 @@ github.com/vbatts/tar-split v0.11.2/go.mod h1:vV3ZuO2yWSVsz+pfFzDG/upWH1JhjOiEaW
 github.com/viki-org/dnscache v0.0.0-20130720023526-c70c1f23c5d8/go.mod h1:dniwbG03GafCjFohMDmz6Zc6oCuiqgH6tGNyXTkHzXE=
 github.com/vito/go-interact v1.0.1 h1:O8xi8c93bRUv2Tb/v6HdiuGc+WnWt+AQzF74MOOdlBs=
 github.com/vito/go-interact v1.0.1/go.mod h1:HrdHSJXD2yn1MhlTwSIMeFgQ5WftiIorszVGd3S/DAA=
-github.com/vmware-tanzu/carvel-imgpkg v0.32.0 h1:J7+4bG8bhpZMRt+FfOgY2otxR2hp3Qcp+yXObZxPZHc=
-github.com/vmware-tanzu/carvel-imgpkg v0.32.0/go.mod h1:lezdty3a/o/weRWbn/yRX7d8lNSO8vY1fMMq5QKBwqY=
+github.com/vmware-tanzu/carvel-imgpkg v0.33.0 h1:ZfMeJ+PKXJkkxcRSRiI/N9Vzxgyqj7YWktY3BEgQC84=
+github.com/vmware-tanzu/carvel-imgpkg v0.33.0/go.mod h1:9J2sqH4lTws2fPhiloEWTc7tKvdsmmOxRqEWgMokTXM=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415/go.mod h1:GwrjFmJcFw6At/Gs6z4yjiIwzuJ1/+UwLxMQDVQXShQ=
 github.com/xeipuuv/gojsonschema v1.2.0/go.mod h1:anYRn/JVcOK2ZgGU+IjEV4nwlhoK5sQluxsYJ78Id3Y=
