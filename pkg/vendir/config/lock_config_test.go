@@ -142,6 +142,7 @@ func TestWriteToFile(t *testing.T) {
 
 		// Check that the file contents have been updated
 		updatedBytes, err := os.ReadFile(lockFilePath)
+		require.NoError(t, err)
 		require.Equal(t, updatedBytes, lockConfigBytes)
 	})
 
