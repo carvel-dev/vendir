@@ -97,9 +97,8 @@ func (o *SyncOptions) Run() error {
 
 	// If syncing against a lock file, apply lock information
 	// on top of existing config
-	var existingLockConfig ctlconf.LockConfig
 	if o.Locked {
-		existingLockConfig, err = ctlconf.NewLockConfigFromFile(o.LockFile)
+		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
 		if err != nil {
 			return err
 		}
@@ -177,9 +176,6 @@ func (o *SyncOptions) Run() error {
 		return nil
 	}
 
-	if newLockConfig.IsEqualTo(existingLockConfig) {
-		return nil
-	}
 	return newLockConfig.WriteToFile(o.LockFile)
 }
 

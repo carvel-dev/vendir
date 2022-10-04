@@ -4,9 +4,12 @@
 package config_test
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	"testing"
 )
 
 func TestNewLockConfigFromBytes(t *testing.T) {
@@ -50,8 +53,8 @@ func TestValidate(t *testing.T) {
 	})
 }
 
-func TestIsEqualTo(t *testing.T) {
-	gitAndDirLockConfig := config.LockConfig{
+func TestWriteToFile(t *testing.T) {
+	lockConfig := config.LockConfig{
 		APIVersion: "vendir.k14s.io/v1alpha1",
 		Kind:       "LockConfig",
 		Directories: []config.LockDirectory{
@@ -74,53 +77,9 @@ func TestIsEqualTo(t *testing.T) {
 			},
 		},
 	}
-	sameGitAndDirLockConfig := config.LockConfig{
-		APIVersion: "vendir.k14s.io/v1alpha1",
-		Kind:       "LockConfig",
-		Directories: []config.LockDirectory{
-			{
-				Path: "lockpath",
-				Contents: []config.LockDirectoryContents{
-					{
-						Path: "gitpath",
-						Git: &config.LockDirectoryContentsGit{
-							SHA:         "mygitsha",
-							Tags:        []string{"main"},
-							CommitTitle: "mycommittitle",
-						},
-					},
-					{
-						Path:      "dirpath",
-						Directory: &config.LockDirectoryContentsDirectory{},
-					},
-				},
-			},
-		},
-	}
-	sortedGitAndDirLockConfig := config.LockConfig{
-		APIVersion: "vendir.k14s.io/v1alpha1",
-		Kind:       "LockConfig",
-		Directories: []config.LockDirectory{
-			{
-				Path: "lockpath",
-				Contents: []config.LockDirectoryContents{
-					{
-						Path:      "dirpath",
-						Directory: &config.LockDirectoryContentsDirectory{},
-					},
-					{
-						Path: "gitpath",
-						Git: &config.LockDirectoryContentsGit{
-							SHA:         "mygitsha",
-							Tags:        []string{"main"},
-							CommitTitle: "mycommittitle",
-						},
-					},
-				},
-			},
-		},
-	}
-	httpLockConfig := config.LockConfig{
+	lockConfigBytes, _ := lockConfig.AsBytes()
+
+	otherLockFile := config.LockConfig{
 		APIVersion: "vendir.k14s.io/v1alpha1",
 		Kind:       "LockConfig",
 		Directories: []config.LockDirectory{
@@ -135,16 +94,41 @@ func TestIsEqualTo(t *testing.T) {
 			},
 		},
 	}
+	otherLockFileBytes, _ := otherLockFile.AsBytes()
 
-	t.Run("equal lock configs returns true", func(t *testing.T) {
-		require.True(t, gitAndDirLockConfig.IsEqualTo(sameGitAndDirLockConfig))
+	tempDir, err := os.MkdirTemp("", "test-vendir-write-to-file")
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile.yml"), lockConfigBytes, 0666))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile-copy.yml"), lockConfigBytes, 0666))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "other-lockfile.yml"), otherLockFileBytes, 0666))
+
+	t.Run("no prior lock config file will write", func(t *testing.T) {
+		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "new-lockfile.yml")))
 	})
 
-	t.Run("equal lock configs, but different ordering, returns false", func(t *testing.T) {
-		require.False(t, gitAndDirLockConfig.IsEqualTo(sortedGitAndDirLockConfig))
+	t.Run("pre-existing identical lock config file does not write", func(t *testing.T) {
+		beforeStats, err := os.Stat(filepath.Join(tempDir, "lockfile.yml"))
+		require.NoError(t, err)
+
+		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "lockfile.yml")))
+
+		afterStats, err := os.Stat(filepath.Join(tempDir, "lockfile.yml"))
+		require.NoError(t, err)
+
+		require.Equal(t, beforeStats.ModTime(), afterStats.ModTime(), "lock file was modified but it shouldn't have been")
 	})
 
-	t.Run("not equal lock configs returns false", func(t *testing.T) {
-		require.False(t, gitAndDirLockConfig.IsEqualTo(httpLockConfig))
+	t.Run("pre-existing but different lock config file will write", func(t *testing.T) {
+		beforeStats, err := os.Stat(filepath.Join(tempDir, "other-lockfile.yml"))
+		require.NoError(t, err)
+
+		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "other-lockfile.yml")))
+
+		afterStats, err := os.Stat(filepath.Join(tempDir, "other-lockfile.yml"))
+		require.NoError(t, err)
+
+		require.Greater(t, afterStats.ModTime(), beforeStats.ModTime(), "lock file was not modified but it should have been")
 	})
+
+	require.NoError(t, os.RemoveAll(tempDir))
 }
