@@ -103,31 +103,46 @@ func TestWriteToFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "other-lockfile.yml"), otherLockFileBytes, 0666))
 
 	t.Run("no prior lock config file will write", func(t *testing.T) {
-		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "new-lockfile.yml")))
+		lockFilePath := filepath.Join(tempDir, "new-lockfile.yml")
+		require.NoError(t, lockConfig.WriteToFile(lockFilePath))
+		require.FileExists(t, lockFilePath)
 	})
 
 	t.Run("pre-existing identical lock config file does not write", func(t *testing.T) {
-		beforeStats, err := os.Stat(filepath.Join(tempDir, "lockfile.yml"))
+		lockFilePath := filepath.Join(tempDir, "lockfile.yml")
+
+		// Remember the original mod time
+		beforeStats, err := os.Stat(lockFilePath)
 		require.NoError(t, err)
 
-		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "lockfile.yml")))
+		// Call WriteToFile, which should not update the file
+		require.NoError(t, lockConfig.WriteToFile(lockFilePath))
 
-		afterStats, err := os.Stat(filepath.Join(tempDir, "lockfile.yml"))
+		// Check that mod time is the same
+		afterStats, err := os.Stat(lockFilePath)
 		require.NoError(t, err)
-
 		require.Equal(t, beforeStats.ModTime(), afterStats.ModTime(), "lock file was modified but it shouldn't have been")
 	})
 
 	t.Run("pre-existing but different lock config file will write", func(t *testing.T) {
-		beforeStats, err := os.Stat(filepath.Join(tempDir, "other-lockfile.yml"))
+		lockFilePath := filepath.Join(tempDir, "other-lockfile.yml")
+
+		// Remember the original mod time
+		beforeStats, err := os.Stat(lockFilePath)
 		require.NoError(t, err)
 
-		require.NoError(t, lockConfig.WriteToFile(filepath.Join(tempDir, "other-lockfile.yml")))
+		// Call WriteToFile, which should update the file
+		require.NoError(t, lockConfig.WriteToFile(lockFilePath))
 
-		afterStats, err := os.Stat(filepath.Join(tempDir, "other-lockfile.yml"))
+		// Check that mod time has been updated
+		afterStats, err := os.Stat(lockFilePath)
 		require.NoError(t, err)
 
-		require.Greater(t, afterStats.ModTime(), beforeStats.ModTime(), "lock file was not modified but it should have been")
+		require.GreaterOrEqual(t, afterStats.ModTime(), beforeStats.ModTime(), "lock file was not modified but it should have been")
+
+		// Check that the file contents have been updated
+		updatedBytes, err := os.ReadFile(lockFilePath)
+		require.Equal(t, updatedBytes, lockConfigBytes)
 	})
 
 	require.NoError(t, os.RemoveAll(tempDir))
