@@ -65,14 +65,13 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 		if err != nil {
 			return lockConf, fmt.Errorf("Unpacking archive: %s", err)
 		}
+
+		err = ctlfetch.MoveDir(incomingTmpPath, dstPath)
+	} else {
+		err = ctlfetch.MoveFile(archivePath, dstPath)
 	}
 
-	err = ctlfetch.MoveDir(incomingTmpPath, dstPath)
-	if err != nil {
-		return lockConf, err
-	}
-
-	return lockConf, nil
+	return lockConf, err
 }
 
 func (t *Sync) downloadFile(dst io.Writer) error {
