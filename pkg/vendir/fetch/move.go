@@ -4,6 +4,7 @@
 package fetch
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,31 @@ func MoveDir(path, dstPath string) error {
 	err = os.Rename(path, dstPath)
 	if err != nil {
 		return fmt.Errorf("Moving directory '%s' to staging dir: %s", path, err)
+	}
+
+	return nil
+}
+
+// MoveFile moves a file to the destination, before that it removes all the contents of the destination folder
+// If folder already existed it will keep the permissions if not it will use 0700
+func MoveFile(path, dstPath string) error {
+	folderPermission := os.FileMode(0700)
+	_, err := os.Stat(dstPath)
+	if !errors.Is(err, &os.PathError{}) {
+		err := os.RemoveAll(dstPath)
+		if err != nil {
+			return fmt.Errorf("Deleting dir %s: %s", dstPath, err)
+		}
+	}
+
+	err = os.Mkdir(dstPath, folderPermission)
+	if err != nil {
+		return fmt.Errorf("Creating dir %s: %s", dstPath, err)
+	}
+
+	err = os.Rename(path, filepath.Join(dstPath, filepath.Base(path)))
+	if err != nil {
+		return fmt.Errorf("Moving file '%s' to staging dir: %s", path, err)
 	}
 
 	return nil

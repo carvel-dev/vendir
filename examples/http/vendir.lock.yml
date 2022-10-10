@@ -4,8 +4,8 @@ directories:
   - http: {}
     path: k8s-simple-app-plain
   - http: {}
-    path: k8s-simple-app-digested
-  - http: {}
     path: k8s-simple-app-archived
+  - http: {}
+    path: k8s-simple-app-digested
   path: vendor
 kind: LockConfig
