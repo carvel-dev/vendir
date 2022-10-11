@@ -175,6 +175,14 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 		defer os.RemoveAll(newIncomingTmpPath)
 
+		_, err = os.Stat(filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return lockConf, fmt.Errorf("Unpacking archive '%s' is not part of the github release", d.opts.UnpackArchive.Path)
+			}
+			return lockConf, err
+		}
+
 		final, err := ctlfetch.NewArchive(filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path), false, "").Unpack(newIncomingTmpPath)
 		if err != nil {
 			return lockConf, fmt.Errorf("Unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
