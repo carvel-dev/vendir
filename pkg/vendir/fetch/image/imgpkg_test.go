@@ -152,7 +152,7 @@ func TestImgpkgCache(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("uses cache when fetching a cacheable image", func(t *testing.T) {
-		localCache := &dummyCache{cache: map[string]map[string]string{}}
+		localCache := &fakeCache{cache: map[string]map[string]string{}}
 		imgpkg := ctlimg.NewImgpkg(
 			ctlimg.ImgpkgOpts{EnvironFunc: func() []string { return []string{} }},
 			nil,
@@ -179,7 +179,7 @@ func TestImgpkgCache(t *testing.T) {
 	})
 
 	t.Run("does not use cache when fetching is a Not cacheable image", func(t *testing.T) {
-		localCache := &dummyCache{cache: map[string]map[string]string{}}
+		localCache := &fakeCache{cache: map[string]map[string]string{}}
 		imgpkg := ctlimg.NewImgpkg(
 			ctlimg.ImgpkgOpts{EnvironFunc: func() []string { return []string{} }},
 			nil,
@@ -239,20 +239,20 @@ func requireImgpkgEnv(t *testing.T, expectedEnv, actualEnv []string) {
 	require.Equal(t, expectedEnv, filteredActualEnv)
 }
 
-type dummyCache struct {
+type fakeCache struct {
 	cache           map[string]map[string]string
 	numCallHit      int
 	numCallSave     int
 	numCallCopyFrom int
 }
 
-func (d *dummyCache) Has(artifactType string, id string) (string, bool) {
+func (d *fakeCache) Has(artifactType string, id string) (string, bool) {
 	d.numCallHit++
 	path, hit := d.cache[artifactType][id]
 	return path, hit
 }
 
-func (d *dummyCache) Save(artifactType string, id string, src string) error {
+func (d *fakeCache) Save(artifactType string, id string, src string) error {
 	d.numCallSave++
 	if _, found := d.cache[artifactType]; !found {
 		d.cache[artifactType] = map[string]string{}
@@ -261,7 +261,7 @@ func (d *dummyCache) Save(artifactType string, id string, src string) error {
 	return nil
 }
 
-func (d *dummyCache) CopyFrom(_, _, _ string) error {
+func (d *fakeCache) CopyFrom(_, _, _ string) error {
 	d.numCallCopyFrom++
 	return nil
 }
