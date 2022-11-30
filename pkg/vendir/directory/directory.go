@@ -202,6 +202,13 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 		}
 
+		if perm, dir := contents.Permission, stagingDstPath; perm != nil {
+			err = os.Chmod(dir, *perm)
+			if err != nil {
+				return lockConfig, fmt.Errorf("chmod '%s' to %s: %s", dir, *perm, err)
+			}
+		}
+
 		// Copy files from current source if values are supposed to be ignored
 		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
 		if err != nil {
@@ -214,6 +221,14 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	err = stagingDir.Replace(d.opts.Path)
 	if err != nil {
 		return lockConfig, err
+	}
+
+	// after everything else is done, ensure the outer dir's access perms are set
+	if perm := d.opts.Permission; perm != nil {
+		err = os.Chmod(d.opts.Path, *perm)
+		if err != nil {
+			return lockConfig, err
+		}
 	}
 
 	return lockConfig, nil

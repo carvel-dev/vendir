@@ -16,19 +16,36 @@ import (
 
 type filePerms map[string]os.FileMode
 
-type testCases = map[string]struct {
-	updateConfig  func(cfg *config.Config)
-	expectedPerms filePerms
-}
-
 func TestDirectoryPermissions(t *testing.T) {
 	env := BuildEnv(t)
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
-	tCases := testCases{
+	tCases := map[string]struct {
+		updateConfig  func(cfg *config.Config)
+		expectedPerms filePerms
+	}{
 		"no permissions defined": {
 			expectedPerms: filePerms{
 				"dir-0": 0700, filepath.Join("dir-0", "subdir-0-0"): 0700, filepath.Join("dir-0", "subdir-0-1"): 0700,
+				"dir-1": 0700, filepath.Join("dir-1", "subdir-1-0"): 0700, filepath.Join("dir-1", "subdir-1-1"): 0700,
+			},
+		},
+		"outer dir permissions can be configured": {
+			updateConfig: func(c *config.Config) {
+				c.Directories[0].Permission = p(0744)
+			},
+			expectedPerms: filePerms{
+				"dir-0": 0744, filepath.Join("dir-0", "subdir-0-0"): 0700, filepath.Join("dir-0", "subdir-0-1"): 0700,
+				"dir-1": 0700, filepath.Join("dir-1", "subdir-1-0"): 0700, filepath.Join("dir-1", "subdir-1-1"): 0700,
+			},
+		},
+		"inner dir permissions can be configured": {
+			updateConfig: func(c *config.Config) {
+				c.Directories[0].Contents[0].Permission = p(0755)
+				c.Directories[0].Contents[1].Permission = p(0744)
+			},
+			expectedPerms: filePerms{
+				"dir-0": 0700, filepath.Join("dir-0", "subdir-0-0"): 0755, filepath.Join("dir-0", "subdir-0-1"): 0744,
 				"dir-1": 0700, filepath.Join("dir-1", "subdir-1-0"): 0700, filepath.Join("dir-1", "subdir-1-1"): 0700,
 			},
 		},
@@ -100,6 +117,9 @@ func getPerms(t *testing.T, fileOrDir string) os.FileMode {
 	return stat.Mode().Perm()
 }
 
+// defaultConfig returns a vendir config which configures 2 directories, with 2
+// subdirectories each. We use 2 directories, so that we can assert that
+// changes on one does not effect the other.
 func defaultConfig() *config.Config {
 	return &config.Config{
 		APIVersion: "vendir.k14s.io/v1alpha1",
