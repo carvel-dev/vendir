@@ -202,17 +202,17 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 		}
 
-		if perm, dir := contents.Permission, stagingDstPath; perm != nil {
-			err = os.Chmod(dir, *perm)
-			if err != nil {
-				return lockConfig, fmt.Errorf("chmod '%s' to %s: %s", dir, *perm, err)
-			}
-		}
-
 		// Copy files from current source if values are supposed to be ignored
 		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
 		if err != nil {
 			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+		}
+
+		// after everything else is done, ensure the inner dir's access perms are set
+		// chmod to the content's permission, fall back to the directory's
+		err = maybeChmod(stagingDstPath, contents.Permission, d.opts.Permission)
+		if err != nil {
+			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
 		}
 
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
@@ -224,12 +224,22 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	// after everything else is done, ensure the outer dir's access perms are set
-	if perm := d.opts.Permission; perm != nil {
-		err = os.Chmod(d.opts.Path, *perm)
-		if err != nil {
-			return lockConfig, err
-		}
+	err = maybeChmod(d.opts.Path, d.opts.Permission)
+	if err != nil {
+		return lockConfig, fmt.Errorf("chmod on '%s': %s", d.opts.Path, err)
 	}
 
 	return lockConfig, nil
+}
+
+// maybeChmod will chmod the path with the first non-nil permission provided.
+// If no permission is handed in or all of them are nil, no chmod will be done.
+func maybeChmod(path string, potentialPerms ...*os.FileMode) error {
+	for _, p := range potentialPerms {
+		if p != nil {
+			return os.Chmod(path, *p)
+		}
+	}
+
+	return nil
 }
