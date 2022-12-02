@@ -1,9 +1,8 @@
 linters:
   enable:
     - goheader
-    - golint
     - unused
-    - deadcode
+    - revive
   disable-all: true
 # all available settings of specific linters
 linters-settings:

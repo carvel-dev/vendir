@@ -31,7 +31,7 @@ func NewGit(opts ctlconf.DirectoryContentsGit,
 	return &Git{opts, infoLog, refFetcher}
 }
 
-// nolint:golint
+// nolint:revive
 type GitInfo struct {
 	SHA         string
 	Tags        []string
