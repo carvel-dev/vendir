@@ -32,7 +32,7 @@ type Secret struct {
 	Data     map[string][]byte
 }
 
-// nolint:golint
+// nolint:revive
 type ConfigMap struct {
 	APIVersion string
 	Kind       string
