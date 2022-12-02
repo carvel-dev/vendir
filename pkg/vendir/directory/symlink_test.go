@@ -7,13 +7,20 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateSymlinks(t *testing.T) {
 	root, err := os.MkdirTemp("", "vendir-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	root, err = filepath.EvalSymlinks(root)
 	if err != nil {
-		t.Fatalf("failed to create tmpdir: %v", err)
+		t.Fatalf("failed to read link tmpdir: %v", err)
 	}
+
 	wd := filepath.Join(root, "wd")
 	validFilePath := filepath.Join(wd, "file")
 
@@ -21,18 +28,13 @@ func TestValidateSymlinks(t *testing.T) {
 	siblingFilePath := filepath.Join(sibling, "file")
 
 	for _, path := range []string{wd, sibling} {
-		if err = os.Mkdir(path, os.ModePerm); err != nil {
-			t.Fatalf("failed to create dir: %v", err)
-		}
+		require.NoError(t, os.Mkdir(path, os.ModePerm))
 	}
 	for _, path := range []string{validFilePath, siblingFilePath} {
 		file, err := os.Create(path)
-		if err != nil {
-			t.Fatalf("failed to create file: %v", err)
-		}
+		require.NoError(t, err)
 		file.Close()
 	}
-	defer os.RemoveAll(root)
 
 	tests := []struct {
 		name    string
@@ -74,21 +76,21 @@ func TestValidateSymlinks(t *testing.T) {
 		test := func(t *testing.T) {
 			newName := filepath.Join(wd, "symlink")
 			err := os.Symlink(tt.target, newName)
-			if err != nil {
-				t.Fatalf("creating symlink: %v", err)
-			}
+			require.NoError(t, err)
+
 			defer os.Remove(newName)
-			if err := ValidateSymlinks(wd); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateSymlinks() error = %v, wantErr %v", err, tt.wantErr)
+			err = ValidateSymlinks(wd)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		}
 
 		t.Run(tt.name+" absolute", test)
 		t.Run(tt.name+" relative", func(t *testing.T) {
 			oldName, err := filepath.Rel(wd, tt.target)
-			if err != nil {
-				t.Fatalf("relativizing path: %v", err)
-			}
+			require.NoError(t, err)
 			tt.target = oldName
 			test(t)
 		})
