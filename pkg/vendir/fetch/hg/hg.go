@@ -30,7 +30,7 @@ func NewHg(opts ctlconf.DirectoryContentsHg,
 	return &Hg{opts, infoLog, refFetcher}
 }
 
-// nolint:golint
+// nolint:revive
 type HgInfo struct {
 	SHA            string
 	ChangeSetTitle string

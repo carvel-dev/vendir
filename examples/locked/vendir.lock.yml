@@ -9,8 +9,8 @@ directories:
       url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
     path: github.com/k14s/kapp-controller
   - helmChart:
-      appVersion: 1.8.0
-      version: 1.2.1
+      appVersion: 1.20.1
+      version: 7.10.1
     path: helm-chart
   path: vendor
 kind: LockConfig
