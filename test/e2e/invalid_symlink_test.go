@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 func TestInvalidSymlink(t *testing.T) {
@@ -53,11 +53,10 @@ func TestInvalidSymlink(t *testing.T) {
 			}},
 		}},
 	}
-	vendirYML, err := os.Create(filepath.Join(tmpDir, "vendir.yml"))
-	require.NoError(t, err)
-	defer vendirYML.Close()
 
-	err = yaml.NewEncoder(vendirYML).Encode(&baseCfg)
+	baseCfgBytes, err := yaml.Marshal(baseCfg)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(tmpDir, "vendir.yml"), baseCfgBytes, 0666)
 	require.NoError(t, err)
 
 	tests := []struct {
