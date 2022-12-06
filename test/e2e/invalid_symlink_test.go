@@ -6,9 +6,9 @@ package e2e
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	"gopkg.in/yaml.v2"
 )
@@ -18,40 +18,29 @@ func TestInvalidSymlink(t *testing.T) {
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
 	tmpDir, err := os.MkdirTemp("", "vendir-test")
-	if err != nil {
-		t.Fatalf("creating tmpdir: %v", err)
-	}
+	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
 	tmpDir, err = filepath.EvalSymlinks(tmpDir)
-	if err != nil {
-		t.Fatalf("failed to read link tmpdir: %v", err)
-	}
+	require.NoError(t, err)
 
 	symlinkDir := filepath.Join(tmpDir, "symlink-dir")
 	err = os.Mkdir(symlinkDir, os.ModePerm)
-	if err != nil {
-		t.Fatalf("creating symlink dir: %v", err)
-
-	}
+	require.NoError(t, err)
 
 	// valid since it is in the symlink-dir
 	validFilePath := filepath.Join(symlinkDir, "a_valid_file.txt")
 	validFile, err := os.Create(validFilePath)
-	if err != nil {
-		t.Fatalf("creating file: %v", err)
-	}
+	require.NoError(t, err)
 	validFile.Close()
 
 	//invalid since it is outside the symlink-dir
 	invalidFilePath := filepath.Join(tmpDir, "invalid_file.txt")
 	invalidFile, err := os.Create(invalidFilePath)
-	if err != nil {
-		t.Fatalf("creating file: %v", err)
-	}
+	require.NoError(t, err)
 	invalidFile.Close()
 
-	config := config.Config{
+	baseCfg := config.Config{
 		APIVersion: "vendir.k14s.io/v1alpha1",
 		Kind:       "Config",
 		Directories: []config.Directory{{
@@ -65,48 +54,35 @@ func TestInvalidSymlink(t *testing.T) {
 		}},
 	}
 	vendirYML, err := os.Create(filepath.Join(tmpDir, "vendir.yml"))
-	if err != nil {
-		t.Fatalf("creating vendir.yml: %v", err)
-	}
+	require.NoError(t, err)
 	defer vendirYML.Close()
 
-	err = yaml.NewEncoder(vendirYML).Encode(&config)
-	if err != nil {
-		t.Fatalf("writing vendir.yml: %v", err)
-	}
+	err = yaml.NewEncoder(vendirYML).Encode(&baseCfg)
+	require.NoError(t, err)
 
 	tests := []struct {
+		description     string
 		symlinkLocation string
 		valid           bool
 		expectedErr     string
 	}{
-		{symlinkLocation: "a_valid_file.txt", valid: true},
-		{symlinkLocation: invalidFilePath, valid: false, expectedErr: "Invalid symlink found to outside parent directory"},
-		{symlinkLocation: "non_existent_file.txt", valid: false, expectedErr: "Unable to resolve symlink"},
+		{description: "valid symlink", symlinkLocation: "a_valid_file.txt", valid: true},
+		{description: "symlink to outside the parent directory", symlinkLocation: invalidFilePath, valid: false, expectedErr: "Invalid symlink found to outside parent directory"},
+		{description: "symlink target does not exist", symlinkLocation: "non_existent_file.txt", valid: false, expectedErr: "Unable to resolve symlink"},
 	}
 	for _, tc := range tests {
-		symlinkPath := filepath.Join(symlinkDir, "file")
-		err = os.Symlink(tc.symlinkLocation, symlinkPath)
-		if err != nil {
-			t.Fatalf("creating symlink: %v", err)
-		}
+		t.Run(tc.description, func(t *testing.T) {
+			symlinkPath := filepath.Join(symlinkDir, "file")
+			err = os.Symlink(tc.symlinkLocation, symlinkPath)
+			require.NoError(t, err)
+			defer os.Remove(symlinkPath)
 
-		_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: tmpDir, AllowError: true})
-		if tc.valid && err != nil {
-			t.Fatalf("unexpected err: %v", err)
-		}
-		if !tc.valid {
-			if err == nil {
-				t.Fatalf("expected an err, got none")
+			_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: tmpDir, AllowError: true})
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.expectedErr)
 			}
-			if !strings.Contains(err.Error(), tc.expectedErr) {
-				t.Fatalf("Expected invalid symlink err: %s", err)
-			}
-		}
-
-		err = os.Remove(symlinkPath)
-		if err != nil {
-			t.Fatalf("deleting symlink: %v", err)
-		}
+		})
 	}
 }
