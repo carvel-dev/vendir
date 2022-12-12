@@ -5,6 +5,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
@@ -27,6 +28,8 @@ var (
 type Directory struct {
 	Path     string              `json:"path"`
 	Contents []DirectoryContents `json:"contents,omitempty"`
+
+	Permissions *os.FileMode `json:"permissions,omitempty"`
 }
 
 type DirectoryContents struct {
@@ -51,6 +54,8 @@ type DirectoryContents struct {
 	LegalPaths *[]string `json:"legalPaths,omitempty"`
 
 	NewRootPath string `json:"newRootPath,omitempty"`
+
+	Permissions *os.FileMode `json:"permissions,omitempty"`
 }
 
 type DirectoryContentsGit struct {
