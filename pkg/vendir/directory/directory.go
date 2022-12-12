@@ -210,7 +210,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		// after everything else is done, ensure the inner dir's access perms are set
 		// chmod to the content's permission, fall back to the directory's
-		err = maybeChmod(stagingDstPath, contents.Permission, d.opts.Permission)
+		err = maybeChmod(stagingDstPath, contents.Permissions, d.opts.Permissions)
 		if err != nil {
 			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
 		}
@@ -224,7 +224,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	// after everything else is done, ensure the outer dir's access perms are set
-	err = maybeChmod(d.opts.Path, d.opts.Permission)
+	err = maybeChmod(d.opts.Path, d.opts.Permissions)
 	if err != nil {
 		return lockConfig, fmt.Errorf("chmod on '%s': %s", d.opts.Path, err)
 	}

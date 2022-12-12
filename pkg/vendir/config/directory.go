@@ -29,7 +29,7 @@ type Directory struct {
 	Path     string              `json:"path"`
 	Contents []DirectoryContents `json:"contents,omitempty"`
 
-	Permission *os.FileMode `json:"permission,omitempty"`
+	Permissions *os.FileMode `json:"permissions,omitempty"`
 }
 
 type DirectoryContents struct {
@@ -55,7 +55,7 @@ type DirectoryContents struct {
 
 	NewRootPath string `json:"newRootPath,omitempty"`
 
-	Permission *os.FileMode `json:"permission,omitempty"`
+	Permissions *os.FileMode `json:"permissions,omitempty"`
 }
 
 type DirectoryContentsGit struct {

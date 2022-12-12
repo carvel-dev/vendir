@@ -32,7 +32,7 @@ func TestDirectoryPermissions(t *testing.T) {
 		},
 		"outer dir permissions can be configured": {
 			updateConfig: func(c *config.Config) {
-				c.Directories[0].Permission = p(0744)
+				c.Directories[0].Permissions = p(0744)
 			},
 			expectedPerms: filePerms{
 				"dir-0": 0744, filepath.Join("dir-0", "subdir-0-0"): 0744, filepath.Join("dir-0", "subdir-0-1"): 0744,
@@ -41,8 +41,8 @@ func TestDirectoryPermissions(t *testing.T) {
 		},
 		"inner dir permissions can be configured": {
 			updateConfig: func(c *config.Config) {
-				c.Directories[0].Contents[0].Permission = p(0755)
-				c.Directories[0].Contents[1].Permission = p(0744)
+				c.Directories[0].Contents[0].Permissions = p(0755)
+				c.Directories[0].Contents[1].Permissions = p(0744)
 			},
 			expectedPerms: filePerms{
 				"dir-0": 0700, filepath.Join("dir-0", "subdir-0-0"): 0755, filepath.Join("dir-0", "subdir-0-1"): 0744,
@@ -51,9 +51,9 @@ func TestDirectoryPermissions(t *testing.T) {
 		},
 		"blocking write or execute in (sub)dirs still works": {
 			updateConfig: func(c *config.Config) {
-				c.Directories[0].Permission = p(0100) // we still need exec permissions here, so that we can stat its subdirectories
-				c.Directories[0].Contents[0].Permission = p(0000)
-				c.Directories[0].Contents[1].Permission = p(0004)
+				c.Directories[0].Permissions = p(0100) // we still need exec permissions here, so that we can stat its subdirectories
+				c.Directories[0].Contents[0].Permissions = p(0000)
+				c.Directories[0].Contents[1].Permissions = p(0004)
 			},
 			expectedPerms: filePerms{
 				"dir-0": 0100, filepath.Join("dir-0", "subdir-0-0"): 0000, filepath.Join("dir-0", "subdir-0-1"): 0004,
