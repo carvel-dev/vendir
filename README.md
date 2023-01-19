@@ -5,8 +5,8 @@
 - Website: [https://carvel.dev/vendir](https://carvel.dev/vendir)
 - Slack: [#carvel in Kubernetes slack](https://slack.kubernetes.io)
 - [Docs](https://carvel.dev/vendir/docs/latest/) with example workflow and other details
-- Install: Grab prebuilt binaries from the [Releases page](https://github.com/vmware-tanzu/carvel-vendir/releases) or [Homebrew Carvel tap](https://github.com/vmware-tanzu/homebrew-carvel)
-- Backlog: [See what we're up to](https://github.com/orgs/vmware-tanzu/projects/16/views/1?filterQuery=repo%3A%22vmware-tanzu%2Fcarvel-vendir%22).
+- Install: Grab prebuilt binaries from the [Releases page](https://github.com/carvel-dev/vendir/releases) or [Homebrew Carvel tap](https://github.com/carvel-dev/homebrew)
+- Backlog: [See what we're up to](https://github.com/orgs/carvel-dev/projects/1/views/1?filterQuery=repo%3A%22carvel-dev%2Fvendir%22).
 
 `vendir` allows to declaratively state what should be in a directory. It's could be used for vendoring software.
 
@@ -39,4 +39,4 @@ Please join us during our online community meetings. Details can be found on our
 
 You can chat with us on Kubernetes Slack in the #carvel channel and follow us on Twitter at @carvel_dev.
 
-Check out which organizations are using and contributing to Carvel: [Adopter's list](https://github.com/vmware-tanzu/carvel/blob/master/ADOPTERS.md)
+Check out which organizations are using and contributing to Carvel: [Adopter's list](https://github.com/carvel-dev/carvel/blob/master/ADOPTERS.md)
