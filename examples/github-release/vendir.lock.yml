@@ -3,15 +3,15 @@ directories:
 - contents:
   - githubRelease:
       tag: v0.1.0
-      url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
-    path: github.com/k14s/kapp-controller
+      url: https://api.github.com/repos/carvel-dev/kapp-controller/releases/21912613
+    path: github.com/carvel-dev/kapp-controller
   - githubRelease:
       tag: v1.8.0
       url: https://api.github.com/repos/cert-manager/cert-manager/releases/63665514
     path: github.com/cert-manager/cert-manager
   - githubRelease:
       tag: v0.35.0
-      url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/64149930
+      url: https://api.github.com/repos/carvel-dev/kapp-controller/releases/64149930
     path: specific-asset-checksum-checked
   - githubRelease:
       tag: v1.2.0

@@ -58,7 +58,7 @@ git log -1 --format=format:%H > ../git-meta/signed-trusted-commit.txt
 git tag -s signed-trusted-tag -m 'signed-trusted-tag-msg'
 
 
-git submodule add https://github.com/vmware-tanzu/carvel-vendir
+git submodule add https://github.com/carvel-dev/vendir
 git add .
 git commit -S -m 'signed-trusted-commit-msg'
 git log -1 --format=format:%H > ../git-meta/signed-trusted-commit-git-submodule.txt

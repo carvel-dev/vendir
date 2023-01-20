@@ -7,7 +7,7 @@ directories:
     path: github.com/cloudfoundry/cf-k8s-networking
   - githubRelease:
       tag: v0.1.0
-      url: https://api.github.com/repos/vmware-tanzu/carvel-kapp-controller/releases/21912613
+      url: https://api.github.com/repos/carvel-dev/kapp-controller/releases/21912613
     path: github.com/k14s/kapp-controller
   - helmChart:
       appVersion: 1.20.1
