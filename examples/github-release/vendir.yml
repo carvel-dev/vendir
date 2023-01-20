@@ -5,9 +5,9 @@ directories:
   contents:
 
   # validates checksums automatically from release notes
-  - path: github.com/k14s/kapp-controller
+  - path: github.com/carvel-dev/kapp-controller
     githubRelease:
-      slug: k14s/kapp-controller
+      slug: carvel-dev/kapp-controller
       tag: v0.1.0
 
   # skips checkum validation
