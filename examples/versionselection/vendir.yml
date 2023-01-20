@@ -35,7 +35,7 @@ directories:
 
   - path: github-release-tag-selection
     githubRelease:
-      slug: k14s/kapp-controller
+      slug: carvel-dev/kapp-controller
       tagSelection:
         semver:
           # version 0.1.0 and 0.2.0 don't show up in the first page (of 40 results), we paginate to fetch them
