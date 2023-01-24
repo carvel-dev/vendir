@@ -1,6 +1,7 @@
 // Copyright 2022 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package credentialprovider contains helper functions used in auth package
 package credentialprovider
 
 import (

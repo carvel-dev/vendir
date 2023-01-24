@@ -42,6 +42,9 @@ func (c Cosign) Signature(imageRef regname.Digest) (imageset.UnprocessedImageRef
 			if transportErr.StatusCode == http.StatusNotFound {
 				return imageset.UnprocessedImageRef{}, NotFoundErr{}
 			}
+			if transportErr.StatusCode == http.StatusForbidden {
+				return imageset.UnprocessedImageRef{}, AccessDeniedErr{imageRef: sigTagRef.Identifier()}
+			}
 		}
 		return imageset.UnprocessedImageRef{}, err
 	}

@@ -19,12 +19,64 @@ type Finder interface {
 	Signature(reference name.Digest) (imageset.UnprocessedImageRef, error)
 }
 
+// FetchingError Error type that happen when fetching signatures
+type FetchingError interface {
+	error
+	ImageRef() string
+}
+
 // NotFoundErr specific not found error
-type NotFoundErr struct{}
+type NotFoundErr struct {
+	imageRef string
+}
+
+// ImageRef Image Reference and associated to the error
+func (n NotFoundErr) ImageRef() string {
+	return n.imageRef
+}
 
 // Error Not Found Error message
-func (s NotFoundErr) Error() string {
+func (n NotFoundErr) Error() string {
 	return "signature not found"
+}
+
+// AccessDeniedErr specific access denied error
+type AccessDeniedErr struct {
+	imageRef string
+}
+
+// ImageRef Image Reference and associated to the error
+func (a AccessDeniedErr) ImageRef() string {
+	return a.imageRef
+}
+
+// Error Access Denied message
+func (a AccessDeniedErr) Error() string {
+	return "access denied"
+}
+
+// FetchError Struct that will contain all the errors found while fetching signatures
+type FetchError struct {
+	AllErrors []FetchingError
+}
+
+// Error message that contains all errors
+func (f *FetchError) Error() string {
+	msg := "Unable to retrieve the following images:\n"
+	for _, err := range f.AllErrors {
+		msg = fmt.Sprintf("%sImage: '%s'\nError:%s", msg, err.ImageRef(), err.Error())
+	}
+	return msg
+}
+
+// HasErrors check if any error happened
+func (f *FetchError) HasErrors() bool {
+	return len(f.AllErrors) > 0
+}
+
+// Add a new error to the list of errors
+func (f *FetchError) Add(err FetchingError) {
+	f.AllErrors = append(f.AllErrors, err)
 }
 
 // Signatures Signature fetcher
@@ -71,6 +123,7 @@ func (s *Signatures) FetchForImageRefs(images []lockconfig.ImageRef) ([]lockconf
 
 	throttle := util.NewThrottle(s.concurrency)
 	var wg errgroup.Group
+	allErrs := &FetchError{}
 
 	for _, ref := range images {
 		ref := ref //copy
@@ -85,10 +138,16 @@ func (s *Signatures) FetchForImageRefs(images []lockconfig.ImageRef) ([]lockconf
 
 			signature, err := s.signatureFinder.Signature(imgDigest)
 			if err != nil {
-				if _, ok := err.(NotFoundErr); !ok {
-					return fmt.Errorf("Fetching signature for image '%s': %s", imgDigest.Name(), err)
+				if _, ok := err.(NotFoundErr); ok {
+					return nil
 				}
-				return nil
+				if deniedErr, ok := err.(AccessDeniedErr); ok {
+					lock.Lock()
+					defer lock.Unlock()
+					allErrs.Add(deniedErr)
+					return nil
+				}
+				return fmt.Errorf("Fetching signature for image '%s': %s", imgDigest.Name(), err)
 			}
 
 			lock.Lock()
@@ -103,7 +162,15 @@ func (s *Signatures) FetchForImageRefs(images []lockconfig.ImageRef) ([]lockconf
 
 	err := wg.Wait()
 
-	return signatures, err
+	if err != nil {
+		return signatures, err
+	}
+
+	if allErrs.HasErrors() {
+		return signatures, allErrs
+	}
+
+	return signatures, nil
 }
 
 // Noop No Operation signature fetcher

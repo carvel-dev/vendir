@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -154,7 +155,7 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 		return registry.Opts{}, err
 	}
 
-	return registry.Opts{
+	opts := registry.Opts{
 		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
 		Insecure:              false,
 		ResponseHeaderTimeout: 30 * time.Second,
@@ -162,7 +163,21 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 		EnvironFunc: func() []string {
 			return append(envVariables, t.opts.EnvironFunc()...)
 		},
-	}, nil
+	}
+	envVars := map[string]string{}
+	for _, envVar := range append(envVariables, t.opts.EnvironFunc()...) {
+		envVarSplit := strings.SplitN(envVar, "=", 2)
+		if len(envVarSplit) != 2 {
+			return registry.Opts{}, fmt.Errorf("Value '%s' does not look like an environment variable", envVar)
+		}
+		envVars[envVarSplit[0]] = envVarSplit[1]
+	}
+
+	envLookup := func(key string) (string, bool) {
+		value, found := envVars[key]
+		return value, found
+	}
+	return v1.OptsFromEnv(opts, envLookup), nil
 }
 
 func (t *Imgpkg) authEnv() ([]string, error) {
