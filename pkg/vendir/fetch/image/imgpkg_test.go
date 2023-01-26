@@ -20,6 +20,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
 	ctlregistry "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
@@ -138,6 +139,59 @@ func TestImgpkgAuth(t *testing.T) {
 		require.NoError(t, err)
 
 		requireImgpkgEnv(t, nil, opts.EnvironFunc())
+	})
+
+	t.Run("enable keychain auth with list of keychains", func(t *testing.T) {
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{
+				EnvironFunc: func() []string {
+					return []string{"IMGPKG_ACTIVE_KEYCHAINS=gcr,ecr"}
+				},
+			},
+			ctlfetch.SingleSecretRefFetcher{},
+			cache,
+		)
+
+		opts, err := imgpkg.RegistryOpts()
+		require.NoError(t, err)
+		require.Equal(t, []auth.IAASKeychain{"gcr", "ecr"}, opts.ActiveKeychains)
+	})
+
+	t.Run("enable keychain auth with single keychain", func(t *testing.T) {
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{
+				EnvironFunc: func() []string {
+					return []string{"IMGPKG_ACTIVE_KEYCHAINS=single"}
+				},
+			},
+			ctlfetch.SingleSecretRefFetcher{},
+			cache,
+		)
+
+		opts, err := imgpkg.RegistryOpts()
+		require.NoError(t, err)
+		require.Equal(t, []auth.IAASKeychain{"single"}, opts.ActiveKeychains)
+	})
+
+	t.Run("no keychain enable when environment variable not set", func(t *testing.T) {
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{},
+			ctlfetch.SingleSecretRefFetcher{},
+			cache,
+		)
+
+		opts, err := imgpkg.RegistryOpts()
+		require.NoError(t, err)
+		require.Nil(t, opts.ActiveKeychains)
 	})
 }
 

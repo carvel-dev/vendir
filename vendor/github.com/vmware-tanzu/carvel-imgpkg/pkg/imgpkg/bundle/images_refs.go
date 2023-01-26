@@ -20,6 +20,7 @@ type ImageRef struct {
 	IsBundle  *bool
 	Copiable  bool
 	ImageType ImageType
+	Error     string
 }
 
 // ImageType defines the type of Image. This is an evolving list that might grow with time
@@ -48,16 +49,18 @@ func NewContentImageRef(imgRef lockconfig.ImageRef) ImageRef {
 
 // NewImageRefWithType Constructs a new ImageRef based on the ImageType
 func NewImageRefWithType(imgRef lockconfig.ImageRef, imageType ImageType) ImageRef {
-	copiable := true
-	if imageType == InternalImage {
-		copiable = false
-	}
-	isBundle := false
-	if imageType == BundleImage {
-		isBundle = true
-	}
+	copiable := imageType == InternalImage
+	isBundle := imageType == BundleImage
 
 	return ImageRef{ImageRef: imgRef, IsBundle: &isBundle, Copiable: copiable, ImageType: imageType}
+}
+
+// NewImageRefWithTypeAndError Constructs a new ImageRef based on the ImageType that failed to fetch
+func NewImageRefWithTypeAndError(imgRef lockconfig.ImageRef, imageType ImageType, err string) ImageRef {
+	copiable := imageType == InternalImage
+	isBundle := imageType == BundleImage
+
+	return ImageRef{ImageRef: imgRef, IsBundle: &isBundle, Copiable: copiable, ImageType: imageType, Error: err}
 }
 
 // Digest Image Digest
@@ -81,6 +84,7 @@ func (i ImageRef) DeepCopy() ImageRef {
 		IsBundle:  isBundle,
 		Copiable:  i.Copiable,
 		ImageType: i.ImageType,
+		Error:     i.Error,
 	}
 }
 

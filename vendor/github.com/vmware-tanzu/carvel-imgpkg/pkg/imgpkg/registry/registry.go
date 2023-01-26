@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"runtime"
 	"sync"
 	"time"
 
@@ -43,6 +42,30 @@ type Opts struct {
 
 	EnvironFunc     func() []string
 	ActiveKeychains []auth.IAASKeychain
+}
+
+// DeepCopy the options to a new struct
+func (o Opts) DeepCopy() Opts {
+	result := Opts{
+		VerifyCerts:                   o.VerifyCerts,
+		Insecure:                      o.Insecure,
+		IncludeNonDistributableLayers: o.IncludeNonDistributableLayers,
+		Username:                      o.Username,
+		Password:                      o.Password,
+		Token:                         o.Token,
+		Anon:                          o.Anon,
+		EnableIaasAuthProviders:       o.EnableIaasAuthProviders,
+		ResponseHeaderTimeout:         o.ResponseHeaderTimeout,
+		RetryCount:                    o.RetryCount,
+		EnvironFunc:                   o.EnvironFunc,
+	}
+	for _, path := range o.CACertPaths {
+		result.CACertPaths = append(result.CACertPaths, path)
+	}
+	for _, keychain := range o.ActiveKeychains {
+		result.ActiveKeychains = append(result.ActiveKeychains, keychain)
+	}
+	return result
 }
 
 // Registry Interface to access the registry
@@ -464,19 +487,10 @@ func (r *SimpleRegistry) FirstImageExists(digests []string) (string, error) {
 func newHTTPTransport(opts Opts) (*http.Transport, error) {
 	var pool *x509.CertPool
 
-	// workaround for windows not returning system certs via x509.SystemCertPool() See: https://github.com/golang/go/issues/16736
-	// instead windows lazily fetches ca certificates (over the network) as needed during cert verification time.
-	// to opt-into that tls.Config.RootCAs is set to nil on windows.
-	if runtime.GOOS != "windows" {
-		var err error
-		pool, err = x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if runtime.GOOS == "windows" && len(opts.CACertPaths) > 0 {
-		pool = x509.NewCertPool()
+	var err error
+	pool, err = x509.SystemCertPool()
+	if err != nil {
+		return nil, err
 	}
 
 	if len(opts.CACertPaths) > 0 {
