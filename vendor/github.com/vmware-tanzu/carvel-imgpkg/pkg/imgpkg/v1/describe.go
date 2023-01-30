@@ -1,7 +1,6 @@
 // Copyright 2022 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v1 contains the public API version 1 used by other tools to interact with imgpkg
 package v1
 
 import (
@@ -35,11 +34,10 @@ type Metadata struct {
 
 // ImageInfo URLs where the image can be found as well as annotations provided in the Images Lock
 type ImageInfo struct {
-	Image       string            `json:"image,omitempty"`
-	Origin      string            `json:"origin,omitempty"`
+	Image       string            `json:"image"`
+	Origin      string            `json:"origin"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 	ImageType   bundle.ImageType  `json:"imageType"`
-	Error       string            `json:"error,omitempty"`
 }
 
 // Content Contents present in a Bundle
@@ -166,22 +164,15 @@ func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDes
 			}
 			desc.bundle.Content.Bundles[digest.DigestStr()] = bundleDesc
 		} else {
-			if ref.Error == "" {
-				digest, err := name.NewDigest(ref.Image)
-				if err != nil {
-					panic(fmt.Sprintf("Internal inconsistency: image %s should be fully resolved", ref.Image))
-				}
-				desc.bundle.Content.Images[digest.DigestStr()] = ImageInfo{
-					Image:       ref.PrimaryLocation(),
-					Origin:      ref.Image,
-					Annotations: ref.Annotations,
-					ImageType:   ref.ImageType,
-				}
-			} else {
-				desc.bundle.Content.Images[ref.Image] = ImageInfo{
-					ImageType: ref.ImageType,
-					Error:     ref.Error,
-				}
+			digest, err := name.NewDigest(ref.Image)
+			if err != nil {
+				panic(fmt.Sprintf("Internal inconsistency: image %s should be fully resolved", ref.Image))
+			}
+			desc.bundle.Content.Images[digest.DigestStr()] = ImageInfo{
+				Image:       ref.PrimaryLocation(),
+				Origin:      ref.Image,
+				Annotations: ref.Annotations,
+				ImageType:   ref.ImageType,
 			}
 		}
 	}
