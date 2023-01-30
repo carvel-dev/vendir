@@ -1,7 +1,6 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package auth provides different keychains used in imgpkg
 package auth
 
 import (

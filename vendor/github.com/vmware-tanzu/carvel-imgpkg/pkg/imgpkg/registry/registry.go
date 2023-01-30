@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"runtime"
 	"sync"
 	"time"
 
@@ -487,10 +488,19 @@ func (r *SimpleRegistry) FirstImageExists(digests []string) (string, error) {
 func newHTTPTransport(opts Opts) (*http.Transport, error) {
 	var pool *x509.CertPool
 
-	var err error
-	pool, err = x509.SystemCertPool()
-	if err != nil {
-		return nil, err
+	// workaround for windows not returning system certs via x509.SystemCertPool() See: https://github.com/golang/go/issues/16736
+	// instead windows lazily fetches ca certificates (over the network) as needed during cert verification time.
+	// to opt-into that tls.Config.RootCAs is set to nil on windows.
+	if runtime.GOOS != "windows" {
+		var err error
+		pool, err = x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if runtime.GOOS == "windows" && len(opts.CACertPaths) > 0 {
+		pool = x509.NewCertPool()
 	}
 
 	if len(opts.CACertPaths) > 0 {
