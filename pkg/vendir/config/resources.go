@@ -45,6 +45,10 @@ func parseResources(paths []string, resourceFunc func([]byte) error) error {
 			if err != nil {
 				return fmt.Errorf("Parsing config '%s': %s", path, err)
 			}
+			// Skip documents that are empty or only contain whitespace
+			if len(bytes.TrimSpace(docBytes)) == 0 {
+				continue
+			}
 			err = resourceFunc(docBytes)
 			if err != nil {
 				return fmt.Errorf("Parsing resource config '%s': %s", path, err)
