@@ -18,7 +18,7 @@ require (
 	github.com/otiai10/copy v1.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.2
-	golang.org/x/crypto v0.0.0-20220314234659-1baeb1ce4c0b
+	golang.org/x/crypto v0.1.0
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401
 	golang.org/x/tools v0.1.12
 	k8s.io/apimachinery v0.17.2
@@ -56,13 +56,13 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect
-	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	github.com/vito/go-interact v1.0.1 // indirect
+	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	gonum.org/v1/gonum v0.0.0-20190331200053-3d26580ed485 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
