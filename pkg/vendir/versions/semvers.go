@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	semver "github.com/k14s/semver/v4"
+	semver "github.com/carvel-dev/semver/v4"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
