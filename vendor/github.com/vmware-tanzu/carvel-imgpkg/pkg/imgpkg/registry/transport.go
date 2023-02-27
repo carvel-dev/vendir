@@ -15,13 +15,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 )
 
-// MultiRoundTripperStorage Maintains a storage of all the available RoundTripper for different registries and repositories
-type MultiRoundTripperStorage struct {
-	baseRoundTripper http.RoundTripper
-	transports       map[string]map[string]map[string]http.RoundTripper
-	readWriteAccess  *sync.Mutex
-}
-
 // NewMultiRoundTripperStorage Creates a struct that holds RoundTripper
 func NewMultiRoundTripperStorage(baseRoundTripper http.RoundTripper) *MultiRoundTripperStorage {
 	return &MultiRoundTripperStorage{
@@ -37,6 +30,18 @@ func NewSingleTripperStorage(baseRoundTripper http.RoundTripper) *SingleTripperS
 		baseRoundTripper: baseRoundTripper,
 		readWriteAccess:  &sync.Mutex{},
 	}
+}
+
+// NewNoopRoundTripperStorage Creates a struct that does not save any RoundTripper
+func NewNoopRoundTripperStorage() *NoopRoundTripperStorage {
+	return &NoopRoundTripperStorage{}
+}
+
+// MultiRoundTripperStorage Maintains a storage of all the available RoundTripper for different registries and repositories
+type MultiRoundTripperStorage struct {
+	baseRoundTripper http.RoundTripper
+	transports       map[string]map[string]map[string]http.RoundTripper
+	readWriteAccess  *sync.Mutex
 }
 
 // BaseRoundTripper retrieves the base RoundTripper used by the store
@@ -145,4 +150,22 @@ func (r *SingleTripperStorage) CreateRoundTripper(reg regname.Registry, auth aut
 	r.transport = rt
 
 	return rt, nil
+}
+
+// NoopRoundTripperStorage does not store any http.RoundTripper
+type NoopRoundTripperStorage struct{}
+
+// RoundTripper returns nil to all invocations
+func (n NoopRoundTripperStorage) RoundTripper(regname.Repository, string) http.RoundTripper {
+	return nil
+}
+
+// CreateRoundTripper does nothing
+func (n NoopRoundTripperStorage) CreateRoundTripper(reg regname.Registry, auth authn.Authenticator, scope string) (http.RoundTripper, error) {
+	return nil, nil
+}
+
+// BaseRoundTripper returns nil to all invocations
+func (n NoopRoundTripperStorage) BaseRoundTripper() http.RoundTripper {
+	return nil
 }
