@@ -6,9 +6,7 @@ package main
 import (
 	"io"
 	"log"
-	"math/rand"
 	"os"
-	"time"
 
 	uierrs "github.com/cppforlife/go-cli-ui/errors"
 	"github.com/cppforlife/go-cli-ui/ui"
@@ -16,8 +14,6 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	log.SetOutput(io.Discard)
 
 	// TODO logs
