@@ -51,6 +51,13 @@ metadata:
 data:
   valid.pub: "%s"
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-pubs
+data:
+  valid.pub: "%s"
+---
 apiVersion: vendir.k14s.io/v1alpha1
 kind: Config
 directories:
@@ -63,7 +70,7 @@ directories:
       verification:
         publicKeysSecretRef:
           name: git-pubs
-`, encodedPubKeys, repoPath, ref))
+`, encodedPubKeys, encodedPubKeys, repoPath, ref))
 	}
 
 	yamlConfig := func(ref string) io.Reader {
