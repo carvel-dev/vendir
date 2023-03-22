@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 )
@@ -185,7 +186,8 @@ metadata:
 
 		require.NoError(t, os.WriteFile(tempConfigPath, configWithWhitespace, 0666))
 
-		_, _, _, err := config.NewConfigFromFiles([]string{tempConfigPath})
+		_, s, _, err := config.NewConfigFromFiles([]string{tempConfigPath})
+		assert.Equal(t, len(s), 2)
 		require.NoError(t, err)
 	})
 
@@ -254,5 +256,6 @@ metadata:
 
 		_, _, _, err := config.NewConfigFromFiles([]string{tempConfigPath})
 		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Expected to find one secret 'ssh-key-secret', but found multiple")
 	})
 }
