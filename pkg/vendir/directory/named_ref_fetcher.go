@@ -5,7 +5,6 @@ package directory
 
 import (
 	"fmt"
-	"reflect"
 
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
@@ -26,9 +25,6 @@ func (f NamedRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
 	var found []ctlconf.Secret
 	for _, secret := range f.secrets {
 		if secret.Metadata.Name == name {
-			if len(found) == 1 && reflect.DeepEqual(found[0].Data, secret.Data) {
-				continue
-			}
 			found = append(found, secret)
 		}
 	}

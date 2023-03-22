@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	semver "github.com/hashicorp/go-version"
@@ -31,7 +32,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 	var configs []Config
 	var secrets []Secret
 	var configMaps []ConfigMap
-
+	secretsNames := map[string][]Secret{}
 	err := parseResources(paths, func(docBytes []byte) error {
 		var res resource
 
@@ -48,7 +49,17 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 			if err != nil {
 				return fmt.Errorf("Unmarshaling secret: %s", err)
 			}
-			secrets = append(secrets, secret)
+
+			if s, ok := secretsNames[secret.Metadata.Name]; ok {
+				if len(s) == 1 {
+					if !reflect.DeepEqual(s[0].Data, secret.Data) {
+						return fmt.Errorf(
+							"Expected to find one secret '%s', but found multiple", s[0].Metadata.Name)
+					}
+				}
+				return nil
+			}
+			secretsNames[secret.Metadata.Name] = []Secret{secret}
 
 		case res.APIVersion == "v1" && res.Kind == "ConfigMap":
 			var cm ConfigMap
@@ -72,6 +83,11 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 		}
 		return nil
 	})
+
+	for _, v := range secretsNames {
+		secrets = append(secrets, v...)
+	}
+
 	if err != nil {
 		return Config{}, nil, nil, err
 	}
