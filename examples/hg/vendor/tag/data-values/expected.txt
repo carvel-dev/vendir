@@ -1,0 +1,46 @@
+nothing: "null"
+string: str
+bool: "true"
+int: "123"
+float: "123.123"
+***
+nothing: null
+string: str
+bool: true
+int: 123
+float: 123.123
+***
+nothing: "null"
+string: str
+bool: true
+int: 123
+float: 123.123
+***
+nothing:
+- 1
+- 2
+- 3
+string:
+- 1
+- 2
+- 4
+bool: true
+int: 123
+float: 123.123
+***
+nothing: something
+string: str
+bool: true
+int: 124
+float: 0
+***
+nothing: something
+string: |-
+  Value that comes from a file.
+
+  Typically, useful for files that contain values
+  that should just be passed through to system
+  configuration, wholesale (e.g. certs).
+bool: false
+int: 0
+float: 0
