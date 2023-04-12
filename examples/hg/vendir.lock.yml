@@ -2,12 +2,12 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - hg:
-      changeSetTitle: Prevent wrapping filenames to preserve whitespace
-      sha: 180c776fe29448afa8c756ab572bab7a1cf17a06
+      changeSetTitle: add data-values example
+      sha: dc860d1ce57c92ef67aee2510592a9e333431038
     path: exact-sha
   - hg:
-      changeSetTitle: Display draft and obsolete changesets in the log
-      sha: ed2bf9d685dac800fcd02530f3722f4b1c3ffb1a
+      changeSetTitle: add data-values example
+      sha: dc860d1ce57c92ef67aee2510592a9e333431038
     path: tag
   path: vendor
 kind: LockConfig
