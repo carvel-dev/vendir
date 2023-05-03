@@ -27,6 +27,6 @@ func (f SingleSecretRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
 	return ctlconf.Secret{}, fmt.Errorf("Not found")
 }
 
-func (f SingleSecretRefFetcher) GetConfigMap(name string) (ctlconf.ConfigMap, error) {
+func (f SingleSecretRefFetcher) GetConfigMap(_ string) (ctlconf.ConfigMap, error) {
 	return ctlconf.ConfigMap{}, fmt.Errorf("Not found")
 }
