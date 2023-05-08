@@ -16,8 +16,8 @@ require (
 	github.com/otiai10/copy v1.2.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.1
-	github.com/vmware-tanzu/carvel-imgpkg v0.36.0
+	github.com/stretchr/testify v1.8.2
+	github.com/vmware-tanzu/carvel-imgpkg v0.36.2
 	golang.org/x/crypto v0.3.0
 	golang.org/x/oauth2 v0.1.0
 	golang.org/x/tools v0.5.0

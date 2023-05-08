@@ -161,7 +161,7 @@ func (n NoopRoundTripperStorage) RoundTripper(regname.Repository, string) http.R
 }
 
 // CreateRoundTripper does nothing
-func (n NoopRoundTripperStorage) CreateRoundTripper(reg regname.Registry, auth authn.Authenticator, scope string) (http.RoundTripper, error) {
+func (n NoopRoundTripperStorage) CreateRoundTripper(_ regname.Registry, _ authn.Authenticator, _ string) (http.RoundTripper, error) {
 	return nil, nil
 }
 
