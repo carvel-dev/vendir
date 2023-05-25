@@ -147,11 +147,19 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		{"init"},
 		{"config", "credential.helper", "store --file " + gitCredsPath},
 		{"remote", "add", "origin", gitURL},
-		{"config", "remote.origin.tagOpt", "--tags"},
+	}
+
+	if t.opts.RefSelection != nil {
+		// fetch tags for selection
+		argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
 	}
 
 	{
 		fetchArgs := []string{"fetch", "origin"}
+		if strings.HasPrefix(t.opts.Ref, "origin/") {
+			// only fetch the exact ref we're seeking
+			fetchArgs = append(fetchArgs, t.opts.Ref[7:])
+		}
 		if t.opts.Depth > 0 {
 			fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
 		}
