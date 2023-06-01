@@ -6,15 +6,9 @@ package imagedesc
 import (
 	"io"
 
-	regname "github.com/google/go-containerregistry/pkg/name"
 	regv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	regv1types "github.com/google/go-containerregistry/pkg/v1/types"
 )
-
-type RegistryRemoteImage interface {
-	Get(reference regname.Reference) (*remote.Descriptor, error)
-}
 
 type ImageOrIndex struct {
 	Image *ImageWithRef

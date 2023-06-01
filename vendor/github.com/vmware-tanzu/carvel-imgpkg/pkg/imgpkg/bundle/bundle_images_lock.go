@@ -18,73 +18,21 @@ import (
 	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/lockconfig"
 )
 
-// ImagesRefs Retrieve the references for the Images of this particular bundle
-func (o *Bundle) ImagesRefs() []ImageRef {
-	return o.cachedImageRefs.All()
+// ImagesRefsWithErrors Retrieve the references for the Images of this particular bundle including images that imgpkg
+// was not able to retrieve information for
+func (o *Bundle) ImagesRefsWithErrors() []ImageRef {
+	return o.cachedImageRefs.AllImagesWithErrors()
 }
 
 // AllImagesLockRefs returns a flat list of nested bundles and every image reference for a specific bundle
 func (o *Bundle) AllImagesLockRefs(concurrency int, logger util.LoggerWithLevels) ([]*Bundle, ImageRefs, error) {
 	throttleReq := util.NewThrottle(concurrency)
 
-	bundles, allImageRefs, err := o.buildAllImagesLock(&throttleReq, &processedImages{processedImgs: map[string]struct{}{}}, logger)
-	if err != nil {
-		return nil, ImageRefs{}, err
-	}
-
-	// Ensure that the correct IsBundle flag is provided.
-	// This loop needs to happen because we skipped some images for some bundle, and only at this point we have
-	// the full list of ImageRefs created and can fill the gaps inside each bundle
-	for _, bundle := range bundles {
-		for _, ref := range bundle.cachedImageRefs.All() {
-			imgRef, found := allImageRefs.Find(ref.Image)
-			if !found {
-				panic(fmt.Sprintf("Internal inconsistency: The Image '%s' cannot be found in the total list of images", ref.Image))
-			}
-
-			// We want to keep the annotations, only ensure the rest of the information is copied
-			bundle.updateCachedImageRefWithoutAnnotations(imgRef)
-		}
-	}
-
-	return bundles, allImageRefs, err
+	return o.buildAllImagesLock(&throttleReq, logger)
 }
 
-// UpdateImageRefs updates the bundle cached images without talking to the registry
-func (o *Bundle) UpdateImageRefs(bundles []*Bundle) error {
-	o.cachedImageRefs = newImageRefCache()
-
-	img, err := o.checkedImage()
-	if err != nil {
-		return err
-	}
-
-	// Call fetchImagesRef with a NotFoundLocationsConfig because this function should only be used
-	// in the copy from tar to repository
-	imageRefsToProcess, err := o.fetchImagesRef(img, &NotFoundLocationsConfig{})
-	if err != nil {
-		return fmt.Errorf("Fetching images of %s: %s", o.DigestRef(), err)
-	}
-
-	for _, image := range imageRefsToProcess.ImageRefs() {
-		isBundle := false
-		for _, bundle := range bundles {
-			if bundle.Digest() == image.Digest() {
-				isBundle = true
-				image.ImageType = BundleImage
-				break
-			}
-		}
-		image.IsBundle = &isBundle
-		// We want to keep the annotations, only ensure the rest of the information is copied
-		o.updateCachedImageRefWithoutAnnotations(image)
-	}
-	return nil
-}
-
-func (o *Bundle) buildAllImagesLock(throttleReq *util.Throttle, processedImgs *processedImages, logger util.LoggerWithLevels) ([]*Bundle, ImageRefs, error) {
-	o.cachedImageRefs = newImageRefCache()
-
+// buildAllImagesLock recursive function that will iterate over the Bundle graph and collect all the bundles and images
+func (o *Bundle) buildAllImagesLock(throttleReq *util.Throttle, logger util.LoggerWithLevels) ([]*Bundle, ImageRefs, error) {
 	img, err := o.checkedImage()
 	if err != nil {
 		return nil, ImageRefs{}, err
@@ -114,11 +62,6 @@ func (o *Bundle) buildAllImagesLock(throttleReq *util.Throttle, processedImgs *p
 	for _, image := range imageRefsToProcess.ImageRefs() {
 		o.cachedImageRefs.StoreImageRef(image.DeepCopy())
 
-		if skip := processedImgs.CheckAndAddImage(image.Image); skip {
-			errChan <- nil
-			continue
-		}
-
 		// Check if this image is not a bundle and skips
 		if image.IsBundle != nil && *image.IsBundle == false {
 			typedImageRef := NewContentImageRef(image.ImageRef).DeepCopy()
@@ -130,7 +73,7 @@ func (o *Bundle) buildAllImagesLock(throttleReq *util.Throttle, processedImgs *p
 
 		image := image.DeepCopy()
 		go func() {
-			nestedBundles, nestedBundlesProcessedImageRefs, imgRef, err := o.imagesLockIfIsBundle(throttleReq, image, processedImgs, logger)
+			nestedBundles, nestedBundlesProcessedImageRefs, imgRef, err := o.imagesLockIfIsBundle(throttleReq, image, logger)
 			if err != nil {
 				errChan <- err
 				return
@@ -165,6 +108,7 @@ func (o *Bundle) buildAllImagesLock(throttleReq *util.Throttle, processedImgs *p
 	return bundles, processedImageRefs, nil
 }
 
+// fetchImagesRef Read and localize to the bundle all images associated with the bundle in img
 func (o *Bundle) fetchImagesRef(img regv1.Image, locationsConfig ImageRefLocationsConfig) (ImageRefs, error) {
 	// Reads the ImagesLock of the bundle because this is the source of truth
 	imagesLock, err := o.imagesLockReader.Read(img)
@@ -184,31 +128,17 @@ func (o *Bundle) fetchImagesRef(img regv1.Image, locationsConfig ImageRefLocatio
 	return refs, nil
 }
 
-func (o *Bundle) imagesLockIfIsBundle(throttleReq *util.Throttle, imgRef ImageRef, processedImgs *processedImages, logger util.LoggerWithLevels) ([]*Bundle, ImageRefs, lockconfig.ImageRef, error) {
-	throttleReq.Take()
-	// We need to check where we can find the image we are looking for.
-	// First checks the current bundle repository and if it cannot be found there
-	// it will check in the original location of the image
-	imgURL, err := o.imgRetriever.FirstImageExists(imgRef.Locations())
-	throttleReq.Done()
+// imagesLockIfIsBundle retrieve all the images associated with Bundle imgRef. if it is not a bundle will return no new images
+func (o *Bundle) imagesLockIfIsBundle(throttleReq *util.Throttle, imgRef ImageRef, logger util.LoggerWithLevels) ([]*Bundle, ImageRefs, lockconfig.ImageRef, error) {
+	newImgRef, bundle, err := o.bundleFetcher.Bundle(throttleReq, imgRef)
 	if err != nil {
 		return nil, ImageRefs{}, lockconfig.ImageRef{}, err
-	}
-	newImgRef := imgRef.DiscardLocationsExcept(imgURL)
-
-	bundle := NewBundleWithReader(newImgRef.PrimaryLocation(), o.imgRetriever, o.imagesLockReader)
-
-	throttleReq.Take()
-	isBundle, err := bundle.IsBundle()
-	throttleReq.Done()
-	if err != nil {
-		return nil, ImageRefs{}, lockconfig.ImageRef{}, fmt.Errorf("Checking if '%s' is a bundle: %s", imgRef.Image, err)
 	}
 
 	var processedImageRefs ImageRefs
 	var nestedBundles []*Bundle
-	if isBundle {
-		nestedBundles, processedImageRefs, err = bundle.buildAllImagesLock(throttleReq, processedImgs, logger)
+	if bundle != nil {
+		nestedBundles, processedImageRefs, err = bundle.buildAllImagesLock(throttleReq, logger)
 		if err != nil {
 			return nil, ImageRefs{}, lockconfig.ImageRef{}, fmt.Errorf("Retrieving images for bundle '%s': %s", imgRef.Image, err)
 		}
@@ -216,22 +146,26 @@ func (o *Bundle) imagesLockIfIsBundle(throttleReq *util.Throttle, imgRef ImageRe
 	return nestedBundles, processedImageRefs, newImgRef, nil
 }
 
-type processedImages struct {
-	lock          sync.Mutex
-	processedImgs map[string]struct{}
+// NewImagesLockReader Creates a SingleLayerReader
+func NewImagesLockReader() *SingleLayerReader {
+	return &SingleLayerReader{
+		imagesLock:      map[string]lockconfig.ImagesLock{},
+		imagesLockMutex: &sync.Mutex{},
+	}
 }
 
-func (p *processedImages) CheckAndAddImage(ref string) bool {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	_, present := p.processedImgs[ref]
-	p.processedImgs[ref] = struct{}{}
-	return present
+// SingleLayerReader Reads the ImagesLock from an image and caches the result
+type SingleLayerReader struct {
+	imagesLock      map[string]lockconfig.ImagesLock
+	imagesLockMutex *sync.Mutex
 }
 
-type singleLayerReader struct{}
-
-func (o *singleLayerReader) Read(img regv1.Image) (lockconfig.ImagesLock, error) {
+// Read the ImagesLock from the provided img
+func (o *SingleLayerReader) Read(img regv1.Image) (lockconfig.ImagesLock, error) {
+	imagesLock, found := o.cachedImagesLock(img)
+	if found {
+		return imagesLock, nil
+	}
 	conf := lockconfig.ImagesLock{}
 
 	layers, err := img.Layers()
@@ -282,7 +216,43 @@ func (o *singleLayerReader) Read(img regv1.Image) (lockconfig.ImagesLock, error)
 		return conf, fmt.Errorf("Reading images.yml from layer: %s", err)
 	}
 
-	return lockconfig.NewImagesLockFromBytes(bs)
+	imgLock, err := lockconfig.NewImagesLockFromBytes(bs)
+	if err != nil {
+		digest, dErr := img.Digest()
+		if dErr != nil {
+			panic(fmt.Sprintf("Internal inconsistency: unable to retrieve digest for image with error: '%s', also with unmarshalling error: %s", dErr, err))
+		}
+		return conf, fmt.Errorf("Unmarshalling ImagesLock from image with Digest '%s': %s", digest, err)
+	}
+	o.storeImagesLock(img, imgLock)
+	return imgLock, nil
+}
+
+// cachedImagesLock retrieve the ImagesLock present in the cache
+// the key for caching is the Digest of the image
+func (o *SingleLayerReader) cachedImagesLock(img regv1.Image) (lockconfig.ImagesLock, bool) {
+	digestHash, err := img.Digest()
+	if err != nil {
+		panic(fmt.Sprintf("Internal inconsistency, unable to get Digest: %s", err))
+	}
+	o.imagesLockMutex.Lock()
+	defer o.imagesLockMutex.Unlock()
+
+	imgsLock, found := o.imagesLock[digestHash.String()]
+	return imgsLock, found
+}
+
+// storeImagesLock stores the ImagesLock in the cache
+// the key for caching is the Digest of the image
+func (o *SingleLayerReader) storeImagesLock(img regv1.Image, lock lockconfig.ImagesLock) {
+	digestHash, err := img.Digest()
+	if err != nil {
+		panic(fmt.Sprintf("Internal inconsistency, unable to get Digest: %s", err))
+	}
+	o.imagesLockMutex.Lock()
+	defer o.imagesLockMutex.Unlock()
+
+	o.imagesLock[digestHash.String()] = lock
 }
 
 type LocationsConfig struct {
