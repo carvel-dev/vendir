@@ -135,6 +135,14 @@ func (i *DirImage) extractTarEntry(header *tar.Header, input io.Reader) error {
 	userPermission := int64(mode & 0700)
 	permMode := os.FileMode(userPermission | userPermission>>3 | userPermission>>6)
 
+	// By default, imgpkg will remove the permissions for group/all on all files.
+	// Here we are checking if these permissions are still present. If this is the case it means that the creator
+	// of the OCI image intended to keep the original permissions of the file. In this case we will honor the
+	// request by keeping the original permissions on the files
+	if mode&0077 > 0 {
+		permMode = mode
+	}
+
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
 		return err
