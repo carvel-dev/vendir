@@ -149,10 +149,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		{"remote", "add", "origin", gitURL},
 	}
 
-	if t.opts.RefSelection != nil {
-		// fetch tags for selection
-		argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
-	}
+	argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
 
 	{
 		fetchArgs := []string{"fetch", "origin"}
@@ -201,6 +198,9 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 func (t *Git) resolveRef(dstPath string) (string, error) {
 	switch {
 	case len(t.opts.Ref) > 0:
+		if strings.HasPrefix(t.opts.Ref, "origin/") {
+			return t.opts.Ref[7:], nil
+		}
 		return t.opts.Ref, nil
 
 	case t.opts.RefSelection != nil:

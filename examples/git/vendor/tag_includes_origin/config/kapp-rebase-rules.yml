@@ -1,0 +1,78 @@
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+metadata:
+  name: "kapp-config"
+rebaseRules:
+- path: [metadata, annotations, pv.kubernetes.io/bind-completed]
+  type: copy
+  sources: [existing]
+  resourceMatchers: &pvcs
+  - apiVersionKindMatcher:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+
+- path: [metadata, annotations, pv.kubernetes.io/bound-by-controller]
+  type: copy
+  sources: [existing]
+  resourceMatchers: *pvcs
+
+- path: [metadata, annotations, volume.beta.kubernetes.io/storage-provisioner]
+  type: copy
+  sources: [existing]
+  resourceMatchers: *pvcs
+
+- path: [spec, volumeMode]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *pvcs
+
+- path: [webhooks, {allIndexes: true}, rules]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: &kpack_webhook
+  - apiVersionKindMatcher:
+      apiVersion: admissionregistration.k8s.io/v1beta1
+      kind: MutatingWebhookConfiguration
+      name: resource.webhook.kpack.pivotal.io
+
+- path: [metadata, annotations]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers:
+  - apiVersionKindMatcher:
+      apiVersion: v1
+      kind: ServiceAccount
+
+- path: [metadata, annotations]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *kpack_webhook
+
+- path: [webhooks, {allIndexes: true}, namespaceSelector]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *kpack_webhook
+
+- path: [webhooks, {allIndexes: true}, clientConfig, service, path]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *kpack_webhook
+
+- path: [webhooks, {allIndexes: true}, sideEffects]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *kpack_webhook
+
+- path: [webhooks, {allIndexes: true}, timeoutSeconds]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *kpack_webhook
+
+- path: [spec, healthCheckNodePort]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers:
+  - apiVersionKindMatcher:
+      apiVersion: v1
+      kind: Service

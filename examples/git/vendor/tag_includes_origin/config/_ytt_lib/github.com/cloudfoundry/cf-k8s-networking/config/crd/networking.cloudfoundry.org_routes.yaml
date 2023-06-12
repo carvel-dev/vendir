@@ -1,0 +1,124 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: routes.networking.cloudfoundry.org
+spec:
+  group: networking.cloudfoundry.org
+  names:
+    kind: Route
+    listKind: RouteList
+    plural: routes
+    singular: route
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Route is the Schema for the routes API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: RouteSpec defines the desired state of Route
+          properties:
+            destinations:
+              items:
+                properties:
+                  app:
+                    properties:
+                      guid:
+                        type: string
+                      process:
+                        properties:
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                    required:
+                    - guid
+                    - process
+                    type: object
+                  guid:
+                    type: string
+                  port:
+                    type: integer
+                  selector:
+                    properties:
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    required:
+                    - matchLabels
+                    type: object
+                  weight:
+                    type: integer
+                required:
+                - app
+                - guid
+                - port
+                - selector
+                type: object
+              type: array
+            domain:
+              properties:
+                internal:
+                  type: boolean
+                name:
+                  type: string
+              required:
+              - internal
+              - name
+              type: object
+            host:
+              type: string
+            path:
+              type: string
+            url:
+              type: string
+          required:
+          - destinations
+          - domain
+          - host
+          - url
+          type: object
+        status:
+          description: RouteStatus defines the observed state of Route
+          properties:
+            conditions:
+              items:
+                properties:
+                  status:
+                    type: boolean
+                  type:
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+          required:
+          - conditions
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

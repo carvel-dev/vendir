@@ -1,0 +1,14 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metric-proxy
+  namespace: #@ data.values.system_namespace
+spec:
+  selector:
+    app: metric-proxy
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: https

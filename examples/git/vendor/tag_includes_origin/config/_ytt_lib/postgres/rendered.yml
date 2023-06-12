@@ -1,0 +1,178 @@
+---
+apiVersion: v1
+data:
+  init.sh: ""
+kind: ConfigMap
+metadata:
+  labels:
+    app: postgresql
+    chart: postgresql-8.10.6
+    heritage: Helm
+    release: cf-db
+  name: cf-db-postgresql-init-scripts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgresql
+    chart: postgresql-8.10.6
+    heritage: Helm
+    release: cf-db
+  name: cf-db-postgresql-headless
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-postgresql
+    port: 5432
+    targetPort: tcp-postgresql
+  selector:
+    app: postgresql
+    release: cf-db
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: null
+  labels:
+    app: postgresql
+    chart: postgresql-8.10.6
+    heritage: Helm
+    release: cf-db
+  name: cf-db-postgresql
+spec:
+  ports:
+  - name: tcp-postgresql
+    port: 5432
+    targetPort: tcp-postgresql
+  selector:
+    app: postgresql
+    release: cf-db
+    role: master
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kbld.k14s.io/images: |
+      - Metas:
+        - Tag: 11.8.0-debian-10-r33
+          Type: resolved
+          URL: docker.io/bitnami/postgresql:11.8.0-debian-10-r33
+        URL: index.docker.io/bitnami/postgresql@sha256:0f76a419cfd9996036e3a53672f50cf69ed7699f1241cbf8e20af17bbbdf0683
+  labels:
+    app: postgresql
+    chart: postgresql-8.10.6
+    heritage: Helm
+    release: cf-db
+  name: cf-db-postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+      release: cf-db
+      role: master
+  serviceName: cf-db-postgresql-headless
+  template:
+    metadata:
+      labels:
+        app: postgresql
+        chart: postgresql-8.10.6
+        heritage: Helm
+        release: cf-db
+        role: master
+      name: cf-db-postgresql
+    spec:
+      containers:
+      - env:
+        - name: BITNAMI_DEBUG
+          value: "false"
+        - name: POSTGRESQL_PORT_NUMBER
+          value: "5432"
+        - name: POSTGRESQL_VOLUME_DIR
+          value: /bitnami/postgresql
+        - name: PGDATA
+          value: /bitnami/postgresql/data
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: cf-db-admin-secret
+        - name: POSTGRESQL_ENABLE_LDAP
+          value: "no"
+        image: index.docker.io/bitnami/postgresql@sha256:0f76a419cfd9996036e3a53672f50cf69ed7699f1241cbf8e20af17bbbdf0683
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: cf-db-postgresql
+        ports:
+        - containerPort: 5432
+          name: tcp-postgresql
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+              [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          runAsUser: 1001
+        volumeMounts:
+        - mountPath: /docker-entrypoint-initdb.d/
+          name: custom-init-scripts
+        - mountPath: /docker-entrypoint-initdb.d/secret
+          name: custom-init-scripts-secret
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /bitnami/postgresql
+          name: data
+          subPath: null
+      securityContext:
+        fsGroup: 1001
+      volumes:
+      - configMap:
+          name: cf-db-postgresql-init-scripts
+        name: custom-init-scripts
+      - name: custom-init-scripts-secret
+        secret:
+          secretName: cf-db-credentials
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+        name: dshm
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
