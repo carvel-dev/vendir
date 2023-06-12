@@ -5,14 +5,14 @@ directories:
   contents:
   - path: exact-sha
     hg:
-      url: http://hg.code.sf.net/p/carvel-sample-hg-repo/sample
-      ref: dc860d1ce57c
+      url: https://hg.sr.ht/~sircmpwn/hg.sr.ht
+      ref: 180c776fe29448afa8c756ab572bab7a1cf17a06
     includePaths:
-    - concourse-overlay/*
+    - scss/main.scss
 
   - path: tag
     hg:
-      url: http://hg.code.sf.net/p/carvel-sample-hg-repo/sample
-      ref: 0.1.1
+      url: https://hg.sr.ht/~sircmpwn/hg.sr.ht
+      ref: 0.11.0
     includePaths:
-    - data-values/*
+    - scss/main.scss
