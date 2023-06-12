@@ -17,7 +17,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.3
-	github.com/vmware-tanzu/carvel-imgpkg v0.37.1
+	github.com/vmware-tanzu/carvel-imgpkg v0.37.2
 	golang.org/x/crypto v0.3.0
 	golang.org/x/oauth2 v0.6.0
 	golang.org/x/tools v0.7.0
