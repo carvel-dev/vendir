@@ -1,0 +1,20 @@
+#@ load("@ytt:overlay", "overlay")
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+
+metadata:
+  name: slightly-above-normal
+
+description: "Useful for DaemonSets which don't really have higher priority but should move other pods to other nodes"
+value: 1
+
+
+#@overlay/match by=overlay.subset({"kind":"DaemonSet"}), expects="1+"
+---
+spec:
+  template:
+    spec:
+      #@overlay/match missing_ok=True
+      priorityClassName: slightly-above-normal

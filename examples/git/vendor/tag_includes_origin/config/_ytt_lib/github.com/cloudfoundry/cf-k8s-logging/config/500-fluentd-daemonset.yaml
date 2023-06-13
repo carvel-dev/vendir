@@ -1,0 +1,62 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: #@ data.values.system_namespace
+  labels:
+    app: fluentd
+spec:
+  selector:
+    matchLabels:
+      app: fluentd
+  template:
+    metadata:
+      labels:
+        app: fluentd
+    spec:
+      serviceAccountName: fluentd-service-account
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: #@ data.values.images.fluent
+        ports:
+        - containerPort: 24224
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: fluentd-config
+          mountPath: /fluentd/etc
+        - name: varlog
+          mountPath: /var/log
+        - name: varvcapstore
+          mountPath: /var/vcap/store
+        - name: dockercontainers
+          mountPath: /var/lib/docker/containers
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: fluentd-config
+        configMap:
+          name: fluentd-config
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varvcapstore
+        hostPath:
+          path: /var/vcap/store
+      - name: dockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: ca
+        secret:
+          secretName: log-cache-ca

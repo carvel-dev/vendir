@@ -1,0 +1,12 @@
+#@ load("@ytt:overlay", "overlay")
+
+#@ not_eirini_app_registry_secret = overlay.not_op(overlay.subset({"kind":"Secret", "metadata":{"name": "app-registry-credentials"}}))
+#@ not_postgres_creds = overlay.not_op(overlay.or_op(overlay.subset({"kind":"Secret", "metadata":{"name": "cf-db-admin-secret"}}), overlay.subset({"kind":"Secret", "metadata":{"name": "cf-db-credentials"}}), overlay.subset({"kind":"Secret", "metadata":{"name": "uaa-database-credentials"}})))
+#@ not_minio_secret = overlay.not_op(overlay.subset({"kind":"Secret", "metadata":{"name": "cf-blobstore-minio"}}))
+#@ configMap_and_secret_matcher = overlay.or_op(overlay.subset({"kind":"ConfigMap"}), overlay.subset({"kind":"Secret"}))
+#@overlay/match by=overlay.and_op(configMap_and_secret_matcher, not_eirini_app_registry_secret, not_postgres_creds, not_minio_secret), expects="1+"
+#@overlay/match-child-defaults missing_ok=True
+---
+metadata:
+  annotations:
+    kapp.k14s.io/versioned: ""

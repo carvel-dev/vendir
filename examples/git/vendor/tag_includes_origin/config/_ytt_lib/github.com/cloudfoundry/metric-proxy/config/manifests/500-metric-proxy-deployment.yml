@@ -1,0 +1,61 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metric-proxy
+  namespace: #@ data.values.system_namespace
+  labels:
+    app: metric-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metric-proxy
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+      labels:
+        app: metric-proxy
+    spec:
+      serviceAccountName: metric-proxy
+      containers:
+      - name: metric-proxy
+        image: #@ data.values.images.metric_proxy
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        - containerPort: 9090
+        env:
+        - name: ADDR
+          value: :8080
+        - name: APP_SELECTOR
+          value: cloudfoundry.org/guid
+        - name: NAMESPACE
+          value: cf-workloads
+        - name: QUERY_TIMEOUT
+          value: "5"
+        - name: CA_PATH
+          value: /ca/tls.crt
+        - name: CERT_PATH
+          value: /metric-proxy-certs/tls.crt
+        - name: KEY_PATH
+          value: /metric-proxy-certs/tls.key
+        volumeMounts:
+        - mountPath: /ca
+          name: ca
+          readOnly: true
+        - mountPath: /metric-proxy-certs
+          name: metric-proxy-certs
+          readOnly: true
+      volumes:
+      - name: ca
+        secret:
+          secretName: #@ data.values.metric_proxy.ca.secret_name
+      - name: metric-proxy-certs
+        secret:
+          secretName: #@ data.values.metric_proxy.cert.secret_name
+

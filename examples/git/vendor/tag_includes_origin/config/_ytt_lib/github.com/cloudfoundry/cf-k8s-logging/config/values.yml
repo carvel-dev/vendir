@@ -1,0 +1,31 @@
+#@data/values
+---
+system_domain: ""
+system_namespace: ""
+
+images:
+  log_cache: "logcache/log-cache@sha256:b964e0d786827994b363700fd5beacb7335d783c878fdbe623c3d3f06feda220"
+  syslog_server: "logcache/syslog-server@sha256:d859988406fc8ff1c1315cd00f5b1095d494ecb30387ab79d2fb8196d2787184"
+  log_cache_gateway: "logcache/log-cache-gateway@sha256:4ecda071c49886930fd5ab733c3caf97ae9b1db5ecd7da5d3e9eea13ff7082b9"
+  fluent: "logcache/cf-k8s-logging@sha256:71fd09077b70fb43dfe91e4445b6528580355003255c8860f7238aaab7b5370b"
+  cf_auth_proxy: "logcache/log-cache-cf-auth-proxy@sha256:df8ad4406febf47e8276be1df9cc376798faf34a5714f220cb481ada822c5e88"
+
+log_cache_ca:
+  crt: "" #! Base64-encoded ca for the log cache
+  key: "" #! Base64-encoded private key for the cert above
+
+log_cache:
+  crt: "" #! Base64-encoded cert for the log cache requires CN of log-cache
+  key: "" #! Base64-encoded private key for the cert above
+
+log_cache_metrics:
+  crt: "" #! Base64-encoded cert for the log cache metrics requires CN of log-cache-metrics
+  key: "" #! Base64-encoded private key for the cert above
+
+log_cache_gateway:
+  crt: "" #! Base64-encoded cert for the log cache gateway
+  key: "" #! Base64-encoded private key for the cert above
+
+log_cache_syslog:
+  crt: "" #! Base64-encoded cert for the log cache syslog server requires CN of log-cache-syslog
+  key: "" #! Base64-encoded private key for the cert above

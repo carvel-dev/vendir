@@ -1,0 +1,13 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluentd-forwarder-ingress
+  namespace: cf-system
+spec:
+  selector:
+    app: fluentd
+  ports:
+  - protocol: TCP
+    port: 24224

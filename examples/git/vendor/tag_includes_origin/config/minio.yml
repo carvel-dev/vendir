@@ -1,0 +1,28 @@
+#@ load("@ytt:base64", "base64")
+#@ load("@ytt:data", "data")
+#@ load("@ytt:library", "library")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+#@ load("must_exist.star", "must_exist")
+
+#@ def add_cf_blobstore_namespace():
+#@overlay/match by=overlay.all, expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: cf-blobstore
+#@ end
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cf-blobstore
+
+#@overlay/match by=overlay.subset({"kind": "Secret", "metadata": {"name": "cf-blobstore-minio"}})
+---
+data:
+  accesskey: #@ base64.encode(must_exist(data.values, "cf_blobstore.access_key"))
+  secretkey: #@ base64.encode(must_exist(data.values, "cf_blobstore.secret_key"))
+
+--- #@ template.replace(overlay.apply(library.get("minio").eval(), add_cf_blobstore_namespace()))

@@ -1,0 +1,9 @@
+#@ load("@ytt:overlay", "overlay")
+
+#! Currently ytt does not allow overlaying maps on top of nils;
+#! replace nil annotations with empty map before further overlays (https://github.com/k14s/ytt/issues/108)
+#@overlay/match by=overlay.subset({"metadata":{"annotations": None}}),expects="1+"
+---
+metadata:
+  #@overlay/remove
+  annotations:

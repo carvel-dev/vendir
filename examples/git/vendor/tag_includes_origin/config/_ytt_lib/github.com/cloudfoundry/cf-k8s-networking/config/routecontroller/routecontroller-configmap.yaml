@@ -1,0 +1,12 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: routecontroller-config
+  namespace: #@ data.values.systemNamespace
+  annotations:
+    kapp.k14s.io/versioned: ""
+    kapp.k14s.io/num-versions: "2"
+data:
+  ISTIO_GATEWAY_NAME: cf-system/istio-ingressgateway

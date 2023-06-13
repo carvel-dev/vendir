@@ -11,5 +11,11 @@ directories:
       tags:
       - v0.4.0
     path: tag
+  - git:
+      commitTitle: Bump minimum Kapp version...
+      sha: cbbb55fc592348a19270057e0b37d6bbadfe5824
+      tags:
+      - v0.4.0
+    path: tag_includes_origin
   path: vendor
 kind: LockConfig
