@@ -104,7 +104,7 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, ignore
 		}
 
 		// Move the file to the staging directory
-		err = copy(path, stagingPath)
+		err = copyFile(path, stagingPath)
 		if err != nil {
 			return fmt.Errorf("Moving source file '%s' to staging location '%s': %s", path, stagingPath, err)
 		}
@@ -194,7 +194,7 @@ func (d StagingTempArea) NewTempFile(pattern string) (*os.File, error) {
 	return os.CreateTemp(d.path, pattern)
 }
 
-func copy(src, dst string) error {
+func copyFile(src, dst string) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("Unable to read file info: %s", src)
