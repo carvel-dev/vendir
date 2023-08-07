@@ -10,6 +10,7 @@ type LockDirectory struct {
 
 type LockDirectoryContents struct {
 	Path string `json:"path"`
+	Hash string `json:"hash"`
 
 	Git           *LockDirectoryContentsGit           `json:"git,omitempty"`
 	Hg            *LockDirectoryContentsHg            `json:"hg,omitempty"`

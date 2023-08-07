@@ -28,6 +28,13 @@ func NewLockConfig() LockConfig {
 	}
 }
 
+func LockFileExists(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+	return true
+}
+
 func NewLockConfigFromFile(path string) (LockConfig, error) {
 	bs, err := os.ReadFile(path)
 	if err != nil {

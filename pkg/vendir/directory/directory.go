@@ -4,7 +4,10 @@
 package directory
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 
@@ -57,7 +60,17 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, err
 		}
 
-		lockDirContents := ctlconf.LockDirectoryContents{Path: contents.Path}
+		yaml, err := yaml.Marshal(contents)
+		if err != nil {
+			return lockConfig, err
+		}
+		hash := sha256.Sum256(yaml)
+		hashStr := hex.EncodeToString(hash[:])
+
+		lockDirContents := ctlconf.LockDirectoryContents{
+			Path: contents.Path,
+			Hash: hashStr,
+		}
 
 		skipFileFilter := false
 		skipNewRootPath := false
