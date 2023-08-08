@@ -155,6 +155,9 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 				return true, err
 			}
 
+		case tar.TypeXGlobalHeader:
+			continue
+
 		default:
 			return false, fmt.Errorf("Unknown file '%s' (%d)", header.Name, header.Typeflag)
 		}
