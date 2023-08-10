@@ -4,10 +4,7 @@
 package cmd
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +30,7 @@ type SyncOptions struct {
 
 	Directories []string
 	Locked      bool
-	Lazy        bool
+	Eager       bool
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
@@ -54,43 +51,12 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
-	cmd.Flags().BoolVar(&o.Lazy, "lazy", false, "Only fetch remote if vendir.yaml diverges from lock file")
+	cmd.Flags().BoolVar(&o.Eager, "eager", false, "Ignore lazy setting in vendir yml and eagerly fetch all remote content")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
 
 	return cmd
-}
-
-func configUnchanged(vendirConfig ctlconf.Config, lockConfig ctlconf.LockConfig) bool {
-	for _, dir := range vendirConfig.Directories {
-		for _, content := range dir.Contents {
-			if !matchesLockConfig(dir.Path, content, lockConfig) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func matchesLockConfig(dir string, content ctlconf.DirectoryContents, lockConfig ctlconf.LockConfig) bool {
-	for _, lockDir := range lockConfig.Directories {
-		for _, lockContent := range lockDir.Contents {
-			if lockDir.Path == dir && lockContent.Path == content.Path {
-				yaml, err := yaml.Marshal(content)
-				if err != nil {
-					return false
-				}
-				hash := sha256.Sum256(yaml)
-				hashStr := hex.EncodeToString(hash[:])
-
-				if hashStr == lockContent.Hash {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 func (o *SyncOptions) Run() error {
@@ -131,14 +97,14 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
-	if o.Lazy && ctlconf.LockFileExists(o.LockFile) {
+	if ctlconf.LockFileExists(o.LockFile) {
 		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
 		if err != nil {
 			return err
 		}
-		if configUnchanged(conf, existingLockConfig) {
-			o.ui.PrintLinef("No changes in vendir.yaml since last sync. No need to sync.")
-			return nil
+		err = conf.TransferHash(existingLockConfig)
+		if err != nil {
+			return err
 		}
 	}
 

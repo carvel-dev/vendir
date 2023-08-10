@@ -33,7 +33,9 @@ type Directory struct {
 }
 
 type DirectoryContents struct {
+	Hash string
 	Path string `json:"path"`
+	Lazy bool   `json:"lazy,omitempty"`
 
 	Git           *DirectoryContentsGit           `json:"git,omitempty"`
 	Hg            *DirectoryContentsHg            `json:"hg,omitempty"`
@@ -331,6 +333,10 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 	default:
 		panic("Unknown contents type")
 	}
+}
+
+func (c *DirectoryContents) LockHash(hash string) {
+	c.Hash = hash
 }
 
 func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error {

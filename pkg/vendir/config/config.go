@@ -257,6 +257,20 @@ func (c Config) Lock(lockConfig LockConfig) error {
 	return nil
 }
 
+func (c Config) TransferHash(lockConfig LockConfig) error {
+	for _, dir := range c.Directories {
+		for _, con := range dir.Contents {
+			lockContents, err := lockConfig.FindContents(dir.Path, con.Path)
+			if err != nil {
+				return err
+			}
+			con.LockHash(lockContents.Hash)
+		}
+	}
+
+	return nil
+}
+
 func (c Config) checkOverlappingPaths() error {
 	paths := []string{}
 

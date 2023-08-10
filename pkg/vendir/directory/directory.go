@@ -42,6 +42,27 @@ type SyncOpts struct {
 	Cache          ctlcache.Cache
 }
 
+func createContentHash(contents ctlconf.DirectoryContents) (string, error) {
+	yaml, err := yaml.Marshal(contents)
+	if err != nil {
+		return "", fmt.Errorf("error during hash creation for path '%s': %s", contents.Path, err)
+	}
+	hash := sha256.Sum256(yaml)
+	hashStr := hex.EncodeToString(hash[:])
+	return hashStr, nil
+}
+
+func configUnchanged(contents ctlconf.DirectoryContents) (bool, error) {
+	hash, err := createContentHash(contents)
+	if err != nil {
+		return false, err
+	}
+	if hash == contents.Hash {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	lockConfig := ctlconf.LockDirectory{Path: d.opts.Path}
 
@@ -60,16 +81,25 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, err
 		}
 
-		yaml, err := yaml.Marshal(contents)
+		// check if vendir config has changed. If not, skip syncing
+		if contents.Lazy {
+			changed, err := configUnchanged(contents)
+			if err != nil {
+				return lockConfig, err
+			}
+			if changed {
+				continue
+			}
+		}
+
+		// adds hash to lockfile of current content
+		hash, err := createContentHash(contents)
 		if err != nil {
 			return lockConfig, err
 		}
-		hash := sha256.Sum256(yaml)
-		hashStr := hex.EncodeToString(hash[:])
-
 		lockDirContents := ctlconf.LockDirectoryContents{
 			Path: contents.Path,
-			Hash: hashStr,
+			Hash: hash,
 		}
 
 		skipFileFilter := false
@@ -244,6 +274,8 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 	return lockConfig, nil
 }
+
+//
 
 // maybeChmod will chmod the path with the first non-nil permission provided.
 // If no permission is handed in or all of them are nil, no chmod will be done.
