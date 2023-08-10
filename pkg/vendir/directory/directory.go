@@ -27,12 +27,13 @@ import (
 )
 
 type Directory struct {
-	opts ctlconf.Directory
-	ui   ui.UI
+	opts       ctlconf.Directory
+	lockConfig ctlconf.LockConfig
+	ui         ui.UI
 }
 
-func NewDirectory(opts ctlconf.Directory, ui ui.UI) *Directory {
-	return &Directory{opts, ui}
+func NewDirectory(opts ctlconf.Directory, lockConfig ctlconf.LockConfig, ui ui.UI) *Directory {
+	return &Directory{opts, lockConfig, ui}
 }
 
 type SyncOpts struct {
@@ -40,6 +41,7 @@ type SyncOpts struct {
 	GithubAPIToken string
 	HelmBinary     string
 	Cache          ctlcache.Cache
+	Eager          bool
 }
 
 func createContentHash(contents ctlconf.DirectoryContents) (string, error) {
@@ -52,12 +54,13 @@ func createContentHash(contents ctlconf.DirectoryContents) (string, error) {
 	return hashStr, nil
 }
 
-func configUnchanged(contents ctlconf.DirectoryContents) (bool, error) {
+func (d *Directory) configUnchanged(path string, contents ctlconf.DirectoryContents) (bool, error) {
 	hash, err := createContentHash(contents)
 	if err != nil {
 		return false, err
 	}
-	if hash == contents.Hash {
+	lockContents, _ := d.lockConfig.FindContents(path, contents.Path)
+	if hash == lockContents.Hash {
 		return true, nil
 	}
 	return false, nil
@@ -80,26 +83,28 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		if err != nil {
 			return lockConfig, err
 		}
-
-		// check if vendir config has changed. If not, skip syncing
-		if contents.Lazy {
-			changed, err := configUnchanged(contents)
-			if err != nil {
-				return lockConfig, err
-			}
-			if changed {
-				continue
-			}
-		}
-
 		// adds hash to lockfile of current content
 		hash, err := createContentHash(contents)
 		if err != nil {
 			return lockConfig, err
 		}
+
 		lockDirContents := ctlconf.LockDirectoryContents{
 			Path: contents.Path,
 			Hash: hash,
+		}
+		// check if vendir config has changed. If not, skip syncing
+		unchanged := false
+		var oldLock ctlconf.LockDirectoryContents
+		if contents.Lazy && syncOpts.Eager == false {
+			unchanged, err = d.configUnchanged(d.opts.Path, contents)
+			if err != nil {
+				return lockConfig, err
+			}
+			if unchanged {
+				d.ui.PrintLinef("Skipping fetch since config has not changed: %s%s", d.opts.Path, contents.Path)
+				oldLock, _ = d.lockConfig.FindContents(d.opts.Path, contents.Path)
+			}
 		}
 
 		skipFileFilter := false
@@ -111,12 +116,15 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			d.ui.PrintLinef("Fetching: %s + %s (git from %s)", d.opts.Path, contents.Path, gitSync.Desc())
 
-			lock, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
-			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
+			if unchanged == false {
+				lock, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
+				if err != nil {
+					return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
+				}
+				lockDirContents.Git = &lock
+			} else {
+				lockDirContents.Git = oldLock.Git
 			}
-
-			lockDirContents.Git = &lock
 
 		case contents.Hg != nil:
 			hgSync := ctlhg.NewSync(*contents.Hg, NewInfoLog(d.ui), syncOpts.RefFetcher)
@@ -186,12 +194,15 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			d.ui.PrintLinef("Fetching: %s + %s (helm chart from %s)",
 				d.opts.Path, contents.Path, helmChartSync.Desc())
 
-			lock, err := helmChartSync.Sync(stagingDstPath, stagingDir.TempArea())
-			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
+			if unchanged == false {
+				lock, err := helmChartSync.Sync(stagingDstPath, stagingDir.TempArea())
+				if err != nil {
+					return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
+				}
+				lockDirContents.HelmChart = &lock
+			} else {
+				lockDirContents.HelmChart = oldLock.HelmChart
 			}
-
-			lockDirContents.HelmChart = &lock
 
 		case contents.Manual != nil:
 			d.ui.PrintLinef("Fetching: %s + %s (manual)", d.opts.Path, contents.Path)
@@ -231,31 +242,33 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
 		}
 
-		if !skipFileFilter {
-			err = FileFilter{contents}.Apply(stagingDstPath)
-			if err != nil {
-				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+		if unchanged == false {
+			if !skipFileFilter {
+				err = FileFilter{contents}.Apply(stagingDstPath)
+				if err != nil {
+					return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+				}
 			}
-		}
 
-		if !skipNewRootPath && len(contents.NewRootPath) > 0 {
-			err = NewSubPath(contents.NewRootPath).Extract(stagingDstPath, stagingDstPath, stagingDir.TempArea())
-			if err != nil {
-				return lockConfig, fmt.Errorf("Changing to new root path '%s': %s", contents.Path, err)
+			if !skipNewRootPath && len(contents.NewRootPath) > 0 {
+				err = NewSubPath(contents.NewRootPath).Extract(stagingDstPath, stagingDstPath, stagingDir.TempArea())
+				if err != nil {
+					return lockConfig, fmt.Errorf("Changing to new root path '%s': %s", contents.Path, err)
+				}
 			}
-		}
 
-		// Copy files from current source if values are supposed to be ignored
-		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
-		if err != nil {
-			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
-		}
+			// Copy files from current source if values are supposed to be ignored
+			err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+			}
 
-		// after everything else is done, ensure the inner dir's access perms are set
-		// chmod to the content's permission, fall back to the directory's
-		err = maybeChmod(stagingDstPath, contents.Permissions, d.opts.Permissions)
-		if err != nil {
-			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
+			// after everything else is done, ensure the inner dir's access perms are set
+			// chmod to the content's permission, fall back to the directory's
+			err = maybeChmod(stagingDstPath, contents.Permissions, d.opts.Permissions)
+			if err != nil {
+				return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
+			}
 		}
 
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)

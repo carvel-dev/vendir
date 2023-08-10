@@ -183,6 +183,7 @@ func (c Config) UseDirectory(path, dirPath string) error {
 				ExcludePaths: con.ExcludePaths,
 				IgnorePaths:  con.IgnorePaths,
 				LegalPaths:   con.LegalPaths,
+				Lazy:         con.Lazy,
 			}
 			dir.Contents[j] = newCon
 			c.Directories[i] = dir
@@ -251,20 +252,6 @@ func (c Config) Lock(lockConfig LockConfig) error {
 			if err != nil {
 				return err
 			}
-		}
-	}
-
-	return nil
-}
-
-func (c Config) TransferHash(lockConfig LockConfig) error {
-	for _, dir := range c.Directories {
-		for _, con := range dir.Contents {
-			lockContents, err := lockConfig.FindContents(dir.Path, con.Path)
-			if err != nil {
-				return err
-			}
-			con.LockHash(lockContents.Hash)
 		}
 	}
 

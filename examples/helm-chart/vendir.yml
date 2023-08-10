@@ -11,6 +11,6 @@ directories:
   - path: custom-repo-custom-version
     helmChart:
       name: contour
-      version: "7.10.1"
+      version: "7.10.0"
       repository:
         url: https://charts.bitnami.com/bitnami

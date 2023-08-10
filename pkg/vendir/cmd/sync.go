@@ -97,12 +97,10 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
+	var existingLockConfig ctlconf.LockConfig
+
 	if ctlconf.LockFileExists(o.LockFile) {
-		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
-		if err != nil {
-			return err
-		}
-		err = conf.TransferHash(existingLockConfig)
+		existingLockConfig, err = ctlconf.NewLockConfigFromFile(o.LockFile)
 		if err != nil {
 			return err
 		}
@@ -111,8 +109,6 @@ func (o *SyncOptions) Run() error {
 	// If syncing against a lock file, apply lock information
 	// on top of existing config
 	if o.Locked {
-		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
-
 		err = conf.Lock(existingLockConfig)
 		if err != nil {
 			return err
@@ -140,11 +136,12 @@ func (o *SyncOptions) Run() error {
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
+		Eager:          o.Eager,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
-		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync(syncOpts)
+		dirLockConf, err := ctldir.NewDirectory(dirConf, existingLockConfig, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
@@ -160,11 +157,6 @@ func (o *SyncOptions) Run() error {
 
 	// Update only selected directories in lock file
 	if len(dirs) > 0 {
-		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
-		if err != nil {
-			return err
-		}
-
 		err = existingLockConfig.Merge(newLockConfig)
 		if err != nil {
 			return err
