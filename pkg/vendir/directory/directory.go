@@ -242,7 +242,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
 		}
 
-		if unchanged == false {
+		if !unchanged {
 			if !skipFileFilter {
 				err = FileFilter{contents}.Apply(stagingDstPath)
 				if err != nil {

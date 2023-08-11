@@ -32,14 +32,6 @@ type Directory struct {
 	Permissions *os.FileMode `json:"permissions,omitempty"`
 }
 
-type HashContainer struct {
-	Hash string
-}
-
-func (h *HashContainer) Write(hash string) {
-	h.Hash = hash
-}
-
 type DirectoryContents struct {
 	Path string `json:"path"`
 	Lazy bool   `json:"lazy,omitempty"`
@@ -186,10 +178,6 @@ type DirectoryContentsHelmChartRepo struct {
 }
 
 type DirectoryContentsManual struct{}
-
-type Hash struct {
-	Hash string
-}
 
 type DirectoryContentsDirectory struct {
 	Path string `json:"path"`
@@ -344,11 +332,6 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 	default:
 		panic("Unknown contents type")
 	}
-}
-
-func (c *Hash) Lock(hash string) error {
-	c.Hash = hash
-	return nil
 }
 
 func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error {
