@@ -1,5 +1,7 @@
 ![logo](docs/CarvelLogo.png)
 
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7746/badge)](https://bestpractices.coreinfrastructure.org/projects/7746)
+
 # vendir
 
 - Website: [https://carvel.dev/vendir](https://carvel.dev/vendir)
