@@ -1,6 +1,6 @@
 module github.com/vmware-tanzu/carvel-vendir
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bmatcuk/doublestar v1.2.1
