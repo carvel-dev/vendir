@@ -7,8 +7,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -536,7 +536,7 @@ func newHTTPTransport(opts Opts) (*http.Transport, error) {
 
 	if len(opts.CACertPaths) > 0 {
 		for _, path := range opts.CACertPaths {
-			if certs, err := ioutil.ReadFile(path); err != nil {
+			if certs, err := os.ReadFile(path); err != nil {
 				return nil, fmt.Errorf("Reading CA certificates from '%s': %s", path, err)
 			} else if ok := pool.AppendCertsFromPEM(certs); !ok {
 				return nil, fmt.Errorf("Adding CA certificates from '%s': failed", path)
