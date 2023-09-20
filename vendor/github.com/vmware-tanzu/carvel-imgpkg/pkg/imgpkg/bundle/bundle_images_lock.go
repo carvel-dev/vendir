@@ -7,7 +7,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"sync"
 
@@ -211,7 +210,7 @@ func (o *SingleLayerReader) Read(img regv1.Image) (lockconfig.ImagesLock, error)
 		}
 	}
 
-	bs, err := ioutil.ReadAll(tarReader)
+	bs, err := io.ReadAll(tarReader)
 	if err != nil {
 		return conf, fmt.Errorf("Reading images.yml from layer: %s", err)
 	}

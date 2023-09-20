@@ -7,7 +7,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -221,7 +220,7 @@ func (o *locationsSingleLayerReader) Read(img regv1.Image) (ImageLocationsConfig
 		}
 	}
 
-	bs, err := ioutil.ReadAll(tarReader)
+	bs, err := io.ReadAll(tarReader)
 	if err != nil {
 		return conf, fmt.Errorf("Reading image-locations.yml from layer: %s", err)
 	}
