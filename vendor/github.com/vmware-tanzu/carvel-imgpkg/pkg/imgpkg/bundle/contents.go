@@ -43,13 +43,17 @@ func NewContents(paths []string, excludedPaths []string, preservePermissions boo
 }
 
 // Push the contents of the bundle to the registry as an OCI Image
-func (b Contents) Push(uploadRef regname.Tag, registry ImagesMetadataWriter, logger Logger) (string, error) {
+func (b Contents) Push(uploadRef regname.Tag, labels map[string]string, registry ImagesMetadataWriter, logger Logger) (string, error) {
 	err := b.validate()
 	if err != nil {
 		return "", err
 	}
 
-	labels := map[string]string{BundleConfigLabel: "true"}
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labels[BundleConfigLabel] = "true"
+
 	return plainimage.NewContents(b.paths, b.excludedPaths, b.preservePermissions).Push(uploadRef, labels, registry, logger)
 }
 

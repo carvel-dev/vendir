@@ -7,7 +7,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,7 +28,7 @@ func NewTarImage(files []string, excludePaths []string, logger Logger, keepPermi
 
 // AsFileImage Creates an OCI Image representation of the provided folders
 func (i *TarImage) AsFileImage(labels map[string]string) (*FileImage, error) {
-	tmpFile, err := ioutil.TempFile("", "imgpkg-tar-image")
+	tmpFile, err := os.CreateTemp("", "imgpkg-tar-image")
 	if err != nil {
 		return nil, err
 	}
