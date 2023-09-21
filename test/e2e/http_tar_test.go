@@ -1,3 +1,6 @@
+// Copyright 2023 VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package e2e
 
 import (
@@ -15,7 +18,7 @@ func TestHttpTarGz(t *testing.T) {
 	vendir := Vendir{t, env.BinaryPath, logger}
 	dstPath, err := os.MkdirTemp("", "vendir-e2e-http-targz-dst")
 	require.NoError(t, err)
-	// defer os.RemoveAll(dstPath)
+	defer os.RemoveAll(dstPath)
 
 	yaml := `
 apiVersion: vendir.k14s.io/v1alpha1
