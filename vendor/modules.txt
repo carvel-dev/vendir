@@ -367,7 +367,7 @@ github.com/vbatts/tar-split/archive/tar
 # github.com/vito/go-interact v1.0.1
 ## explicit; go 1.12
 github.com/vito/go-interact/interact
-# github.com/vmware-tanzu/carvel-imgpkg v0.37.4
+# github.com/vmware-tanzu/carvel-imgpkg v0.38.0
 ## explicit; go 1.21
 github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/bundle
 github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/image
