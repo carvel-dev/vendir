@@ -121,7 +121,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		env = append(env, "GIT_LFS_SKIP_SMUDGE=1")
 	}
 	if t.opts.SkipSSLVerification {
-		env = append(env, "GIT_SSL_NO_VERIFY = true")
+		env = append(env, "GIT_SSL_NO_VERIFY=true")
 	}
 	gitURL := t.opts.URL
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
