@@ -30,7 +30,7 @@ type SyncOptions struct {
 
 	Directories []string
 	Locked      bool
-	Eager       bool
+	Lazy        bool
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
@@ -51,7 +51,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
-	cmd.Flags().BoolVar(&o.Eager, "eager", false, "Ignore lazy setting in vendir yml and eagerly fetch all remote content")
+	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Ignore lazy setting in vendir yml if set to false")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
@@ -136,7 +136,7 @@ func (o *SyncOptions) Run() error {
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
-		Eager:          o.Eager,
+		Lazy:           o.Lazy,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
