@@ -27,13 +27,13 @@ import (
 )
 
 type Directory struct {
-	opts       ctlconf.Directory
-	lockConfig ctlconf.LockConfig
-	ui         ui.UI
+	opts          ctlconf.Directory
+	lockDirectory ctlconf.LockDirectory
+	ui            ui.UI
 }
 
-func NewDirectory(opts ctlconf.Directory, lockConfig ctlconf.LockConfig, ui ui.UI) *Directory {
-	return &Directory{opts, lockConfig, ui}
+func NewDirectory(opts ctlconf.Directory, lockDirectory ctlconf.LockDirectory, ui ui.UI) *Directory {
+	return &Directory{opts, lockDirectory, ui}
 }
 
 type SyncOpts struct {
@@ -83,7 +83,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 
 		// error is safe to ignore, since it indicates that no lock file entry for the given path exists
-		oldLockContent, _ := d.lockConfig.FindContents(d.opts.Path, contents.Path)
+		oldLockContent, _ := d.lockDirectory.FindContents(contents.Path)
 		skipFetching, lazySyncAddConfigDigest := handleLazySync(oldLockContent.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
 
 		if skipFetching {

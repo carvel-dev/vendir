@@ -51,7 +51,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
-	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Ignore lazy setting in vendir yml if set to false")
+	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Override \"lazy\" value in directory content configuration")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
@@ -97,13 +97,9 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
-	var existingLockConfig ctlconf.LockConfig
-
-	if ctlconf.LockFileExists(o.LockFile) {
-		existingLockConfig, err = ctlconf.NewLockConfigFromFile(o.LockFile)
-		if err != nil {
-			return err
-		}
+	existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
+	if err != nil && o.Locked {
+		return err
 	}
 
 	// If syncing against a lock file, apply lock information
@@ -141,7 +137,9 @@ func (o *SyncOptions) Run() error {
 	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
-		dirLockConf, err := ctldir.NewDirectory(dirConf, existingLockConfig, o.ui).Sync(syncOpts)
+		// error safe to ignore, since lock file might not exist
+		dirExistingLockConf, _ := existingLockConfig.FindLockDirectory(dirConf.Path)
+		dirLockConf, err := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
