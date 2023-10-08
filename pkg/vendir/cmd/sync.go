@@ -138,7 +138,7 @@ func (o *SyncOptions) Run() error {
 
 	for _, dirConf := range conf.Directories {
 		// error safe to ignore, since lock file might not exist
-		dirExistingLockConf, _ := existingLockConfig.FindLockDirectory(dirConf.Path)
+		dirExistingLockConf, _ := existingLockConfig.FindDirectory(dirConf.Path)
 		dirLockConf, err := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)

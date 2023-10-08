@@ -121,7 +121,7 @@ func (c LockConfig) FindContents(dirPath, conPath string) (LockDirectoryContents
 		"Expected to find directory '%s' within lock config, but did not", dirPath)
 }
 
-func (c LockConfig) FindLockDirectory(dirPath string) (LockDirectory, error) {
+func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
 	for _, dir := range c.Directories {
 		if dir.Path == dirPath {
 			return dir, nil

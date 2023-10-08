@@ -83,12 +83,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 
 		// error is safe to ignore, since it indicates that no lock file entry for the given path exists
-		oldLockContent, _ := d.lockDirectory.FindContents(contents.Path)
-		skipFetching, lazySyncAddConfigDigest := handleLazySync(oldLockContent.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
+		oldLockContents, _ := d.lockDirectory.FindContents(contents.Path)
+		skipFetching, lazySyncAddConfigDigest := handleLazySync(oldLockContents.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
 
 		if skipFetching {
 			d.ui.PrintLinef("Skipping fetch: %s + %s (flagged as lazy, config has not changed since last sync)", d.opts.Path, contents.Path)
-			lockConfig.Contents = append(lockConfig.Contents, oldLockContent)
+			lockConfig.Contents = append(lockConfig.Contents, oldLockContents)
 			continue
 		}
 
