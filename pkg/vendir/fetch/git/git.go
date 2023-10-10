@@ -120,7 +120,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	if t.opts.LFSSkipSmudge {
 		env = append(env, "GIT_LFS_SKIP_SMUDGE=1")
 	}
-	if t.opts.SkipSSLVerification {
+	if t.opts.DangerousSkipTLSVerify {
 		env = append(env, "GIT_SSL_NO_VERIFY=true")
 	}
 	gitURL := t.opts.URL

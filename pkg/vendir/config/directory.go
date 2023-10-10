@@ -67,10 +67,10 @@ type DirectoryContentsGit struct {
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 	// +optional
-	LFSSkipSmudge       bool `json:"lfsSkipSmudge,omitempty"`
-	SkipSSLVerification bool `json:"skipSSLVerification,omitempty"`
-	SkipInitSubmodules  bool `json:"skipInitSubmodules,omitempty"`
-	Depth               int  `json:"depth,omitempty"`
+	LFSSkipSmudge          bool `json:"lfsSkipSmudge,omitempty"`
+	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
+	SkipInitSubmodules     bool `json:"skipInitSubmodules,omitempty"`
+	Depth                  int  `json:"depth,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {
