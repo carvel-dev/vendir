@@ -51,7 +51,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
-	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Override \"lazy\" value in directory content configuration")
+	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Set to 'false' it ignores the 'lazy' flag in the directory content configuration")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")

@@ -7,9 +7,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	dircopy "github.com/otiai10/copy"
@@ -84,7 +84,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		// error is safe to ignore, since it indicates that no lock file entry for the given path exists
 		oldLockContents, _ := d.lockDirectory.FindContents(contents.Path)
-		skipFetching, lazySyncAddConfigDigest := handleLazySync(oldLockContents.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
+		skipFetching, lazySyncAddConfigDigest := d.handleLazySync(oldLockContents.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
 
 		if skipFetching {
 			d.ui.PrintLinef("Skipping fetch: %s + %s (flagged as lazy, config has not changed since last sync)", d.opts.Path, contents.Path)
@@ -279,7 +279,7 @@ func maybeChmod(path string, potentialPerms ...*os.FileMode) error {
 	return nil
 }
 
-func handleLazySync(oldConfigDigest string, newConfigDigest string, fetchLazyGlobalOverride bool, fetchLazy bool) (bool, bool) {
+func (d *Directory) handleLazySync(oldConfigDigest string, newConfigDigest string, fetchLazyGlobalOverride bool, fetchLazy bool) (bool, bool) {
 	skipFetching := false
 	addConfigDigest := false
 	// if lazy sync is enabled and config remains unchanged, skip fetching
