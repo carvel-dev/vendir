@@ -18,6 +18,7 @@ func TestExampleLazy(t *testing.T) {
 	dir := "examples/lazy"
 	path := "../../" + dir
 
+	// run lazy sync
 	_, err := vendir.RunWithOpts([]string{"sync", "-f=vendir-lazy.yml"}, RunOpts{Dir: path, Env: osEnv})
 	if err != nil {
 		t.Fatalf("Expected no err")
@@ -39,7 +40,7 @@ func TestExampleLazy(t *testing.T) {
 		t.Fatalf("Expected no err")
 	}
 
-	// resync lazily
+	// resync lazily, should not sync. Removed dir has not been reinstated
 	_, err = vendir.RunWithOpts([]string{"sync", "-f=vendir-lazy.yml"}, RunOpts{Dir: path, Env: osEnv})
 	if err != nil {
 		t.Fatalf("Expected no err")
@@ -52,7 +53,7 @@ func TestExampleLazy(t *testing.T) {
 		t.Fatalf("Expected IsNotExist err")
 	}
 
-	// resync with lazy override
+	// resync with lazy override, should not affect config digest
 	_, err = vendir.RunWithOpts([]string{"sync", "--lazy=false", "-f=vendir-lazy.yml"}, RunOpts{Dir: path, Env: osEnv})
 	if err != nil {
 		t.Fatalf("Expected no err")
@@ -75,7 +76,7 @@ func TestExampleLazy(t *testing.T) {
 		t.Fatalf("Expected Config Digest in Lock File")
 	}
 
-	// if synced without lazy flag in vendir.yml, no config digest is kept in lock file
+	// if synced without lazy flag in vendir.yml, no config digest should be kept in lock file
 	_, err = vendir.RunWithOpts([]string{"sync", "-f=vendir-nonlazy.yml"}, RunOpts{Dir: path, Env: osEnv})
 	if err != nil {
 		t.Fatalf("Expected no err")
@@ -86,9 +87,8 @@ func TestExampleLazy(t *testing.T) {
 		t.Fatalf("Expected no err")
 	}
 
-	// find content digest
+	// Ensure no content digest set
 	if len(lockConf.Directories[0].Contents[0].ConfigDigest) != 0 {
 		t.Fatalf("Expected No Config Digest in Lock File")
 	}
-
 }
