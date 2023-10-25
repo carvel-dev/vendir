@@ -4,10 +4,11 @@
 package e2e
 
 import (
-	"github.com/stretchr/testify/require"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	"os"
 	"testing"
+
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExampleLazy(t *testing.T) {

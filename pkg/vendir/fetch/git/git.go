@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"strings"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlver "carvel.dev/vendir/pkg/vendir/versions"
 )
 
 type Git struct {

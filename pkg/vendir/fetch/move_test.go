@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	"github.com/stretchr/testify/require"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
 func TestMoveFile(t *testing.T) {

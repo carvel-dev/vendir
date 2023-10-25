@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"strings"
 
+	"carvel.dev/vendir/pkg/vendir/version"
 	semver "github.com/hashicorp/go-version"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
 	"sigs.k8s.io/yaml"
 )
 

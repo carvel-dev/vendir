@@ -6,10 +6,10 @@ package cmd
 import (
 	"io"
 
+	"carvel.dev/vendir/pkg/vendir/version"
 	"github.com/cppforlife/cobrautil"
 	"github.com/cppforlife/go-cli-ui/ui"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
 )
 
 type VendirOptions struct {

@@ -7,9 +7,9 @@ set -e -x
 
 # Based on vendor/k8s.io/code-generator/generate-groups.sh
 go run vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go \
-	--input-dirs github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1 \
+	--input-dirs carvel.dev/vendir/pkg/vendir/versions/v1alpha1 \
 	-O zz_generated.deepcopy \
-	--bounding-dirs github.com/vmware-tanzu/carvel-vendir/pkg/vendir \
+	--bounding-dirs carvel.dev/vendir/pkg/vendir \
 	--go-header-file ./hack/gen-boilerplate.txt
 
 # Install protoc binary as directed by https://github.com/gogo/protobuf#installation
@@ -28,7 +28,7 @@ export PATH=$PWD/tmp/gen-apiserver-bin/:$PATH
 
 go run vendor/k8s.io/code-generator/cmd/go-to-protobuf/main.go \
   --proto-import vendor \
-  --packages "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1" \
+  --packages "carvel.dev/vendir/pkg/vendir/versions/v1alpha1" \
   --go-header-file ./hack/gen-boilerplate.txt
 
 # TODO It seems that above command messes around with protos in vendor directory

@@ -20,7 +20,7 @@ builds:
       - -trimpath
 
     ldflags:
-      - -X github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version.Version={{ .Version }}
+      - -X carvel.dev/vendir/pkg/vendir/version.Version={{ .Version }}
 
 archives:
   - format: binary

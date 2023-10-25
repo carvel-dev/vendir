@@ -10,9 +10,9 @@ import (
 	"os"
 	"time"
 
+	"carvel.dev/vendir/pkg/vendir/cmd"
 	uierrs "github.com/cppforlife/go-cli-ui/errors"
 	"github.com/cppforlife/go-cli-ui/ui"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/cmd"
 )
 
 func main() {

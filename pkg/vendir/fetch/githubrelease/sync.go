@@ -14,12 +14,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlhttp "carvel.dev/vendir/pkg/vendir/fetch/http"
+	ctlver "carvel.dev/vendir/pkg/vendir/versions"
 	"github.com/bmatcuk/doublestar"
 	"github.com/google/go-github/github"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlhttp "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/http"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
 	"golang.org/x/oauth2"
 )
 

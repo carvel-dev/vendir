@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"strings"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	oarmor "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/openpgparmor"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	oarmor "carvel.dev/vendir/pkg/vendir/openpgparmor"
 	"golang.org/x/crypto/openpgp" //nolint:staticcheck
 )
 

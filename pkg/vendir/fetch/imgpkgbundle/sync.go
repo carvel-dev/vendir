@@ -5,11 +5,11 @@ package imgpkgbundle
 import (
 	"fmt"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
-	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
+	ctlimg "carvel.dev/vendir/pkg/vendir/fetch/image"
+	ctlver "carvel.dev/vendir/pkg/vendir/versions"
 )
 
 type Sync struct {

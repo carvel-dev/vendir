@@ -1,4 +1,4 @@
-module github.com/vmware-tanzu/carvel-vendir
+module carvel.dev/vendir
 
 go 1.21
 

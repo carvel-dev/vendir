@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	"carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type ConstraintCallback struct {

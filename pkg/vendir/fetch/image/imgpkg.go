@@ -12,10 +12,10 @@ import (
 
 	"carvel.dev/imgpkg/pkg/imgpkg/registry"
 	v1 "carvel.dev/imgpkg/pkg/imgpkg/v1"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
 	"github.com/google/go-containerregistry/pkg/name"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 )
 
 const (
