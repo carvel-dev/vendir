@@ -1,3 +1,23 @@
+# carvel.dev/imgpkg v0.39.0
+## explicit; go 1.21
+carvel.dev/imgpkg/pkg/imgpkg/bundle
+carvel.dev/imgpkg/pkg/imgpkg/image
+carvel.dev/imgpkg/pkg/imgpkg/imagedesc
+carvel.dev/imgpkg/pkg/imgpkg/imagedigest
+carvel.dev/imgpkg/pkg/imgpkg/imageset
+carvel.dev/imgpkg/pkg/imgpkg/imagetar
+carvel.dev/imgpkg/pkg/imgpkg/imageutils/and
+carvel.dev/imgpkg/pkg/imgpkg/imageutils/gzip
+carvel.dev/imgpkg/pkg/imgpkg/imageutils/verify
+carvel.dev/imgpkg/pkg/imgpkg/internal/util
+carvel.dev/imgpkg/pkg/imgpkg/lockconfig
+carvel.dev/imgpkg/pkg/imgpkg/plainimage
+carvel.dev/imgpkg/pkg/imgpkg/registry
+carvel.dev/imgpkg/pkg/imgpkg/registry/auth
+carvel.dev/imgpkg/pkg/imgpkg/registry/auth/credentialprovider
+carvel.dev/imgpkg/pkg/imgpkg/signature
+carvel.dev/imgpkg/pkg/imgpkg/signature/cosign
+carvel.dev/imgpkg/pkg/imgpkg/v1
 # cloud.google.com/go/compute v1.19.3
 ## explicit; go 1.19
 cloud.google.com/go/compute/internal
@@ -367,26 +387,6 @@ github.com/vbatts/tar-split/archive/tar
 # github.com/vito/go-interact v1.0.1
 ## explicit; go 1.12
 github.com/vito/go-interact/interact
-# github.com/vmware-tanzu/carvel-imgpkg v0.38.2
-## explicit; go 1.21
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/bundle
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/image
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imagedesc
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imagedigest
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imageset
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imagetar
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imageutils/and
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imageutils/gzip
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/imageutils/verify
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/internal/util
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/lockconfig
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/plainimage
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth/credentialprovider
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/signature
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/signature/cosign
-github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1
 # golang.org/x/crypto v0.14.0
 ## explicit; go 1.17
 golang.org/x/crypto/cast5

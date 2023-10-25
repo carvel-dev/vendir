@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"carvel.dev/imgpkg/pkg/imgpkg/registry"
+	v1 "carvel.dev/imgpkg/pkg/imgpkg/v1"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
-	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/v1"
 	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
