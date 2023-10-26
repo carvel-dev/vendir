@@ -4,9 +4,12 @@
 package directory
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	dircopy "github.com/otiai10/copy"
@@ -24,12 +27,13 @@ import (
 )
 
 type Directory struct {
-	opts ctlconf.Directory
-	ui   ui.UI
+	opts          ctlconf.Directory
+	lockDirectory ctlconf.LockDirectory
+	ui            ui.UI
 }
 
-func NewDirectory(opts ctlconf.Directory, ui ui.UI) *Directory {
-	return &Directory{opts, ui}
+func NewDirectory(opts ctlconf.Directory, lockDirectory ctlconf.LockDirectory, ui ui.UI) *Directory {
+	return &Directory{opts, lockDirectory, ui}
 }
 
 type SyncOpts struct {
@@ -37,6 +41,17 @@ type SyncOpts struct {
 	GithubAPIToken string
 	HelmBinary     string
 	Cache          ctlcache.Cache
+	Lazy           bool
+}
+
+func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
+	yaml, err := yaml.Marshal(contents)
+	if err != nil {
+		return "", fmt.Errorf("error during creating for config digest for path '%s': %s", contents.Path, err)
+	}
+	digest := sha256.Sum256(yaml)
+	digestStr := hex.EncodeToString(digest[:])
+	return digestStr, nil
 }
 
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
@@ -57,7 +72,25 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, err
 		}
 
-		lockDirContents := ctlconf.LockDirectoryContents{Path: contents.Path}
+		// creates config digest for current content config
+		configDigest, err := createConfigDigest(contents)
+		if err != nil {
+			return lockConfig, err
+		}
+
+		lockDirContents := ctlconf.LockDirectoryContents{
+			Path: contents.Path,
+		}
+
+		// error is safe to ignore, since it indicates that no lock file entry for the given path exists
+		oldLockContents, _ := d.lockDirectory.FindContents(contents.Path)
+		skipFetching, lazySyncAddConfigDigest := d.handleLazySync(oldLockContents.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
+
+		if skipFetching {
+			d.ui.PrintLinef("Skipping fetch: %s + %s (flagged as lazy, config has not changed since last sync)", d.opts.Path, contents.Path)
+			lockConfig.Contents = append(lockConfig.Contents, oldLockContents)
+			continue
+		}
 
 		skipFileFilter := false
 		skipNewRootPath := false
@@ -72,7 +105,6 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
 			}
-
 			lockDirContents.Git = &lock
 
 		case contents.Hg != nil:
@@ -147,7 +179,6 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			if err != nil {
 				return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
 			}
-
 			lockDirContents.HelmChart = &lock
 
 		case contents.Manual != nil:
@@ -215,6 +246,10 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
 		}
 
+		if lazySyncAddConfigDigest {
+			lockDirContents.ConfigDigest = configDigest
+		}
+
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
 	}
 
@@ -242,4 +277,18 @@ func maybeChmod(path string, potentialPerms ...*os.FileMode) error {
 	}
 
 	return nil
+}
+
+func (d *Directory) handleLazySync(oldConfigDigest string, newConfigDigest string, fetchLazyGlobalOverride bool, fetchLazy bool) (bool, bool) {
+	skipFetching := false
+	addConfigDigest := false
+	// if lazy sync is enabled and config remains unchanged, skip fetching
+	if fetchLazyGlobalOverride && fetchLazy && oldConfigDigest == newConfigDigest {
+		skipFetching = true
+	}
+	// config digest is always added if lazy syncing is enabled locally and globally
+	if fetchLazy {
+		addConfigDigest = true
+	}
+	return skipFetching, addConfigDigest
 }

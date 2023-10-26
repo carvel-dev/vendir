@@ -34,6 +34,7 @@ type Directory struct {
 
 type DirectoryContents struct {
 	Path string `json:"path"`
+	Lazy bool   `json:"lazy,omitempty"`
 
 	Git           *DirectoryContentsGit           `json:"git,omitempty"`
 	Hg            *DirectoryContentsHg            `json:"hg,omitempty"`

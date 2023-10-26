@@ -28,6 +28,13 @@ func NewLockConfig() LockConfig {
 	}
 }
 
+func LockFileExists(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+	return true
+}
+
 func NewLockConfigFromFile(path string) (LockConfig, error) {
 	bs, err := os.ReadFile(path)
 	if err != nil {
@@ -111,6 +118,16 @@ func (c LockConfig) FindContents(dirPath, conPath string) (LockDirectoryContents
 		}
 	}
 	return LockDirectoryContents{}, fmt.Errorf(
+		"Expected to find directory '%s' within lock config, but did not", dirPath)
+}
+
+func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
+	for _, dir := range c.Directories {
+		if dir.Path == dirPath {
+			return dir, nil
+		}
+	}
+	return LockDirectory{}, fmt.Errorf(
 		"Expected to find directory '%s' within lock config, but did not", dirPath)
 }
 

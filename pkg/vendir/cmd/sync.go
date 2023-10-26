@@ -30,6 +30,7 @@ type SyncOptions struct {
 
 	Directories []string
 	Locked      bool
+	Lazy        bool
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
@@ -50,6 +51,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
+	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Set to 'false' it ignores the 'lazy' flag in the directory content configuration")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
@@ -95,14 +97,14 @@ func (o *SyncOptions) Run() error {
 		o.ui.PrintBlock(configBs)
 	}
 
+	existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
+	if err != nil && o.Locked {
+		return err
+	}
+
 	// If syncing against a lock file, apply lock information
 	// on top of existing config
 	if o.Locked {
-		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
-		if err != nil {
-			return err
-		}
-
 		err = conf.Lock(existingLockConfig)
 		if err != nil {
 			return err
@@ -130,11 +132,14 @@ func (o *SyncOptions) Run() error {
 		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
+		Lazy:           o.Lazy,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
-		dirLockConf, err := ctldir.NewDirectory(dirConf, o.ui).Sync(syncOpts)
+		// error safe to ignore, since lock file might not exist
+		dirExistingLockConf, _ := existingLockConfig.FindDirectory(dirConf.Path)
+		dirLockConf, err := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui).Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
@@ -150,11 +155,6 @@ func (o *SyncOptions) Run() error {
 
 	// Update only selected directories in lock file
 	if len(dirs) > 0 {
-		existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
-		if err != nil {
-			return err
-		}
-
 		err = existingLockConfig.Merge(newLockConfig)
 		if err != nil {
 			return err

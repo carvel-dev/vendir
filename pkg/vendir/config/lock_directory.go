@@ -3,13 +3,16 @@
 
 package config
 
+import "fmt"
+
 type LockDirectory struct {
 	Path     string                  `json:"path"`
 	Contents []LockDirectoryContents `json:"contents"`
 }
 
 type LockDirectoryContents struct {
-	Path string `json:"path"`
+	Path         string `json:"path"`
+	ConfigDigest string `json:"configDigest,omitempty"`
 
 	Git           *LockDirectoryContentsGit           `json:"git,omitempty"`
 	Hg            *LockDirectoryContentsHg            `json:"hg,omitempty"`
@@ -62,3 +65,13 @@ type LockDirectoryContentsManual struct{}
 type LockDirectoryContentsDirectory struct{}
 
 type LockDirectoryContentsInline struct{}
+
+func (d LockDirectory) FindContents(conPath string) (LockDirectoryContents, error) {
+	for _, con := range d.Contents {
+		if con.Path == conPath {
+			return con, nil
+		}
+	}
+	return LockDirectoryContents{}, fmt.Errorf("Expected to find contents '%s' "+
+		"within directory '%s' in lock config, but did not", conPath, d.Path)
+}

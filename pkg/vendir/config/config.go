@@ -183,6 +183,7 @@ func (c Config) UseDirectory(path, dirPath string) error {
 				ExcludePaths: con.ExcludePaths,
 				IgnorePaths:  con.IgnorePaths,
 				LegalPaths:   con.LegalPaths,
+				Lazy:         con.Lazy,
 			}
 			dir.Contents[j] = newCon
 			c.Directories[i] = dir
