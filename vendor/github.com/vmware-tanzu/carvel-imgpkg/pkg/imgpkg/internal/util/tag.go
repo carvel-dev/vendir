@@ -5,6 +5,7 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	regname "github.com/google/go-containerregistry/pkg/name"
@@ -65,13 +66,19 @@ func (tagGen RepoBasedTagGenerator) GenerateTag(item imagedigest.DigestWrap, imp
 	}
 
 	origRepoPath = strings.Join(strings.Split(origRepoPath, "/")[1:], "-")
+
+	pattern := `^[^a-zA-Z0-9_]+|[^a-zA-Z0-9\._-]+`
+	regex := regexp.MustCompile(pattern)
+	cleanedOrigRepoPath := regex.ReplaceAllString(origRepoPath, "")
+
 	digestArr := strings.Split(item.RegnameDigest().DigestStr(), ":")
-	tagStartIdx := len(origRepoPath) - 49
+	tagStartIdx := len(cleanedOrigRepoPath) - 49
 	if tagStartIdx < 0 {
 		tagStartIdx = 0
 	}
 
-	dashedRepo := fmt.Sprintf("%s-%s-%s.imgpkg", origRepoPath[tagStartIdx:], digestArr[0], digestArr[1])
+	cleanedTag := regex.ReplaceAllString(cleanedOrigRepoPath[tagStartIdx:], "")
+	dashedRepo := fmt.Sprintf("%s-%s-%s.imgpkg", cleanedTag, digestArr[0], digestArr[1])
 	// if tag starts with a "-", PUT to /v2/<repo>/manifests/-<foo>
 	// will give an "un-recognized request" error
 	if strings.HasPrefix(dashedRepo, "-") {
