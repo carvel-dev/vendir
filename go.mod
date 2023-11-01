@@ -1,8 +1,9 @@
-module github.com/vmware-tanzu/carvel-vendir
+module carvel.dev/vendir
 
 go 1.21
 
 require (
+	carvel.dev/imgpkg v0.39.0
 	github.com/bmatcuk/doublestar v1.2.1
 	github.com/carvel-dev/semver/v4 v4.0.1-0.20230221220520-8090ce423695
 	github.com/cppforlife/cobrautil v0.0.0-20221021151949-d60711905d65
@@ -17,7 +18,6 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vmware-tanzu/carvel-imgpkg v0.38.2
 	golang.org/x/crypto v0.14.0
 	golang.org/x/oauth2 v0.8.0
 	golang.org/x/tools v0.12.0

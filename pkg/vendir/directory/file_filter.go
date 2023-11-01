@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	"github.com/bmatcuk/doublestar"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 )
 
 type FileFilter struct {

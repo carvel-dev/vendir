@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"carvel.dev/vendir/pkg/vendir/config"
 	"github.com/stretchr/testify/require"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
 	"sigs.k8s.io/yaml"
 )
 

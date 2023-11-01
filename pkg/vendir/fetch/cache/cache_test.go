@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"carvel.dev/vendir/pkg/vendir/fetch/cache"
 	"github.com/stretchr/testify/require"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
 )
 
 type hitTest struct {

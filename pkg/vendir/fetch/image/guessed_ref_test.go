@@ -6,8 +6,8 @@ package image_test
 import (
 	"testing"
 
+	ctlimg "carvel.dev/vendir/pkg/vendir/fetch/image"
 	"github.com/stretchr/testify/assert"
-	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
 )
 
 func TestGuessedRefParts(t *testing.T) {

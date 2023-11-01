@@ -6,7 +6,7 @@ package fetch
 import (
 	"fmt"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 )
 
 type RefFetcher interface {

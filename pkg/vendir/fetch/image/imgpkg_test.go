@@ -13,18 +13,18 @@ import (
 	"strings"
 	"testing"
 
+	ctlregistry "carvel.dev/imgpkg/pkg/imgpkg/registry"
+	"carvel.dev/imgpkg/pkg/imgpkg/registry/auth"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
+	ctlimg "carvel.dev/vendir/pkg/vendir/fetch/image"
 	regname "github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	regrandom "github.com/google/go-containerregistry/pkg/v1/random"
 	regremote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
-	ctlregistry "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
-	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry/auth"
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
-	ctlimg "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/image"
 )
 
 var localRegistryAddress string

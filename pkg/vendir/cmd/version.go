@@ -6,9 +6,9 @@ package cmd
 import (
 	"fmt"
 
+	"carvel.dev/vendir/pkg/vendir/version"
 	"github.com/cppforlife/go-cli-ui/ui"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/version"
 )
 
 type VersionOptions struct {

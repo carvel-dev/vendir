@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	versions "carvel.dev/vendir/pkg/vendir/versions"
+	"carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	versions "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 func TestSemverOrder(t *testing.T) {

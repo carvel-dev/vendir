@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	"github.com/bmatcuk/doublestar"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
 )
 
 type StagingDir struct {

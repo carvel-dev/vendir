@@ -6,10 +6,10 @@ package image
 import (
 	"fmt"
 
-	ctlconf "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/config"
-	ctlfetch "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch"
-	ctlcache "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache"
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions"
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
+	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
+	ctlver "carvel.dev/vendir/pkg/vendir/versions"
 )
 
 type Sync struct {

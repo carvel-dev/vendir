@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	ctlver "github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
+	ctlver "carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 )
 
 const (

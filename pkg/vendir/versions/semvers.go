@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"carvel.dev/vendir/pkg/vendir/versions/v1alpha1"
 	semver "github.com/carvel-dev/semver/v4"
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/versions/v1alpha1"
 )
 
 type Semvers struct {

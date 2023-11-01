@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/vmware-tanzu/carvel-vendir/pkg/vendir/fetch/cache/resources"
+	"carvel.dev/vendir/pkg/vendir/fetch/cache/resources"
 )
 
 // Cache functionality
