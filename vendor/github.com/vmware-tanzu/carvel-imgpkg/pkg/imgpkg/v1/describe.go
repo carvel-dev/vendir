@@ -1,6 +1,7 @@
 // Copyright 2022 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package v1 contains the public API version 1 used by other tools to interact with imgpkg
 package v1
 
 import (

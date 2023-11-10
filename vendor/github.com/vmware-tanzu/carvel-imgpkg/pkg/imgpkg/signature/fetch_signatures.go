@@ -118,6 +118,6 @@ func (n Noop) Fetch(*imageset.UnprocessedImageRefs) (*imageset.UnprocessedImageR
 }
 
 // FetchForImageRefs Retrieve the available signatures associated with the images provided
-func (n Noop) FetchForImageRefs(images []lockconfig.ImageRef) ([]lockconfig.ImageRef, error) {
+func (n Noop) FetchForImageRefs(_ []lockconfig.ImageRef) ([]lockconfig.ImageRef, error) {
 	return nil, nil
 }
