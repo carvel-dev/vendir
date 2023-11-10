@@ -89,6 +89,11 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		if skipFetching {
 			d.ui.PrintLinef("Skipping fetch: %s + %s (flagged as lazy, config has not changed since last sync)", d.opts.Path, contents.Path)
 			lockConfig.Contents = append(lockConfig.Contents, oldLockContents)
+			// copy previously fetched contents to staging dir
+			err = dircopy.Copy(filepath.Join(d.opts.Path, contents.Path), stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+			}
 			continue
 		}
 
