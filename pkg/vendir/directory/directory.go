@@ -92,7 +92,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			// copy previously fetched contents to staging dir
 			err = dircopy.Copy(filepath.Join(d.opts.Path, contents.Path), stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+				return lockConfig, fmt.Errorf("Lazy content missing. Run sync with --lazy=false to fix. '%s': %s", d.opts.Path, err)
 			}
 			continue
 		}
