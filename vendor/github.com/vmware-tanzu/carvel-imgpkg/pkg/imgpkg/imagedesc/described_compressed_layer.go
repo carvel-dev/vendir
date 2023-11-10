@@ -1,6 +1,7 @@
 // Copyright 2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package imagedesc defines the description of image, indexes and layers used by go-containerregistry
 package imagedesc
 
 import (
