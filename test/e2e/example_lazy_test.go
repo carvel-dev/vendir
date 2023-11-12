@@ -23,6 +23,12 @@ func TestExampleLazy(t *testing.T) {
 	// run lazy sync
 	_, err := vendir.RunWithOpts([]string{"sync", "-f=vendir-lazy.yml"}, RunOpts{Dir: path, Env: osEnv})
 	require.NoError(t, err)
+	require.DirExists(t, path+"/vendor/dir")
+
+	// rerun lazy sync for good measure
+	_, err = vendir.RunWithOpts([]string{"sync", "-f=vendir-lazy.yml"}, RunOpts{Dir: path, Env: osEnv})
+	require.NoError(t, err)
+	require.DirExists(t, path+"/vendor/dir")
 
 	// check that the lock file has config digest
 	lockConf, err := ctlconf.NewLockConfigFromFile(path + "/vendir.lock.yml")
