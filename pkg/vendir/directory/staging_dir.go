@@ -130,18 +130,12 @@ func isPathIgnored(path string, ignorePaths []string) (bool, error) {
 	return false, nil
 }
 
+// Replaces entire final location directory with staging directory
 func (d StagingDir) Replace(path string) error {
-	err := os.RemoveAll(path)
-	if err != nil {
-		return fmt.Errorf("Deleting dir %s: %s", path, err)
-	}
 
-	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
-	parentPath := filepath.Dir(filepath.Clean(path))
-
-	err = os.MkdirAll(parentPath, 0700)
+	err := d.prepareOutputDirectory(path)
 	if err != nil {
-		return fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
+		return err
 	}
 
 	err = os.Rename(d.stagingDir, path)
@@ -149,6 +143,37 @@ func (d StagingDir) Replace(path string) error {
 		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, path, err)
 	}
 
+	return nil
+}
+
+// Replaces single directory of final location dir with single directory of staging dir
+func (d StagingDir) PartialRepace(contentPath string, directoryPath string) error {
+	err := d.prepareOutputDirectory(directoryPath)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(filepath.Join(d.stagingDir, contentPath), directoryPath)
+	if err != nil {
+		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
+	}
+
+	return nil
+}
+
+func (d StagingDir) prepareOutputDirectory(directoryPath string) error {
+	err := os.RemoveAll(directoryPath)
+	if err != nil {
+		return fmt.Errorf("Deleting dir %s: %s", directoryPath, err)
+	}
+
+	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
+	parentPath := filepath.Dir(filepath.Clean(directoryPath))
+
+	err = os.MkdirAll(parentPath, 0700)
+	if err != nil {
+		return fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
+	}
 	return nil
 }
 

@@ -148,3 +148,109 @@ func TestWriteToFile(t *testing.T) {
 
 	require.NoError(t, os.RemoveAll(tempDir))
 }
+
+func TestLockConfig_ReplaceContents(t *testing.T) {
+	lockConfig := config.LockConfig{
+		APIVersion: "vendir.k14s.io/v1alpha1",
+		Kind:       "LockConfig",
+		Directories: []config.LockDirectory{
+			{
+				Path: "dirpath",
+				Contents: []config.LockDirectoryContents{
+					{
+						Path: "dirpath",
+					},
+				},
+			},
+		},
+	}
+	lockContents := config.LockDirectoryContents{
+		Path: "dirpath",
+		HelmChart: &config.LockDirectoryContentsHelmChart{
+			Version: "test",
+		},
+	}
+	t.Run("replace contents", func(t *testing.T) {
+		appended := lockConfig.ReplaceContents("dirpath/dirpath", lockContents)
+		require.True(t, appended)
+		require.Equal(t, 1, len(lockConfig.Directories))
+		require.Equal(t, 1, len(lockConfig.Directories[0].Contents))
+		require.Equal(t, config.LockDirectoryContents{Path: "dirpath", HelmChart: &config.LockDirectoryContentsHelmChart{Version: "test"}}, lockConfig.Directories[0].Contents[0])
+	})
+
+	t.Run("fail to append content to config due to wrong path", func(t *testing.T) {
+		appended := lockConfig.AppendContents("wrong-path", lockContents)
+		require.False(t, appended)
+	})
+}
+
+func TestLockConfig_AppendContents(t *testing.T) {
+	lockConfig := config.LockConfig{
+		APIVersion: "vendir.k14s.io/v1alpha1",
+		Kind:       "LockConfig",
+		Directories: []config.LockDirectory{
+			{
+				Path: "dirpath",
+				Contents: []config.LockDirectoryContents{
+					{
+						Path: "dirpath",
+					},
+				},
+			},
+		},
+	}
+	lockContents := config.LockDirectoryContents{
+		Path: "gitpath",
+	}
+	t.Run("append contents to config", func(t *testing.T) {
+		appended := lockConfig.AppendContents("dirpath", lockContents)
+		require.True(t, appended)
+		require.Equal(t, 1, len(lockConfig.Directories))
+		require.Equal(t, 2, len(lockConfig.Directories[0].Contents))
+		require.Equal(t, config.LockDirectoryContents{Path: "gitpath"}, lockConfig.Directories[0].Contents[1])
+	})
+
+	t.Run("fail to append content to config due to wrong path", func(t *testing.T) {
+		appended := lockConfig.AppendContents("wrong-path", lockContents)
+		require.False(t, appended)
+	})
+}
+
+func TestLockConfig_Merge(t *testing.T) {
+	lockConfig := config.LockConfig{
+		APIVersion: "vendir.k14s.io/v1alpha1",
+		Kind:       "LockConfig",
+		Directories: []config.LockDirectory{
+			{
+				Path: "gitpath-1",
+				Contents: []config.LockDirectoryContents{
+					{
+						Path: "gitpath-1",
+					},
+				},
+			},
+		},
+	}
+	lockConfig2 := config.LockConfig{
+		APIVersion: "vendir.k14s.io/v1alpha1",
+		Kind:       "LockConfig",
+		Directories: []config.LockDirectory{
+			{
+				Path: "gitpath-2",
+				Contents: []config.LockDirectoryContents{
+					{
+						Path: "gitpath-2",
+					},
+				},
+			},
+		},
+	}
+	t.Run("append directory to config", func(t *testing.T) {
+		lockConfig.Merge(lockConfig2)
+		require.Equal(t, 2, len(lockConfig.Directories))
+		require.Equal(t, 1, len(lockConfig.Directories[0].Contents))
+		require.Equal(t, 1, len(lockConfig.Directories[1].Contents))
+		require.Equal(t, config.LockDirectoryContents{Path: "gitpath-1"}, lockConfig.Directories[0].Contents[0])
+		require.Equal(t, config.LockDirectoryContents{Path: "gitpath-2"}, lockConfig.Directories[1].Contents[0])
+	})
+}

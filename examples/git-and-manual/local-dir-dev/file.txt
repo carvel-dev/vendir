@@ -1,1 +1,1 @@
-local-dir2/file
+file-dir-dev

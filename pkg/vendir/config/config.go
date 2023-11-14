@@ -209,22 +209,22 @@ func (c Config) Subset(paths []string) (Config, error) {
 
 	for _, dir := range c.Directories {
 		for _, con := range dir.Contents {
-			path := filepath.Join(dir.Path, con.Path)
+			entirePath := filepath.Join(dir.Path, con.Path)
 
-			seen, found := pathsToSeen[path]
+			seen, found := pathsToSeen[entirePath]
 			if !found {
 				continue
 			}
 			if seen {
-				return Config{}, fmt.Errorf("Expected to match path '%s' once, but matched multiple", path)
+				return Config{}, fmt.Errorf("Expected to match path '%s' once, but matched multiple", entirePath)
 			}
-			pathsToSeen[path] = true
+			pathsToSeen[entirePath] = true
 
 			newCon := con // copy (but not deep unfortunately)
-			newCon.Path = EntireDirPath
+			newCon.Path = con.Path
 
 			result.Directories = append(result.Directories, Directory{
-				Path:     path,
+				Path:     dir.Path,
 				Contents: []DirectoryContents{newCon},
 			})
 		}

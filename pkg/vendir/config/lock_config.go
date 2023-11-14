@@ -30,7 +30,10 @@ func NewLockConfig() LockConfig {
 
 func LockFileExists(path string) bool {
 	if _, err := os.Stat(path); err != nil {
-		return false
+		if errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		panic(fmt.Errorf("can not stat file '%v': %v", path, err))
 	}
 	return true
 }
@@ -131,42 +134,48 @@ func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
 		"Expected to find directory '%s' within lock config, but did not", dirPath)
 }
 
-func (c LockConfig) Merge(other LockConfig) error {
+func (c *LockConfig) Merge(other LockConfig) error {
 	for _, dir := range other.Directories {
+		replaced := false
 		for _, con := range dir.Contents {
-			err := c.MergeContents(filepath.Join(dir.Path, con.Path), con)
-			if err != nil {
-				return err
+			replaced = c.ReplaceContents(filepath.Join(dir.Path, con.Path), con)
+			if replaced {
+				continue
 			}
+			replaced = c.AppendContents(dir.Path, con)
+			if replaced {
+				continue
+			}
+		}
+		if !replaced {
+			c.Directories = append(c.Directories, dir)
 		}
 	}
 	return nil
 }
 
-func (c LockConfig) MergeContents(path string, replaceCon LockDirectoryContents) error {
-	var matched bool
+func (c *LockConfig) ReplaceContents(path string, replaceCon LockDirectoryContents) bool {
 
 	for i, dir := range c.Directories {
 		for j, con := range dir.Contents {
 			if filepath.Join(dir.Path, con.Path) != path {
 				continue
 			}
-
-			if matched {
-				return fmt.Errorf("Expected to match exactly one directory, but matched multiple")
-			}
-			matched = true
-
-			newCon := replaceCon
-			newCon.Path = con.Path
-
-			dir.Contents[j] = newCon
+			dir.Contents[j] = replaceCon
 			c.Directories[i] = dir
+			return true
 		}
 	}
 
-	if !matched {
-		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
+	return false
+}
+
+func (c *LockConfig) AppendContents(path string, appendCon LockDirectoryContents) bool {
+	for i, dir := range c.Directories {
+		if dir.Path == path {
+			c.Directories[i].Contents = append(dir.Contents, appendCon)
+			return true
+		}
 	}
-	return nil
+	return false
 }
