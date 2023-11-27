@@ -11,5 +11,7 @@ directories:
     path: github.com/GoogleCloudPlatform/metacontroller
   - directory: {}
     path: local-dir
+  - directory: {}
+    path: local-dir-2
   path: vendor
 kind: LockConfig

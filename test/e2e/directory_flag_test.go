@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
@@ -18,37 +19,30 @@ func TestUseDirectory(t *testing.T) {
 	reset := func() {
 		// Make sure state is reset
 		_, err := vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path})
-		if err != nil {
-			t.Fatalf("Expected no err")
-		}
+		require.NoError(t, err)
+	}
+	checkFileContent := func(filePath string, expectedContent string) {
+		file, err := os.ReadFile(path + filePath)
+		require.NoError(t, err)
+		require.EqualValues(t, string(file), expectedContent)
 	}
 
-	reset()
-	defer reset()
-
-	checkFileContent := func(expectedContent string) {
-		file, err := os.ReadFile(path + "/vendor/local-dir/file.txt")
-		if err != nil {
-			t.Fatalf("Expected no err")
-		}
-		if string(file) != expectedContent {
-			t.Fatalf("Expected file contents to be known: %s", string(file))
-		}
-	}
-
-	checkFileContent("file\n")
-
-	_, err := vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path})
+	// Sync with directory flag
+	_, err := vendir.RunWithOpts([]string{"sync", "--directory", "vendor/local-dir", "--directory", "vendor/local-dir-2"}, RunOpts{Dir: path})
 	if err != nil {
 		t.Fatalf("Expected no err")
 	}
+	checkFileContent("/vendor/local-dir/file.txt", "file\n")
+	checkFileContent("/vendor/local-dir-2/file.txt", "file-dir-2\n")
 
-	checkFileContent("file\n")
-
+	// Sync with directory flag and local-dir-dev
 	_, err = vendir.RunWithOpts([]string{"sync", "--directory", "vendor/local-dir=local-dir-dev"}, RunOpts{Dir: path})
-	if err != nil {
-		t.Fatalf("Expected no err")
-	}
+	require.NoError(t, err)
+	checkFileContent("/vendor/local-dir/file.txt", "file-dir-dev\n")
 
-	checkFileContent("local-dir2/file\n")
+	// Lock file check
+	require.FileExists(t, path+"/vendir.lock.yml")
+
+	// Final regular sync to make sure nothing in vendir was deleted (manual syncs would fail).
+	reset()
 }

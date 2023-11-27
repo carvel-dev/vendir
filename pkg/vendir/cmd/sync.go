@@ -36,6 +36,13 @@ type SyncOptions struct {
 	AllowAllSymlinkDestinations bool
 }
 
+func (o *SyncOptions) LockFileExists() bool {
+	if _, err := os.Stat(o.LockFile); err != nil {
+		return false
+	}
+	return true
+}
+
 func NewSyncOptions(ui ui.UI) *SyncOptions {
 	return &SyncOptions{ui: ui}
 }
@@ -133,13 +140,15 @@ func (o *SyncOptions) Run() error {
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
 		Lazy:           o.Lazy,
+		Partial:        len(dirs) > 0,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
 	for _, dirConf := range conf.Directories {
 		// error safe to ignore, since lock file might not exist
 		dirExistingLockConf, _ := existingLockConfig.FindDirectory(dirConf.Path)
-		dirLockConf, err := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui).Sync(syncOpts)
+		directory := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui)
+		dirLockConf, err := directory.Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
 		}
@@ -155,12 +164,18 @@ func (o *SyncOptions) Run() error {
 
 	// Update only selected directories in lock file
 	if len(dirs) > 0 {
-		err = existingLockConfig.Merge(newLockConfig)
-		if err != nil {
-			return err
-		}
+		if o.LockFileExists() {
+			existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
+			if err != nil {
+				return err
+			}
+			err = existingLockConfig.Merge(newLockConfig)
+			if err != nil {
+				return err
+			}
 
-		newLockConfig = existingLockConfig
+			newLockConfig = existingLockConfig
+		}
 	}
 
 	newLockConfigBs, err := newLockConfig.AsBytes()

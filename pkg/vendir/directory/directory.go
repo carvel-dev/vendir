@@ -42,6 +42,7 @@ type SyncOpts struct {
 	HelmBinary     string
 	Cache          ctlcache.Cache
 	Lazy           bool
+	Partial        bool
 }
 
 func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
@@ -256,11 +257,20 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		}
 
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
+
+		if syncOpts.Partial {
+			err = stagingDir.PartialRepace(contents.Path, filepath.Join(d.opts.Path, contents.Path))
+			if err != nil {
+				return lockConfig, err
+			}
+		}
 	}
 
-	err = stagingDir.Replace(d.opts.Path)
-	if err != nil {
-		return lockConfig, err
+	if !syncOpts.Partial {
+		err = stagingDir.Replace(d.opts.Path)
+		if err != nil {
+			return lockConfig, err
+		}
 	}
 
 	// after everything else is done, ensure the outer dir's access perms are set

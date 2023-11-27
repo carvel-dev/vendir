@@ -17,3 +17,6 @@ directories:
   - path: local-dir
     directory:
       path: local-dir
+  - path: local-dir-2
+    directory:
+      path: local-dir-2
