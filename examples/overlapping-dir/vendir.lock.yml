@@ -1,0 +1,13 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - configDigest: d0aef6c75d30608bf40883a6c52adcea0e8afc62c23513e0462a059390ea9b6b
+    directory: {}
+    path: dir1
+  path: vendor
+- contents:
+  - configDigest: 147cb489ce06d7fb463ed370dd6c0f41b237af66a1260fecfbd82e5c33bf6c4a
+    directory: {}
+    path: dir3
+  path: vendor
+kind: LockConfig

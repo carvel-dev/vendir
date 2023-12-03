@@ -1,0 +1,15 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: vendor
+    contents:
+      - path: dir1
+        lazy: true
+        directory:
+          path: ./some-content
+  - path: vendor
+    contents:
+      - path: dir3
+        lazy: true
+        directory:
+          path: ./some-content

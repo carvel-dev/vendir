@@ -42,7 +42,6 @@ type SyncOpts struct {
 	HelmBinary     string
 	Cache          ctlcache.Cache
 	Lazy           bool
-	Partial        bool
 }
 
 func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
@@ -245,31 +244,22 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
 		}
 
-		// after everything else is done, ensure the inner dir's access perms are set
-		// chmod to the content's permission, fall back to the directory's
-		err = maybeChmod(stagingDstPath, contents.Permissions, d.opts.Permissions)
-		if err != nil {
-			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
-		}
-
 		if lazySyncAddConfigDigest {
 			lockDirContents.ConfigDigest = configDigest
 		}
 
 		lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
 
-		if syncOpts.Partial {
-			err = stagingDir.PartialRepace(contents.Path, filepath.Join(d.opts.Path, contents.Path))
-			if err != nil {
-				return lockConfig, err
-			}
-		}
-	}
-
-	if !syncOpts.Partial {
-		err = stagingDir.Replace(d.opts.Path)
+		err = stagingDir.CopyToFinalOutputDir(d.opts.Path, contents.Path)
 		if err != nil {
 			return lockConfig, err
+		}
+
+		// after everything else is done, ensure the inner dir's access perms are set
+		// chmod to the content's permission, fall back to the directory's
+		err = maybeChmod(filepath.Join(d.opts.Path, contents.Path), contents.Permissions, d.opts.Permissions)
+		if err != nil {
+			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
 		}
 	}
 

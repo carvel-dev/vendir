@@ -8,13 +8,13 @@ import (
 	"testing"
 )
 
-func TestOverlappingDirErr(t *testing.T) {
+func TestOverlappingContentPathErr(t *testing.T) {
 	env := BuildEnv(t)
 	vendir := Vendir{t, env.BinaryPath, Logger{}}
 
 	path := "../../examples/overlapping-dir"
 
-	_, err := vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path, AllowError: true})
+	_, err := vendir.RunWithOpts([]string{"sync", "-f", "vendir-content-path-overlap.yml"}, RunOpts{Dir: path, AllowError: true})
 	if err == nil {
 		t.Fatalf("Expected err")
 	}

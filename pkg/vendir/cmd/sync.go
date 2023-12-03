@@ -140,10 +140,8 @@ func (o *SyncOptions) Run() error {
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
 		Lazy:           o.Lazy,
-		Partial:        len(dirs) > 0,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
-
 	for _, dirConf := range conf.Directories {
 		// error safe to ignore, since lock file might not exist
 		dirExistingLockConf, _ := existingLockConfig.FindDirectory(dirConf.Path)
@@ -175,6 +173,40 @@ func (o *SyncOptions) Run() error {
 			}
 
 			newLockConfig = existingLockConfig
+		}
+	}
+
+	// Clean old dirs from final output dir
+	// Iterate over directory paths
+	for _, dir := range newLockConfig.Directories {
+		// Walk through file system dirs and match with lock file config
+		err := filepath.WalkDir(dir.Path, func(filePath string, info os.DirEntry, err error) error {
+			if err != nil {
+				// dirs might be unreadable due to restrictive file permissions set in vendir.yml
+				// therefore ignore errors on traversing directories
+				return nil
+			}
+			for _, dir := range newLockConfig.Directories {
+				for _, content := range dir.Contents {
+					// if file system path found in config file then skip
+					if filepath.Join(dir.Path, content.Path) == filePath {
+						return filepath.SkipDir
+					}
+					// if file system path is a parent directory of config file then continue iterating
+					if strings.HasPrefix(filepath.Join(dir.Path, content.Path), filePath+"/") {
+						return nil
+					}
+				}
+			}
+			// if file system path not found in config file then delete
+			err = os.RemoveAll(filePath)
+			if err != nil {
+				return err
+			}
+			return filepath.SkipDir
+		})
+		if err != nil {
+			return fmt.Errorf("Error while cleaning old directories: %s", err)
 		}
 	}
 

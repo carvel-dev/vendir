@@ -1,0 +1,13 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: vendor
+    contents:
+      - path: dir1
+        directory:
+          path: ./some-content
+  - path: vendor
+    contents:
+      - path: dir2
+        directory:
+          path: ./some-content

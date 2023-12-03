@@ -147,15 +147,17 @@ func (d StagingDir) Replace(path string) error {
 }
 
 // Replaces single directory of final location dir with single directory of staging dir
-func (d StagingDir) PartialRepace(contentPath string, directoryPath string) error {
-	err := d.prepareOutputDirectory(directoryPath)
+func (d StagingDir) CopyToFinalOutputDir(directoryPath string, contentPath string) error {
+	stagingPath := filepath.Join(d.stagingDir, contentPath)
+	outputPath := filepath.Join(directoryPath, contentPath)
+	err := d.prepareOutputDirectory(outputPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.Rename(filepath.Join(d.stagingDir, contentPath), directoryPath)
+	err = os.Rename(stagingPath, outputPath)
 	if err != nil {
-		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
+		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", stagingPath, outputPath, err)
 	}
 
 	return nil
