@@ -10,7 +10,7 @@
 - Install: Grab prebuilt binaries from the [Releases page](https://github.com/carvel-dev/vendir/releases) or [Homebrew Carvel tap](https://github.com/carvel-dev/homebrew)
 - Backlog: [See what we're up to](https://github.com/orgs/carvel-dev/projects/1/views/1?filterQuery=repo%3A%22carvel-dev%2Fvendir%22).
 
-`vendir` allows to declaratively state what should be in a directory. It's could be used for vendoring software.
+`vendir` allows you to declaratively state what should be in a directory. It can be used for vendoring software.
 
 ```bash
 $ vendir sync # from a directory that contains vendir.yml
