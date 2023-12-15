@@ -340,8 +340,8 @@ github.com/vbatts/tar-split v0.11.2 h1:Via6XqJr0hceW4wff3QRzD5gAk/tatMw/4ZA7cTlI
 github.com/vbatts/tar-split v0.11.2/go.mod h1:vV3ZuO2yWSVsz+pfFzDG/upWH1JhjOiEaWq6kXyQ3VI=
 github.com/vito/go-interact v1.0.1 h1:O8xi8c93bRUv2Tb/v6HdiuGc+WnWt+AQzF74MOOdlBs=
 github.com/vito/go-interact v1.0.1/go.mod h1:HrdHSJXD2yn1MhlTwSIMeFgQ5WftiIorszVGd3S/DAA=
-github.com/vmware-tanzu/carvel-imgpkg v0.33.8 h1:+XMEiJmyCrUWW8VAGKpavfvLhOhzYPp2tUVur4LmFHY=
-github.com/vmware-tanzu/carvel-imgpkg v0.33.8/go.mod h1:ojdAv8DSDpedhotEX+7adYsEmbj8IXil9cBHntRLrJ4=
+github.com/vmware-tanzu/carvel-imgpkg v0.33.9 h1:IXtbJuU/zkj/u5tl3dG471VYtEESQLLmyfVXygBqUoM=
+github.com/vmware-tanzu/carvel-imgpkg v0.33.9/go.mod h1:ojdAv8DSDpedhotEX+7adYsEmbj8IXil9cBHntRLrJ4=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
