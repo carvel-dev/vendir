@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	ctlconf "carvel.dev/vendir/pkg/vendir/config"
-	ctldir "carvel.dev/vendir/pkg/vendir/directory"
-	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
 	"github.com/cppforlife/go-cli-ui/ui"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+
+	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	ctldir "carvel.dev/vendir/pkg/vendir/directory"
+	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
 )
 
 const (
@@ -34,13 +35,6 @@ type SyncOptions struct {
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
-}
-
-func (o *SyncOptions) LockFileExists() bool {
-	if _, err := os.Stat(o.LockFile); err != nil {
-		return false
-	}
-	return true
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -162,9 +156,9 @@ func (o *SyncOptions) Run() error {
 		newLockConfig.Directories = append(newLockConfig.Directories, dirLockConf)
 	}
 
-	// Update only selected directories in lock file
+	// Update only selected directories in lock file, if it exists
 	if len(dirs) > 0 {
-		if o.LockFileExists() {
+		if _, err := os.Stat(o.LockFile); err == nil {
 			existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
 			if err != nil {
 				return err
@@ -175,6 +169,8 @@ func (o *SyncOptions) Run() error {
 			}
 
 			newLockConfig = existingLockConfig
+		} else if !os.IsNotExist(err) {
+			return err
 		}
 	}
 
