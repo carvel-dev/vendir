@@ -9,9 +9,10 @@ import (
 	"reflect"
 	"strings"
 
-	"carvel.dev/vendir/pkg/vendir/version"
 	semver "github.com/hashicorp/go-version"
 	"sigs.k8s.io/yaml"
+
+	"carvel.dev/vendir/pkg/vendir/version"
 )
 
 const (
@@ -259,20 +260,34 @@ func (c Config) Lock(lockConfig LockConfig) error {
 }
 
 func (c Config) checkOverlappingPaths() error {
-	paths := []string{}
-
-	for _, dir := range c.Directories {
-		for _, con := range dir.Contents {
-			paths = append(paths, filepath.Join(dir.Path, con.Path))
+	checkPaths := func(paths []string) error {
+		for i, path := range paths {
+			for i2, path2 := range paths {
+				if i != i2 && strings.HasPrefix(path2+string(filepath.Separator), path+string(filepath.Separator)) {
+					return fmt.Errorf("Expected to not manage overlapping paths: '%s' and '%s'", path2, path)
+				}
+			}
 		}
+		return nil
 	}
 
-	for i, path := range paths {
-		for i2, path2 := range paths {
-			if i != i2 && strings.HasPrefix(path2+string(filepath.Separator), path+string(filepath.Separator)) {
-				return fmt.Errorf("Expected to not "+
-					"manage overlapping paths: '%s' and '%s'", path2, path)
-			}
+	paths := []string{}
+	for _, dir := range c.Directories {
+		paths = append(paths, dir.Path)
+	}
+
+	if err := checkPaths(paths); err != nil {
+		return err
+	}
+
+	for _, dir := range c.Directories {
+		paths = []string{}
+		for _, cont := range dir.Contents {
+			paths = append(paths, filepath.Join(dir.Path, cont.Path))
+		}
+
+		if err := checkPaths(paths); err != nil {
+			return err
 		}
 	}
 
