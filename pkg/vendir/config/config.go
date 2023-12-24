@@ -209,6 +209,9 @@ func (c Config) Subset(paths []string) (Config, error) {
 	}
 
 	for _, dir := range c.Directories {
+		newDir := dir
+		newDir.Contents = []DirectoryContents{}
+
 		for _, con := range dir.Contents {
 			entirePath := filepath.Join(dir.Path, con.Path)
 
@@ -221,13 +224,11 @@ func (c Config) Subset(paths []string) (Config, error) {
 			}
 			pathsToSeen[entirePath] = true
 
-			newCon := con // copy (but not deep unfortunately)
-			newCon.Path = con.Path
+			newDir.Contents = append(newDir.Contents, con)
+		}
 
-			result.Directories = append(result.Directories, Directory{
-				Path:     dir.Path,
-				Contents: []DirectoryContents{newCon},
-			})
+		if len(newDir.Contents) > 0 {
+			result.Directories = append(result.Directories, newDir)
 		}
 	}
 
