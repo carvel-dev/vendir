@@ -28,16 +28,6 @@ func NewLockConfig() LockConfig {
 	}
 }
 
-func LockFileExists(path string) bool {
-	if _, err := os.Stat(path); err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false
-		}
-		panic(fmt.Errorf("can not stat file '%v': %v", path, err))
-	}
-	return true
-}
-
 func NewLockConfigFromFile(path string) (LockConfig, error) {
 	bs, err := os.ReadFile(path)
 	if err != nil {
@@ -155,7 +145,6 @@ func (c *LockConfig) Merge(other LockConfig) error {
 }
 
 func (c *LockConfig) ReplaceContents(path string, replaceCon LockDirectoryContents) bool {
-
 	for i, dir := range c.Directories {
 		for j, con := range dir.Contents {
 			if filepath.Join(dir.Path, con.Path) != path {
