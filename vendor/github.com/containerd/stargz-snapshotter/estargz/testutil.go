@@ -379,7 +379,6 @@ func compressBlob(t *testing.T, src *io.SectionReader, srcCompression int) *io.S
 	}
 	data := buf.Bytes()
 	return io.NewSectionReader(bytes.NewReader(data), 0, int64(len(data)))
-
 }
 
 type stargzEntry struct {
@@ -409,7 +408,7 @@ func contains(t *testing.T, a, b stargzEntry) bool {
 				return true // Ignore landmarks
 			}
 
-			// Ignore a TOCEntry of "./" (formated as "" by stargz lib) on root directory
+			// Ignore a TOCEntry of "./" (formatted as "" by stargz lib) on root directory
 			// because this points to the root directory itself.
 			if aChild.Name == "" && ae.Name == "" {
 				return true
@@ -1948,7 +1947,6 @@ func lookupMatch(name string, want *TOCEntry) stargzCheck {
 		if !reflect.DeepEqual(e, want) {
 			t.Errorf("entry %q mismatch.\n got: %+v\nwant: %+v\n", name, e, want)
 		}
-
 	})
 }
 
@@ -2200,6 +2198,7 @@ func blockdev(name string, major, minor int64) tarEntry {
 		})
 	})
 }
+
 func fifo(name string) tarEntry {
 	now := time.Now()
 	return tarEntryFunc(func(w *tar.Writer, prefix string, format tar.Format) error {

@@ -112,7 +112,7 @@ type DirectoryContentsImage struct {
 
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
-	// TODO support docker config formated secret
+	// TODO support docker config formatted secret
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 
@@ -130,7 +130,7 @@ type DirectoryContentsImgpkgBundle struct {
 
 	// Secret may include one or more keys: username, password, token.
 	// By default anonymous access is used for authentication.
-	// TODO support docker config formated secret
+	// TODO support docker config formatted secret
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 
