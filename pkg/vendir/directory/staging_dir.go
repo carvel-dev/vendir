@@ -21,7 +21,10 @@ type StagingDir struct {
 }
 
 func NewStagingDir() StagingDir {
-	rootDir := ".vendir-tmp"
+	rootDir, err := os.MkdirTemp(".", ".vendir-tmp-")
+	if err != nil {
+		panic(fmt.Errorf("Creating tmp dir: %s", err))
+	}
 	return StagingDir{
 		rootDir:     rootDir,
 		stagingDir:  filepath.Join(rootDir, "staging"),
