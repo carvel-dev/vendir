@@ -58,9 +58,12 @@ func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
 func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	lockConfig := ctlconf.LockDirectory{Path: d.opts.Path}
 
-	stagingDir := NewStagingDir()
+	stagingDir, err := NewStagingDir()
+	if err != nil {
+		return lockConfig, err
+	}
 
-	err := stagingDir.Prepare()
+	err = stagingDir.Prepare()
 	if err != nil {
 		return lockConfig, err
 	}
