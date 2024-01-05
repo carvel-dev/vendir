@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -85,6 +86,14 @@ jobs:
             ${checksums['vendir-linux-amd64']}  ./vendir-linux-amd64
             ${checksums['vendir-linux-arm64']}  ./vendir-linux-arm64
             ${checksums['vendir-windows-amd64.exe']}  ./vendir-windows-amd64.exe`
+      - name: Verify checksums signature
+        run: |
+          cosign verify-blob \
+          --cert dist/checksums.txt.pem \
+          --signature dist/checksums.txt.sig \
+          --certificate-identity-regexp=https://github.com/carvel-dev \
+          --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+          dist/checksums.txt
 
       - name: verify uploaded artifacts
         if: startsWith(github.ref, 'refs/tags/') && ${{ !env.ACT }}
