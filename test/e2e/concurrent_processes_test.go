@@ -41,14 +41,13 @@ directories:
 			wg.Add(1)
 			go func(n int, t *testing.T, wg *sync.WaitGroup) {
 				defer wg.Done()
-				_, err := vendir.RunWithOpts(
+				// RunWithOpts invokes t.Fatal on error
+				vendir.RunWithOpts(
 					[]string{"sync", "-f", "-"},
 					RunOpts{
 						Dir:         tmpRoot,
 						StdinReader: strings.NewReader(fmt.Sprintf(yaml, n)),
-						AllowError:  true,
 					})
-				require.NoError(t, err)
 			}(i, t, &wg)
 		}
 		wg.Wait()
