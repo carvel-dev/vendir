@@ -93,7 +93,8 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		if authOpts.PrivateKey != nil {
 			path := filepath.Join(authDir, "private-key")
 
-			err = os.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
+			// Ensure the private key ends with a newline character, as git requires it to work. (https://github.com/carvel-dev/vendir/issues/350)
+			err = os.WriteFile(path, []byte(*authOpts.PrivateKey+"\n"), 0600)
 			if err != nil {
 				return fmt.Errorf("Writing private key: %s", err)
 			}
