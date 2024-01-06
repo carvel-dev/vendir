@@ -116,6 +116,7 @@ type DirectoryContentsImage struct {
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 
+	ResponseHeaderTimeout  int  `json:"responseHeaderTimeout,omitempty"`
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 }
 
@@ -134,6 +135,7 @@ type DirectoryContentsImgpkgBundle struct {
 	// +optional
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 
+	ResponseHeaderTimeout  int  `json:"responseHeaderTimeout,omitempty"`
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 	Recursive              bool `json:"recursive,omitempty"`
 }
