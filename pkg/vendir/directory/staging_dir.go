@@ -33,12 +33,7 @@ func NewStagingDir() (StagingDir, error) {
 }
 
 func (d StagingDir) Prepare() error {
-	err := d.cleanUpAll()
-	if err != nil {
-		return err
-	}
-
-	err = os.MkdirAll(d.stagingDir, 0700)
+	err := os.MkdirAll(d.stagingDir, 0700)
 	if err != nil {
 		return fmt.Errorf("Creating staging dir '%s': %s", d.stagingDir, err)
 	}
