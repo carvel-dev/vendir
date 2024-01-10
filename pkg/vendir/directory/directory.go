@@ -9,9 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/cppforlife/go-cli-ui/ui"
-	dircopy "github.com/otiai10/copy"
 	"sigs.k8s.io/yaml"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
@@ -25,6 +22,8 @@ import (
 	ctlimg "carvel.dev/vendir/pkg/vendir/fetch/image"
 	ctlimgpkgbundle "carvel.dev/vendir/pkg/vendir/fetch/imgpkgbundle"
 	ctlinl "carvel.dev/vendir/pkg/vendir/fetch/inline"
+	"github.com/cppforlife/go-cli-ui/ui"
+	dircopy "github.com/otiai10/copy"
 )
 
 type Directory struct {

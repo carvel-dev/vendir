@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cppforlife/go-cli-ui/ui"
-	"github.com/mitchellh/go-homedir"
-	"github.com/spf13/cobra"
-
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctldir "carvel.dev/vendir/pkg/vendir/directory"
 	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
+	"github.com/cppforlife/go-cli-ui/ui"
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 )
 
 const (
