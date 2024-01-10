@@ -9,10 +9,9 @@ import (
 	"reflect"
 	"strings"
 
+	"carvel.dev/vendir/pkg/vendir/version"
 	semver "github.com/hashicorp/go-version"
 	"sigs.k8s.io/yaml"
-
-	"carvel.dev/vendir/pkg/vendir/version"
 )
 
 const (
