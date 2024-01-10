@@ -36,13 +36,6 @@ type SyncOptions struct {
 	AllowAllSymlinkDestinations bool
 }
 
-func (o *SyncOptions) LockFileExists() bool {
-	if _, err := os.Stat(o.LockFile); err != nil {
-		return false
-	}
-	return true
-}
-
 func NewSyncOptions(ui ui.UI) *SyncOptions {
 	return &SyncOptions{ui: ui}
 }
@@ -162,9 +155,9 @@ func (o *SyncOptions) Run() error {
 		newLockConfig.Directories = append(newLockConfig.Directories, dirLockConf)
 	}
 
-	// Update only selected directories in lock file
+	// Update only selected directories in lock file, if it exists
 	if len(dirs) > 0 {
-		if o.LockFileExists() {
+		if _, err := os.Stat(o.LockFile); err == nil {
 			existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
 			if err != nil {
 				return err
@@ -175,6 +168,8 @@ func (o *SyncOptions) Run() error {
 			}
 
 			newLockConfig = existingLockConfig
+		} else if !os.IsNotExist(err) {
+			return err
 		}
 	}
 

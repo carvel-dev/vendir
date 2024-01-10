@@ -88,9 +88,10 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 		// error is safe to ignore, since it indicates that no lock file entry for the given path exists
 		oldLockContents, _ := d.lockDirectory.FindContents(contents.Path)
-		skipFetching, lazySyncAddConfigDigest := d.handleLazySync(oldLockContents.ConfigDigest, configDigest, syncOpts.Lazy, contents.Lazy)
 
-		if skipFetching {
+		// if lazy sync is enabled in both config and sync options and the config was not changed since the last sync,
+		// skip fetching
+		if syncOpts.Lazy && contents.Lazy && oldLockContents.ConfigDigest == configDigest {
 			d.ui.PrintLinef("Skipping fetch: %s + %s (flagged as lazy, config has not changed since last sync)", d.opts.Path, contents.Path)
 			lockConfig.Contents = append(lockConfig.Contents, oldLockContents)
 			// copy previously fetched contents to staging dir
@@ -255,7 +256,8 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
 		}
 
-		if lazySyncAddConfigDigest {
+		// config digest is always added if lazy syncing is enabled in the config
+		if contents.Lazy {
 			lockDirContents.ConfigDigest = configDigest
 		}
 
@@ -295,18 +297,4 @@ func maybeChmod(path string, potentialPerms ...*os.FileMode) error {
 	}
 
 	return nil
-}
-
-func (d *Directory) handleLazySync(oldConfigDigest string, newConfigDigest string, fetchLazyGlobalOverride bool, fetchLazy bool) (bool, bool) {
-	skipFetching := false
-	addConfigDigest := false
-	// if lazy sync is enabled and config remains unchanged, skip fetching
-	if fetchLazyGlobalOverride && fetchLazy && oldConfigDigest == newConfigDigest {
-		skipFetching = true
-	}
-	// config digest is always added if lazy syncing is enabled locally and globally
-	if fetchLazy {
-		addConfigDigest = true
-	}
-	return skipFetching, addConfigDigest
 }
