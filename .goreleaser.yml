@@ -69,6 +69,63 @@ release:
   # Defaults to false.
   disable: false
 
+  header: |
+    <details>
+
+    <summary><h2>Installation and signature verification</h2></summary>
+
+    ### Installation
+    
+    #### By downloading binary from the release
+
+    For instance, if you are using Linux on an AMD64 architecture:
+    ```shell
+    # Download the binary
+    curl -LO https://github.com/{{ .Env.GITHUB_REPOSITORY }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-linux-amd64
+
+    # Move the binary in to your PATH
+    mv vendir-linux-amd64 /usr/local/bin/vendir
+
+    # Make the binary executable
+    chmod +x /usr/local/bin/vendir
+    ```
+
+    #### Via Homebrew (macOS or Linux)
+    ```shell
+    $ brew tap carvel-dev/carvel
+    $ brew install vendir
+    $ vendir version  
+    ```
+
+    ### Verify checksums file signature
+
+    Install cosign on your system https://docs.sigstore.dev/system_config/installation/
+    
+    The checksums file provided within the artifacts attached to this release is signed using [Cosign](https://docs.sigstore.dev/cosign/overview/) with GitHub OIDC. To validate the signature of this file, run the following commands:
+
+    ```shell
+    # Download the checksums file, certificate and signature
+    curl -LO https://github.com/{{ .Env.GITHUB_REPOSITORY }}/releases/download/{{ .Tag }}/checksums.txt
+    curl -LO https://github.com/{{ .Env.GITHUB_REPOSITORY }}/releases/download/{{ .Tag }}/checksums.txt.pem
+    curl -LO https://github.com/{{ .Env.GITHUB_REPOSITORY }}/releases/download/{{ .Tag }}/checksums.txt.sig
+ 
+    # Verify the checksums file
+    cosign verify-blob checksums.txt \
+      --certificate checksums.txt.pem \
+      --signature checksums.txt.sig \
+      --certificate-identity-regexp=https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }} \
+      --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+    ```
+
+    ### Verify binary integrity
+
+    To verify the integrity of the downloaded binary, you can utilize the checksums file after having validated its signature.
+    ```shell
+    # Verify the binary using the checksums file
+    sha256sum -c checksums.txt --ignore-missing
+    ```
+    </details>
+
 changelog:
   # Set it to true if you wish to skip the changelog generation.
   # This may result in an empty release notes on GitHub/GitLab/Gitea.
