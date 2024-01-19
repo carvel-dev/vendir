@@ -169,3 +169,23 @@ func (n NoopRoundTripperStorage) CreateRoundTripper(_ regname.Registry, _ authn.
 func (n NoopRoundTripperStorage) BaseRoundTripper() http.RoundTripper {
 	return nil
 }
+
+// NewImgpkgRoundTripper creates a RoundTripper that will add headers to the request
+func NewImgpkgRoundTripper(parent http.RoundTripper, sessionID string) *ImgpkgRoundTripper {
+	return &ImgpkgRoundTripper{
+		parent:    parent,
+		sessionID: sessionID,
+	}
+}
+
+// ImgpkgRoundTripper RoundTripper that adds headers to request
+type ImgpkgRoundTripper struct {
+	parent    http.RoundTripper
+	sessionID string
+}
+
+// RoundTrip changes the request to add headers and calls the parent RoundTrip
+func (i *ImgpkgRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("imgpkg-session-id", i.sessionID)
+	return i.parent.RoundTrip(req)
+}
