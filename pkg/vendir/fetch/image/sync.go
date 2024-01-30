@@ -21,6 +21,7 @@ func NewSync(opts ctlconf.DirectoryContentsImage, refFetcher ctlfetch.RefFetcher
 	imgpkgOpts := ImgpkgOpts{
 		SecretRef:              opts.SecretRef,
 		DangerousSkipTLSVerify: opts.DangerousSkipTLSVerify,
+		ResponseHeaderTimeout:  opts.ResponseHeaderTimeout,
 	}
 	return &Sync{opts, NewImgpkg(imgpkgOpts, refFetcher, c)}
 }

@@ -26,6 +26,7 @@ const (
 type ImgpkgOpts struct {
 	SecretRef              *ctlconf.DirectoryContentsLocalRef
 	DangerousSkipTLSVerify bool
+	ResponseHeaderTimeout  int
 
 	EnvironFunc func() []string
 }
@@ -158,7 +159,7 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 	opts := registry.Opts{
 		VerifyCerts:           !t.opts.DangerousSkipTLSVerify,
 		Insecure:              false,
-		ResponseHeaderTimeout: 30 * time.Second,
+		ResponseHeaderTimeout: time.Duration(t.opts.ResponseHeaderTimeout|30) * time.Second,
 		RetryCount:            5,
 		EnvironFunc: func() []string {
 			return append(envVariables, t.opts.EnvironFunc()...)
