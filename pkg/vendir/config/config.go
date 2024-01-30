@@ -69,6 +69,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 
 		case res.APIVersion == knownAPIVersion && res.Kind == knownKind:
 			config, err := NewConfigFromBytes(docBytes)
+			config.cleanPaths()
 			if err != nil {
 				return fmt.Errorf("Unmarshaling config: %s", err)
 			}
@@ -277,4 +278,13 @@ func (c Config) checkOverlappingPaths() error {
 	}
 
 	return nil
+}
+
+func (c *Config) cleanPaths() {
+	for i, dir := range c.Directories {
+		c.Directories[i].Path = filepath.Clean(dir.Path)
+		for j, con := range dir.Contents {
+			c.Directories[i].Contents[j].Path = filepath.Clean(con.Path)
+		}
+	}
 }

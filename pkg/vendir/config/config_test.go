@@ -29,6 +29,74 @@ kind: Config`)
 	})
 }
 
+func TestCleanPaths(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   string
+		checkFn func(config.Config)
+	}{
+		{
+			name: "single directory and single contents",
+			input: `
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor/foo/..//
+  contents:
+    - path: bar//baz///../
+      inline:
+        paths:
+          file.txt: File contents
+`,
+			checkFn: func(cfg config.Config) {
+				require.Equal(t, "vendor", cfg.Directories[0].Path)
+				require.Equal(t, "bar", cfg.Directories[0].Contents[0].Path)
+			},
+		},
+		{
+			name: "multiple directories and multiple contents",
+			input: `
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor/foo/
+  contents:
+  - path: bar///baz/.
+    inline:
+      paths:
+        file.txt: File contents
+  - path: lorem/ipsum
+    inline:
+      paths:
+        file.txt: File contents
+- path: vendor//../vendor/bar
+  contents:
+  - path: baz
+    inline:
+      paths:
+        file.txt: File contents
+`,
+			checkFn: func(cfg config.Config) {
+				require.Equal(t, "vendor/foo", cfg.Directories[0].Path)
+				require.Equal(t, "bar/baz", cfg.Directories[0].Contents[0].Path)
+				require.Equal(t, "lorem/ipsum", cfg.Directories[0].Contents[1].Path)
+				require.Equal(t, "vendor/bar", cfg.Directories[1].Path)
+				require.Equal(t, "baz", cfg.Directories[1].Contents[0].Path)
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tmpFile := filepath.Join(t.TempDir(), "config.yml")
+			require.NoError(t, os.WriteFile(tmpFile, []byte(tc.input), 0600))
+			cfg, _, _, err := config.NewConfigFromFiles([]string{tmpFile})
+			require.NoError(t, err)
+			tc.checkFn(cfg)
+		})
+	}
+}
+
 func TestSecretsForNewConfigFromFiles(t *testing.T) {
 	t.Run("Config with single secret", func(t *testing.T) {
 		tempConfigPath := filepath.Join(t.TempDir(), "config.yml")
