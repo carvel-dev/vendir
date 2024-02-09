@@ -48,6 +48,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 
 	incomingTmpPath := filepath.Dir(tmpFile.Name())
 	archivePath := filepath.Join(incomingTmpPath, path.Base(t.opts.URL))
+	tmpFile.Close()
 	err = os.Rename(tmpFile.Name(), archivePath)
 	if err != nil {
 		return lockConf, err
