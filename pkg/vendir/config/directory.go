@@ -72,6 +72,7 @@ type DirectoryContentsGit struct {
 	DangerousSkipTLSVerify bool `json:"dangerousSkipTLSVerify,omitempty"`
 	SkipInitSubmodules     bool `json:"skipInitSubmodules,omitempty"`
 	Depth                  int  `json:"depth,omitempty"`
+	ForceHTTPBasicAuth     bool `json:"forceHTTPBasicAuth,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {

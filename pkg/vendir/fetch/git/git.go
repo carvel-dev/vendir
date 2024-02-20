@@ -5,6 +5,7 @@ package git
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/url"
@@ -23,12 +24,20 @@ type Git struct {
 	opts       ctlconf.DirectoryContentsGit
 	infoLog    io.Writer
 	refFetcher ctlfetch.RefFetcher
+	cmdRunner  CommandRunner
 }
 
 func NewGit(opts ctlconf.DirectoryContentsGit,
 	infoLog io.Writer, refFetcher ctlfetch.RefFetcher) *Git {
 
-	return &Git{opts, infoLog, refFetcher}
+	return &Git{opts, infoLog, refFetcher, &runner{infoLog}}
+}
+
+// NewGitWithRunner creates a Git retriever with a provided runner
+func NewGitWithRunner(opts ctlconf.DirectoryContentsGit,
+	infoLog io.Writer, refFetcher ctlfetch.RefFetcher, cmdRunner CommandRunner) *Git {
+
+	return &Git{opts, infoLog, refFetcher, cmdRunner}
 }
 
 //nolint:revive
@@ -50,19 +59,19 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea) (GitInfo, err
 
 	info := GitInfo{}
 
-	out, _, err := t.run([]string{"rev-parse", "HEAD"}, nil, dstPath)
+	out, _, err := t.cmdRunner.Run([]string{"rev-parse", "HEAD"}, nil, dstPath)
 	if err != nil {
 		return GitInfo{}, err
 	}
 
 	info.SHA = strings.TrimSpace(out)
 
-	out, _, err = t.run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
+	out, _, err = t.cmdRunner.Run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
 	if err == nil {
 		info.Tags = strings.Split(strings.TrimSpace(out), "\n")
 	}
 
-	out, _, err = t.run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath)
+	out, _, err = t.cmdRunner.Run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath)
 	if err != nil {
 		return GitInfo{}, err
 	}
@@ -127,29 +136,34 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	gitURL := t.opts.URL
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
 
+	argss := [][]string{
+		{"init"},
+		{"config", "credential.helper", "store --file " + gitCredsPath},
+		{"remote", "add", "origin", gitURL},
+	}
+
 	if authOpts.Username != nil && authOpts.Password != nil {
 		if !strings.HasPrefix(gitURL, "https://") {
 			return fmt.Errorf("Username/password authentication is only supported for https remotes")
 		}
 
-		gitCredsURL, err := url.Parse(gitURL)
-		if err != nil {
-			return fmt.Errorf("Parsing git remote url: %s", err)
+		if t.opts.ForceHTTPBasicAuth {
+			encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *authOpts.Username, *authOpts.Password)))
+			argss = append(argss, []string{"config", "--add", "http.extraHeader", fmt.Sprintf("Authorization: Basic %s", encodedAuth)})
+		} else {
+			gitCredsURL, err := url.Parse(gitURL)
+			if err != nil {
+				return fmt.Errorf("Parsing git remote url: %s", err)
+			}
+
+			gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
+			gitCredsURL.Path = ""
+
+			err = os.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
+			if err != nil {
+				return fmt.Errorf("Writing %s: %s", gitCredsPath, err)
+			}
 		}
-
-		gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
-		gitCredsURL.Path = ""
-
-		err = os.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
-		if err != nil {
-			return fmt.Errorf("Writing %s: %s", gitCredsPath, err)
-		}
-	}
-
-	argss := [][]string{
-		{"init"},
-		{"config", "credential.helper", "store --file " + gitCredsPath},
-		{"remote", "add", "origin", gitURL},
 	}
 
 	argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
@@ -166,7 +180,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		argss = append(argss, fetchArgs)
 	}
 
-	err = t.runMultiple(argss, env, dstPath)
+	err = t.cmdRunner.RunMultiple(argss, env, dstPath)
 	if err != nil {
 		return err
 	}
@@ -183,13 +197,13 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 		}
 	}
 
-	_, _, err = t.run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath)
+	_, _, err = t.cmdRunner.Run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath)
 	if err != nil {
 		return err
 	}
 
 	if !t.opts.SkipInitSubmodules {
-		_, _, err = t.run([]string{"submodule", "update", "--init", "--recursive"}, env, dstPath)
+		_, _, err = t.cmdRunner.Run([]string{"submodule", "update", "--init", "--recursive"}, env, dstPath)
 		if err != nil {
 			return err
 		}
@@ -219,7 +233,7 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 }
 
 func (t *Git) tags(dstPath string) ([]string, error) {
-	out, _, err := t.run([]string{"tag", "-l"}, nil, dstPath)
+	out, _, err := t.cmdRunner.Run([]string{"tag", "-l"}, nil, dstPath)
 	if err != nil {
 		return nil, err
 	}
@@ -227,9 +241,18 @@ func (t *Git) tags(dstPath string) ([]string, error) {
 	return strings.Split(out, "\n"), nil
 }
 
-func (t *Git) runMultiple(argss [][]string, env []string, dstPath string) error {
+type CommandRunner interface {
+	RunMultiple(argss [][]string, env []string, dstPath string) error
+	Run(args []string, env []string, dstPath string) (string, string, error)
+}
+
+type runner struct {
+	infoLog io.Writer
+}
+
+func (r *runner) RunMultiple(argss [][]string, env []string, dstPath string) error {
 	for _, args := range argss {
-		_, _, err := t.run(args, env, dstPath)
+		_, _, err := r.Run(args, env, dstPath)
 		if err != nil {
 			return err
 		}
@@ -237,16 +260,16 @@ func (t *Git) runMultiple(argss [][]string, env []string, dstPath string) error 
 	return nil
 }
 
-func (t *Git) run(args []string, env []string, dstPath string) (string, string, error) {
+func (r *runner) Run(args []string, env []string, dstPath string) (string, string, error) {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command("git", args...)
 	cmd.Env = env
 	cmd.Dir = dstPath
-	cmd.Stdout = io.MultiWriter(t.infoLog, &stdoutBs)
-	cmd.Stderr = io.MultiWriter(t.infoLog, &stderrBs)
+	cmd.Stdout = io.MultiWriter(r.infoLog, &stdoutBs)
+	cmd.Stderr = io.MultiWriter(r.infoLog, &stderrBs)
 
-	t.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
+	r.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
 
 	err := cmd.Run()
 	if err != nil {
