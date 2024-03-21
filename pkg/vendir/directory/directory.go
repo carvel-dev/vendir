@@ -1,4 +1,4 @@
-// Copyright 2020 VMware, Inc.
+// Copyright 2024 The Carvel Authors.
 // SPDX-License-Identifier: Apache-2.0
 
 package directory
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"sigs.k8s.io/yaml"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
