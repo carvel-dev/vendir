@@ -67,8 +67,8 @@ func (vr *versionRange) rangeFunc() Range {
 // Range represents a range of versions.
 // A Range can be used to check if a Version satisfies it:
 //
-//     range, err := semver.ParseRange(">1.0.0 <2.0.0")
-//     range(semver.MustParse("1.1.1") // returns true
+//	range, err := semver.ParseRange(">1.0.0 <2.0.0")
+//	range(semver.MustParse("1.1.1") // returns true
 type Range func(Version) bool
 
 // OR combines the existing Range with another Range using logical OR.
@@ -108,7 +108,7 @@ func (rf Range) AND(f Range) Range {
 //
 // Ranges can be combined by both AND and OR
 //
-//  - `>1.0.0 <2.0.0 || >3.0.0 !4.2.1` would match `1.2.3`, `1.9.9`, `3.1.1`, but not `4.2.1`, `2.1.1`
+//   - `>1.0.0 <2.0.0 || >3.0.0 !4.2.1` would match `1.2.3`, `1.9.9`, `3.1.1`, but not `4.2.1`, `2.1.1`
 func ParseRange(s string) (Range, error) {
 	parts := splitAndTrim(s)
 	orParts, err := splitORParts(parts)
@@ -269,10 +269,10 @@ func createVersionFromWildcard(vStr string) string {
 
 	// handle 1.x
 	if len(parts) == 2 {
-		return vStr2 + ".0"
+		vStr2 = vStr2 + ".0"
 	}
 
-	return vStr2
+	return vStr2 + "-0"
 }
 
 // incrementMajorVersion will increment the major version
@@ -327,12 +327,12 @@ func expandWildcardVersion(parts [][]string) ([][]string, error) {
 	for _, p := range parts {
 		var newParts []string
 		for _, ap := range p {
-			if strings.Contains(ap, "x") {
-				opStr, vStr, err := splitComparatorVersion(ap)
-				if err != nil {
-					return nil, err
-				}
+			opStr, vStr, err := splitComparatorVersion(ap)
+			if err != nil {
+				return nil, err
+			}
 
+			if containsWildcard(ap) {
 				versionWildcardType := getWildcardType(vStr)
 				flatVersion := createVersionFromWildcard(vStr)
 
@@ -379,6 +379,16 @@ func expandWildcardVersion(parts [][]string) ([][]string, error) {
 	}
 
 	return expandedParts, nil
+}
+
+// containsWildcard returns true if there's a wildcard in any of the major, minor or patch components
+func containsWildcard(v string) bool {
+	return strings.Contains(trimIdentifiers(v), ".x")
+}
+
+// trimIdentifiers removes any pre-release and build metadata from a version
+func trimIdentifiers(v string) string {
+  return strings.Split(strings.Split(v, "+")[0], "-")[0]
 }
 
 func parseComparator(s string) comparator {
