@@ -48,6 +48,6 @@ directories:
       disableAutoChecksumValidation: true
       tagSelection:
         semver:
-          constraints: "~v1.23.x"
+          constraints: 1.23.x
       http:
         url: https://dl.k8s.io/release/{tag}/bin/linux/amd64/kubectl
