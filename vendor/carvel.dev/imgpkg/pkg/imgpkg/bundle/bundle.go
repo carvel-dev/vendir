@@ -1,4 +1,4 @@
-// Copyright 2020 VMware, Inc.
+// Copyright 2024 The Carvel Authors.
 // SPDX-License-Identifier: Apache-2.0
 
 package bundle
@@ -126,18 +126,23 @@ func (o *Bundle) NoteCopy(processedImages *imageset.ProcessedImages, reg ImagesM
 		APIVersion: LocationAPIVersion,
 		Kind:       ImageLocationsKind,
 	}
+	foundImages := map[string]bool{}
 	var bundleProcessedImage imageset.ProcessedImage
 	for _, image := range processedImages.All() {
-		ref, found := o.findCachedImageRef(image.UnprocessedImageRef.DigestRef)
-		if found {
-			locationsCfg.Images = append(locationsCfg.Images, ImageLocation{
-				Image:    ref.Image,
-				IsBundle: *ref.IsBundle,
-			})
-		}
 		imgDigest, err := regname.NewDigest(image.UnprocessedImageRef.DigestRef)
 		if err != nil {
 			panic(fmt.Sprintf("Internal inconsistency: Image '%s' is not a valid Digest Reference", err))
+		}
+
+		ref, found := o.findCachedImageRef(image.UnprocessedImageRef.DigestRef)
+		if found {
+			if _, ok := foundImages[imgDigest.DigestStr()]; !ok {
+				locationsCfg.Images = append(locationsCfg.Images, ImageLocation{
+					Image:    ref.Image,
+					IsBundle: *ref.IsBundle,
+				})
+				foundImages[imgDigest.DigestStr()] = true
+			}
 		}
 
 		if imgDigest.DigestStr() == o.Digest() {

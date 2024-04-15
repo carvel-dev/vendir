@@ -1,4 +1,4 @@
-// Copyright 2020 VMware, Inc.
+// Copyright 2024 The Carvel Authors.
 // SPDX-License-Identifier: Apache-2.0
 
 package imageset
@@ -18,7 +18,14 @@ type UnprocessedImageRef struct {
 	OrigRef   string
 }
 
+// Key that uniquely identify a ImageRef
 func (u UnprocessedImageRef) Key() string {
+	// With this definition of key if one image is shared by 2 bundles
+	// but it is referred in the ImagesLock using a different Registry/Repository
+	// while the SHA is the same, we consider them to be different images, which they are not.
+	// This will lead to duplication of the image in the UnprocessedImageRef that needs to be
+	// address by whoever is using it. This should impact performance of copy because ggcr
+	// will dedupe the Image/Layers based on the SHA.
 	return u.DigestRef + ":" + u.Tag
 }
 

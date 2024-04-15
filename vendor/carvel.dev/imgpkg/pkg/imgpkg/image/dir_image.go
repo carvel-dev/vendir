@@ -1,4 +1,4 @@
-// Copyright 2020 VMware, Inc.
+// Copyright 2024 The Carvel Authors.
 // SPDX-License-Identifier: Apache-2.0
 
 package image
@@ -50,13 +50,19 @@ func (i *DirImage) AsDirectory() error {
 		return err
 	}
 
-	for idx, imgLayer := range layers {
+	fileMap := map[string]bool{}
+
+	// we iterate through the layers in reverse order because it makes handling
+	// whiteout layers more efficient, since we can just keep track of the removed
+	// files as we see .wh. layers and ignore those in previous layers.
+	for idx := len(layers) - 1; idx >= 0; idx-- {
+		imgLayer := layers[idx]
 		digest, err := imgLayer.Digest()
 		if err != nil {
 			return err
 		}
 
-		i.logger.Logf("Extracting layer '%s' (%d/%d)\n", digest, idx+1, len(layers))
+		i.logger.Logf("Extracting layer '%s' (%d/%d)\n", digest, len(layers)-idx, len(layers))
 
 		layerStream, err := imgLayer.Uncompressed()
 		if err != nil {
@@ -65,7 +71,7 @@ func (i *DirImage) AsDirectory() error {
 
 		defer layerStream.Close()
 
-		err = i.writeLayer(layerStream)
+		err = i.writeLayer(fileMap, layerStream)
 		if err != nil {
 			return err
 		}
@@ -76,7 +82,7 @@ func (i *DirImage) AsDirectory() error {
 
 // Taken from https://github.com/concourse/registry-image-resource/blob/b5481130ad61bc74e0a74f9b00b287b3a24bab88/cmd/in/unpack.go
 
-func (i *DirImage) writeLayer(stream io.Reader) error {
+func (i *DirImage) writeLayer(fileMap map[string]bool, stream io.Reader) error {
 	tarReader := tar.NewReader(stream)
 
 	for {
@@ -102,6 +108,12 @@ func (i *DirImage) writeLayer(stream io.Reader) error {
 			if err != nil {
 				return nil
 			}
+			fileMap[base] = true
+			continue
+		}
+
+		// check for a whited out parent directory
+		if inWhiteoutDir(fileMap, path) {
 			continue
 		}
 
@@ -116,6 +128,7 @@ func (i *DirImage) writeLayer(stream io.Reader) error {
 			}
 		}
 
+		fileMap[hdr.Name] = true
 		err = i.extractTarEntry(hdr, tarReader)
 		if err != nil {
 			return err
@@ -123,6 +136,22 @@ func (i *DirImage) writeLayer(stream io.Reader) error {
 	}
 
 	return nil
+}
+
+func inWhiteoutDir(fileMap map[string]bool, file string) bool {
+	for {
+		if file == "" {
+			return false
+		}
+		dirname := filepath.Dir(file)
+		if file == dirname {
+			return false
+		}
+		if val, ok := fileMap[dirname]; ok && val {
+			return true
+		}
+		file = dirname
+	}
 }
 
 // Taken from https://github.com/concourse/go-archive/blob/f26802964d15194bddb07bf116ea567c56af973f/tarfs/extract.go
@@ -150,10 +179,7 @@ func (i *DirImage) extractTarEntry(header *tar.Header, input io.Reader) error {
 
 	switch header.Typeflag {
 	case tar.TypeDir:
-		err := os.MkdirAll(path, permMode)
-		if err != nil {
-			return err
-		}
+		return nil
 
 	case tar.TypeReg, tar.TypeRegA:
 		file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, permMode)
@@ -174,6 +200,10 @@ func (i *DirImage) extractTarEntry(header *tar.Header, input io.Reader) error {
 
 	case tar.TypeLink, tar.TypeSymlink:
 		// skipping symlinks as a security feature
+		return nil
+
+	case tar.TypeChar, tar.TypeBlock, tar.TypeFifo:
+		// skipping devices
 		return nil
 
 	default:

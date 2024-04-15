@@ -1,4 +1,4 @@
-// Copyright 2022 VMware, Inc.
+// Copyright 2024 The Carvel Authors.
 // SPDX-License-Identifier: Apache-2.0
 
 // Package v1 contains the public API version 1 used by other tools to interact with imgpkg
@@ -72,6 +72,7 @@ type DescribeOpts struct {
 	Logger                 bundle.Logger
 	Concurrency            int
 	IncludeCosignArtifacts bool
+	Layers                 bool
 }
 
 // SignatureFetcher Interface to retrieve signatures associated with Images
@@ -116,7 +117,7 @@ func DescribeWithRegistryAndSignatureFetcher(bundleImage string, opts DescribeOp
 	topBundle := refWithDescription{
 		imgRef: bundle.NewBundleImageRef(lockconfig.ImageRef{Image: newBundle.DigestRef()}),
 	}
-	return topBundle.DescribeBundle(allBundles)
+	return topBundle.DescribeBundle(allBundles, opts.Layers)
 }
 
 type refWithDescription struct {
@@ -124,20 +125,26 @@ type refWithDescription struct {
 	bundle Description
 }
 
-func (r *refWithDescription) DescribeBundle(bundles []*bundle.Bundle) (Description, error) {
+func (r *refWithDescription) DescribeBundle(bundles []*bundle.Bundle, layers bool) (Description, error) {
 	var visitedImgs map[string]refWithDescription
-	return r.describeBundleRec(visitedImgs, r.imgRef, bundles)
+	return r.describeBundleRec(visitedImgs, r.imgRef, bundles, layers)
 }
 
-func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDescription, currentBundle bundle.ImageRef, bundles []*bundle.Bundle) (Description, error) {
+func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDescription, currentBundle bundle.ImageRef, bundles []*bundle.Bundle, showLayers bool) (Description, error) {
 	desc, wasVisited := visitedImgs[currentBundle.Image]
+	var (
+		layers []Layers
+		err    error
+	)
 	if wasVisited {
 		return desc.bundle, nil
 	}
 
-	layers, err := getImageLayersInfo(currentBundle.Image)
-	if err != nil {
-		return desc.bundle, err
+	if showLayers {
+		layers, err = getImageLayersInfo(currentBundle.Image)
+		if err != nil {
+			return desc.bundle, err
+		}
 	}
 
 	desc = refWithDescription{
@@ -176,7 +183,7 @@ func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDes
 		}
 
 		if *ref.IsBundle {
-			bundleDesc, err := r.describeBundleRec(visitedImgs, ref, bundles)
+			bundleDesc, err := r.describeBundleRec(visitedImgs, ref, bundles, showLayers)
 			if err != nil {
 				return desc.bundle, err
 			}
@@ -188,13 +195,15 @@ func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDes
 			desc.bundle.Content.Bundles[digest.DigestStr()] = bundleDesc
 		} else {
 			if ref.Error == "" {
-				digest, err := name.NewDigest(ref.Image)
+				digest, err := name.NewDigest(ref.PrimaryLocation())
 				if err != nil {
 					return desc.bundle, fmt.Errorf("Internal inconsistency: image %s should be fully resolved", ref.Image)
 				}
-				layers, err = getImageLayersInfo(ref.Image)
-				if err != nil {
-					return desc.bundle, err
+				if showLayers {
+					layers, err = getImageLayersInfo(ref.PrimaryLocation())
+					if err != nil {
+						return desc.bundle, err
+					}
 				}
 				desc.bundle.Content.Images[digest.DigestStr()] = ImageInfo{
 					Image:       ref.PrimaryLocation(),
