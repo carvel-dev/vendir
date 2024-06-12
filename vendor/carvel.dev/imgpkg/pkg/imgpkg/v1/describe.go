@@ -141,7 +141,7 @@ func (r *refWithDescription) describeBundleRec(visitedImgs map[string]refWithDes
 	}
 
 	if showLayers {
-		layers, err = getImageLayersInfo(currentBundle.Image)
+		layers, err = getImageLayersInfo(currentBundle.PrimaryLocation())
 		if err != nil {
 			return desc.bundle, err
 		}
