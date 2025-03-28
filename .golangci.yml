@@ -21,4 +21,5 @@ linters-settings:
       disabled: true
 issues:
   max-issues-per-linter: 0
-  max-same-issues: 0 
+  max-same-issues: 0
+  new-from-rev: 83f3e89d49b7882e0b9afc305a00f67232ba96b1
