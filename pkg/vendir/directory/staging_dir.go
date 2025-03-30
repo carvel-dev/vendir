@@ -35,12 +35,12 @@ func NewStagingDir() (StagingDir, error) {
 func (d StagingDir) Prepare() error {
 	err := os.MkdirAll(d.stagingDir, 0700)
 	if err != nil {
-		return fmt.Errorf("Creating staging dir '%s': %s", d.stagingDir, err)
+		return fmt.Errorf("creating staging dir '%s': %s", d.stagingDir, err)
 	}
 
 	err = os.MkdirAll(d.incomingDir, 0700)
 	if err != nil {
-		return fmt.Errorf("Creating incoming dir '%s': %s", d.incomingDir, err)
+		return fmt.Errorf("creating incoming dir '%s': %s", d.incomingDir, err)
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func (d StagingDir) NewChild(path string) (string, error) {
 
 	err := os.MkdirAll(childPathParent, 0700)
 	if err != nil {
-		return "", fmt.Errorf("Creating directory '%s': %s", childPathParent, err)
+		return "", fmt.Errorf("creating directory '%s': %s", childPathParent, err)
 	}
 
 	return childPath, nil
@@ -98,13 +98,13 @@ func (d StagingDir) CopyExistingFiles(rootDir string, stagingPath string, ignore
 		stagingDir := filepath.Dir(stagingPath)
 		err = os.MkdirAll(stagingDir, 0700)
 		if err != nil {
-			return fmt.Errorf("Unable to create staging directory '%s': %s", stagingDir, err)
+			return fmt.Errorf("unable to create staging directory '%s': %s", stagingDir, err)
 		}
 
 		// Move the file to the staging directory
 		err = copyFile(path, stagingPath)
 		if err != nil {
-			return fmt.Errorf("Moving source file '%s' to staging location '%s': %s", path, stagingPath, err)
+			return fmt.Errorf("moving source file '%s' to staging location '%s': %s", path, stagingPath, err)
 		}
 		return nil
 	})
@@ -138,7 +138,7 @@ func (d StagingDir) Replace(path string) error {
 
 	err = os.Rename(d.stagingDir, path)
 	if err != nil {
-		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, path, err)
+		return fmt.Errorf("moving staging directory '%s' to final location '%s': %s", d.stagingDir, path, err)
 	}
 
 	return nil
@@ -153,7 +153,7 @@ func (d StagingDir) PartialRepace(contentPath string, directoryPath string) erro
 
 	err = os.Rename(filepath.Join(d.stagingDir, contentPath), directoryPath)
 	if err != nil {
-		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
+		return fmt.Errorf("moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
 	}
 
 	return nil
@@ -162,7 +162,7 @@ func (d StagingDir) PartialRepace(contentPath string, directoryPath string) erro
 func (d StagingDir) prepareOutputDirectory(directoryPath string) error {
 	err := os.RemoveAll(directoryPath)
 	if err != nil {
-		return fmt.Errorf("Deleting dir %s: %s", directoryPath, err)
+		return fmt.Errorf("deleting dir %s: %s", directoryPath, err)
 	}
 
 	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
@@ -170,7 +170,7 @@ func (d StagingDir) prepareOutputDirectory(directoryPath string) error {
 
 	err = os.MkdirAll(parentPath, 0700)
 	if err != nil {
-		return fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
+		return fmt.Errorf("creating final location parent dir %s: %s", parentPath, err)
 	}
 	return nil
 }
@@ -186,7 +186,7 @@ func (d StagingDir) CleanUp() error {
 func (d StagingDir) cleanUpAll() error {
 	err := os.RemoveAll(d.rootDir)
 	if err != nil {
-		return fmt.Errorf("Deleting tmp dir '%s': %s", d.rootDir, err)
+		return fmt.Errorf("deleting tmp dir '%s': %s", d.rootDir, err)
 	}
 	return nil
 }
@@ -202,12 +202,12 @@ func (d StagingTempArea) NewTempDir(name string) (string, error) {
 
 	absTmpDir, err := filepath.Abs(tmpDir)
 	if err != nil {
-		return "", fmt.Errorf("Abs path '%s': %s", tmpDir, err)
+		return "", fmt.Errorf("abs path '%s': %s", tmpDir, err)
 	}
 
 	err = os.Mkdir(absTmpDir, 0700)
 	if err != nil {
-		return "", fmt.Errorf("Creating incoming dir '%s' for %s: %s", absTmpDir, name, err)
+		return "", fmt.Errorf("creating incoming dir '%s' for %s: %s", absTmpDir, name, err)
 	}
 
 	return absTmpDir, nil
@@ -220,7 +220,7 @@ func (d StagingTempArea) NewTempFile(pattern string) (*os.File, error) {
 func copyFile(src, dst string) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("Unable to read file info: %s", src)
+		return fmt.Errorf("unable to read file info: %s", src)
 	}
 
 	if !sourceFileStat.Mode().IsRegular() {
@@ -229,20 +229,20 @@ func copyFile(src, dst string) error {
 
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("Unable to open file: %s", src)
+		return fmt.Errorf("unable to open file: %s", src)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("Unable to create destination file: %s", dst)
+		return fmt.Errorf("unable to create destination file: %s", dst)
 	}
 
 	defer dstFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return fmt.Errorf("Copying into dst file: %s", err)
+		return fmt.Errorf("copying into dst file: %s", err)
 	}
 
 	return nil

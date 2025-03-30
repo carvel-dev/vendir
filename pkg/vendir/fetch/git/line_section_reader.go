@@ -22,14 +22,14 @@ func (r lineSectionReader) Read(contents string, required bool) (string, string,
 		switch {
 		case line == r.StartLine:
 			if opened {
-				return "", "", fmt.Errorf("Expected section to be closed before opening")
+				return "", "", fmt.Errorf("expected section to be closed before opening")
 			}
 			opened = true
 			sectionLines = append(sectionLines, line)
 
 		case line == r.EndLine:
 			if !opened {
-				return "", "", fmt.Errorf("Expected section to be opened before closing")
+				return "", "", fmt.Errorf("expected section to be opened before closing")
 			}
 			closed = true
 			sectionLines = append(sectionLines, line)
@@ -43,10 +43,10 @@ func (r lineSectionReader) Read(contents string, required bool) (string, string,
 	}
 
 	if opened && !closed {
-		return "", "", fmt.Errorf("Expected section to be closed before ending")
+		return "", "", fmt.Errorf("expected section to be closed before ending")
 	}
 	if required && !opened {
-		return "", "", fmt.Errorf("Expected to find section '%s', but did not", r.Description)
+		return "", "", fmt.Errorf("expected to find section '%s', but did not", r.Description)
 	}
 
 	return strings.Join(outsideLines, "\n"), strings.Join(sectionLines, "\n"), nil

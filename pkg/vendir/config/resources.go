@@ -26,12 +26,12 @@ func parseResources(paths []string, resourceFunc func([]byte) error) error {
 		if path == "-" {
 			bs, err = io.ReadAll(os.Stdin)
 			if err != nil {
-				return fmt.Errorf("Reading config from stdin: %s", err)
+				return fmt.Errorf("reading config from stdin: %s", err)
 			}
 		} else {
 			bs, err = os.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("Reading config '%s': %s", path, err)
+				return fmt.Errorf("reading config '%s': %s", path, err)
 			}
 		}
 
@@ -43,7 +43,7 @@ func parseResources(paths []string, resourceFunc func([]byte) error) error {
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("Parsing config '%s': %s", path, err)
+				return fmt.Errorf("parsing config '%s': %s", path, err)
 			}
 			// Skip documents that are empty or only contain whitespace
 			if len(bytes.TrimSpace(docBytes)) == 0 {
@@ -51,7 +51,7 @@ func parseResources(paths []string, resourceFunc func([]byte) error) error {
 			}
 			err = resourceFunc(docBytes)
 			if err != nil {
-				return fmt.Errorf("Parsing resource config '%s': %s", path, err)
+				return fmt.Errorf("parsing resource config '%s': %s", path, err)
 			}
 		}
 	}

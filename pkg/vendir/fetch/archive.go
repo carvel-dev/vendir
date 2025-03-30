@@ -51,19 +51,19 @@ func (t Archive) writeIntoFile(srcFile io.Reader, dstPath, additionalPath string
 
 	err := os.MkdirAll(filepath.Dir(dstFilePath), 0700)
 	if err != nil {
-		return fmt.Errorf("Making intermediate dir: %s", err)
+		return fmt.Errorf("making intermediate dir: %s", err)
 	}
 
 	dstFile, err := os.Create(dstFilePath)
 	if err != nil {
-		return fmt.Errorf("Creating dst file: %s", err)
+		return fmt.Errorf("creating dst file: %s", err)
 	}
 
 	defer dstFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return fmt.Errorf("Copying into dst file: %s", err)
+		return fmt.Errorf("copying into dst file: %s", err)
 	}
 
 	return nil
@@ -77,7 +77,7 @@ func (t Archive) writeIntoFileAndClose(srcFile io.ReadCloser, dstPath, additiona
 func (t Archive) tryZip(path, dstPath string) (bool, error) {
 	zipArchive, err := zip.OpenReader(path)
 	if err != nil {
-		return false, fmt.Errorf("Opening zip archive: %s", err)
+		return false, fmt.Errorf("opening zip archive: %s", err)
 	}
 
 	defer zipArchive.Close()
@@ -90,7 +90,7 @@ func (t Archive) tryZip(path, dstPath string) (bool, error) {
 
 		srcZipFile, err := f.Open()
 		if err != nil {
-			return true, fmt.Errorf("Opening zip file: %s", err)
+			return true, fmt.Errorf("opening zip file: %s", err)
 		}
 
 		err = t.writeIntoFileAndClose(srcZipFile, dstPath, f.Name)
@@ -113,7 +113,7 @@ func (t Archive) tryTar(path, dstPath string) (bool, error) {
 func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error) {
 	plainFile, err := os.Open(path)
 	if err != nil {
-		return false, fmt.Errorf("Opening archive: %s", err)
+		return false, fmt.Errorf("opening archive: %s", err)
 	}
 
 	defer plainFile.Close()
@@ -123,7 +123,7 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 	if gzipped {
 		gzipFile, err := gzip.NewReader(plainFile)
 		if err != nil {
-			return false, fmt.Errorf("Opening gzip archive: %s", err)
+			return false, fmt.Errorf("opening gzip archive: %s", err)
 		}
 		fileReader = gzipFile
 	} else {
@@ -139,7 +139,7 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 			if err == io.EOF {
 				break
 			}
-			return readEntries, fmt.Errorf("Reading next tar header: %s", err)
+			return readEntries, fmt.Errorf("reading next tar header: %s", err)
 		}
 
 		readEntries = true
@@ -159,7 +159,7 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 			continue
 
 		default:
-			return false, fmt.Errorf("Unknown file '%s' (%d)", header.Name, header.Typeflag)
+			return false, fmt.Errorf("unknown file '%s' (%d)", header.Name, header.Typeflag)
 		}
 	}
 
@@ -169,7 +169,7 @@ func (t Archive) tryTarWithGzip(path, dstPath string, gzipped bool) (bool, error
 func (t Archive) tryPlain(path, dstPath string) error {
 	parsedURL, err := gourl.Parse(t.fallbackOnPlainURL)
 	if err != nil {
-		return fmt.Errorf("Parsing URL: %s", err)
+		return fmt.Errorf("parsing URL: %s", err)
 	}
 
 	pathSegs := strings.Split(parsedURL.Path, "/")
@@ -181,7 +181,7 @@ func (t Archive) tryPlain(path, dstPath string) error {
 
 	srcFile, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Opening file %s: %s", path, err)
+		return fmt.Errorf("opening file %s: %s", path, err)
 	}
 
 	// Cannot just move since it may be on a different device

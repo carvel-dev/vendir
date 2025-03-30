@@ -80,7 +80,7 @@ func (k Vendir) RunWithOpts(args []string, opts RunOpts) (string, error) {
 	stdoutStr := stdout.String()
 
 	if err != nil {
-		err = fmt.Errorf("Execution error: stdout: '%s' stderr: '%s' error: '%s'", stdoutStr, stderr.String(), err)
+		err = fmt.Errorf("execution error: stdout: '%s' stderr: '%s' error: '%s'", stdoutStr, stderr.String(), err)
 
 		if !opts.AllowError {
 			k.t.Fatalf("Failed to successfully execute '%s': %v", k.cmdDesc(args, opts), err)

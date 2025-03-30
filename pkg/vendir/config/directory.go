@@ -227,14 +227,14 @@ func (c Directory) Validate() error {
 			}
 		}
 		if consumesEntireDir && len(c.Contents) != 1 {
-			return fmt.Errorf("Expected only one directory contents if path is set to '%s'", EntireDirPath)
+			return fmt.Errorf("expected only one directory contents if path is set to '%s'", EntireDirPath)
 		}
 	}
 
 	for i, con := range c.Contents {
 		err := con.Validate()
 		if err != nil {
-			return fmt.Errorf("Validating directory contents '%s' (%d): %s", con.Path, i, err)
+			return fmt.Errorf("validating directory contents '%s' (%d): %s", con.Path, i, err)
 		}
 	}
 
@@ -276,10 +276,10 @@ func (c DirectoryContents) Validate() error {
 	}
 
 	if len(srcTypes) == 0 {
-		return fmt.Errorf("Expected directory contents type to be specified (one of git, manual, etc.)")
+		return fmt.Errorf("expected directory contents type to be specified (one of git, manual, etc.)")
 	}
 	if len(srcTypes) > 1 {
-		return fmt.Errorf("Expected exactly one directory contents type to be specified (multiple found: %s)", strings.Join(srcTypes, ", "))
+		return fmt.Errorf("expected exactly one directory contents type to be specified (multiple found: %s)", strings.Join(srcTypes, ", "))
 	}
 
 	// entire dir path is allowed for contents
@@ -307,7 +307,7 @@ func (c DirectoryContents) LegalPathsWithDefaults() []string {
 func isDisallowedPath(path string) error {
 	for _, p := range disallowedPaths {
 		if path == p {
-			return fmt.Errorf("Expected path to not be one of '%s'",
+			return fmt.Errorf("expected path to not be one of '%s'",
 				strings.Join(disallowedPaths, "', '"))
 		}
 	}
@@ -343,10 +343,10 @@ func (c DirectoryContents) Lock(lockConfig LockDirectoryContents) error {
 
 func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected git lock configuration to be non-empty")
+		return fmt.Errorf("expected git lock configuration to be non-empty")
 	}
 	if len(lockConfig.SHA) == 0 {
-		return fmt.Errorf("Expected git SHA to be non-empty")
+		return fmt.Errorf("expected git SHA to be non-empty")
 	}
 	c.Ref = lockConfig.SHA
 	return nil
@@ -354,10 +354,10 @@ func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error 
 
 func (c *DirectoryContentsHg) Lock(lockConfig *LockDirectoryContentsHg) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected hg lock configuration to be non-empty")
+		return fmt.Errorf("expected hg lock configuration to be non-empty")
 	}
 	if len(lockConfig.SHA) == 0 {
-		return fmt.Errorf("Expected hg SHA to be non-empty")
+		return fmt.Errorf("expected hg SHA to be non-empty")
 	}
 	c.Ref = lockConfig.SHA
 	return nil
@@ -365,17 +365,17 @@ func (c *DirectoryContentsHg) Lock(lockConfig *LockDirectoryContentsHg) error {
 
 func (c *DirectoryContentsHTTP) Lock(lockConfig *LockDirectoryContentsHTTP) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected HTTP lock configuration to be non-empty")
+		return fmt.Errorf("expected HTTP lock configuration to be non-empty")
 	}
 	return nil
 }
 
 func (c *DirectoryContentsImage) Lock(lockConfig *LockDirectoryContentsImage) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected image lock configuration to be non-empty")
+		return fmt.Errorf("expected image lock configuration to be non-empty")
 	}
 	if len(lockConfig.URL) == 0 {
-		return fmt.Errorf("Expected image URL to be non-empty")
+		return fmt.Errorf("expected image URL to be non-empty")
 	}
 	c.URL = lockConfig.URL
 	c.TagSelection = nil // URL is fully resolved already
@@ -385,10 +385,10 @@ func (c *DirectoryContentsImage) Lock(lockConfig *LockDirectoryContentsImage) er
 
 func (c *DirectoryContentsImgpkgBundle) Lock(lockConfig *LockDirectoryContentsImgpkgBundle) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected image lock configuration to be non-empty")
+		return fmt.Errorf("expected image lock configuration to be non-empty")
 	}
 	if len(lockConfig.Image) == 0 {
-		return fmt.Errorf("Expected imgpkg bundle Image to be non-empty")
+		return fmt.Errorf("expected imgpkg bundle Image to be non-empty")
 	}
 	c.Image = lockConfig.Image
 	c.TagSelection = nil // URL is fully resolved already
@@ -398,10 +398,10 @@ func (c *DirectoryContentsImgpkgBundle) Lock(lockConfig *LockDirectoryContentsIm
 
 func (c *DirectoryContentsGithubRelease) Lock(lockConfig *LockDirectoryContentsGithubRelease) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected github release lock configuration to be non-empty")
+		return fmt.Errorf("expected github release lock configuration to be non-empty")
 	}
 	if len(lockConfig.URL) == 0 {
-		return fmt.Errorf("Expected github release URL to be non-empty")
+		return fmt.Errorf("expected github release URL to be non-empty")
 	}
 	c.URL = lockConfig.URL
 	c.Tag = lockConfig.Tag
@@ -410,10 +410,10 @@ func (c *DirectoryContentsGithubRelease) Lock(lockConfig *LockDirectoryContentsG
 
 func (c *DirectoryContentsHelmChart) Lock(lockConfig *LockDirectoryContentsHelmChart) error {
 	if lockConfig == nil {
-		return fmt.Errorf("Expected helm chart lock configuration to be non-empty")
+		return fmt.Errorf("expected helm chart lock configuration to be non-empty")
 	}
 	if len(lockConfig.Version) == 0 {
-		return fmt.Errorf("Expected helm chart version to be non-empty")
+		return fmt.Errorf("expected helm chart version to be non-empty")
 	}
 	c.Version = lockConfig.Version
 	return nil

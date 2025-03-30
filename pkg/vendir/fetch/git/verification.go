@@ -37,11 +37,11 @@ func (v Verification) Verify(ref string) error {
 
 	publicKeys, err := oarmor.ReadArmoredKeys(publicKeysStr)
 	if err != nil {
-		return fmt.Errorf("Reading armored key ring: %s", err)
+		return fmt.Errorf("reading armored key ring: %s", err)
 	}
 
 	if len(publicKeys) == 0 {
-		return fmt.Errorf("Expected at least one public key, but found 0")
+		return fmt.Errorf("expected at least one public key, but found 0")
 	}
 
 	signedObj, err := v.readObject(ref)
@@ -58,7 +58,7 @@ func (v Verification) Verify(ref string) error {
 		if strings.Contains(err.Error(), "signature made by unknown entity") {
 			hintMsg = " (hint: provided public key does not match signature)"
 		}
-		return fmt.Errorf("Checking signature: %s%s", err, hintMsg)
+		return fmt.Errorf("checking signature: %s%s", err, hintMsg)
 	}
 
 	return nil
@@ -82,7 +82,7 @@ func (v Verification) readObject(ref string) (signedObj, error) {
 		return v.extractCommitSignature(out)
 	}
 
-	return signedObj{}, fmt.Errorf("Reading git object for '%s': %s", ref, err)
+	return signedObj{}, fmt.Errorf("reading git object for '%s': %s", ref, err)
 }
 
 func (v Verification) extractCommitSignature(obj string) (signedObj, error) {
@@ -96,7 +96,7 @@ func (v Verification) extractCommitSignature(obj string) (signedObj, error) {
 
 	nonSig, sig, err := sectionReader.Read(obj, true)
 	if err != nil {
-		return signedObj{}, fmt.Errorf("Expected to find commit signature: %s", err)
+		return signedObj{}, fmt.Errorf("expected to find commit signature: %s", err)
 	}
 
 	sig = strings.TrimPrefix(sig, "gpgsig ")    // header
@@ -116,7 +116,7 @@ func (v Verification) extractTagSignature(obj string) (signedObj, error) {
 
 	nonSig, sig, err := sectionReader.Read(obj, true)
 	if err != nil {
-		return signedObj{}, fmt.Errorf("Expected to find tag signature: %s", err)
+		return signedObj{}, fmt.Errorf("expected to find tag signature: %s", err)
 	}
 
 	return signedObj{Contents: nonSig, Signature: sig}, nil
@@ -132,7 +132,7 @@ func (v Verification) run(args []string) (string, string, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("git %s: %s (stderr: %s)", args, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil

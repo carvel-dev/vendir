@@ -171,7 +171,7 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 	for _, envVar := range append(envVariables, t.opts.EnvironFunc()...) {
 		envVarSplit := strings.SplitN(envVar, "=", 2)
 		if len(envVarSplit) != 2 {
-			return registry.Opts{}, fmt.Errorf("Value '%s' does not look like an environment variable", envVar)
+			return registry.Opts{}, fmt.Errorf("value '%s' does not look like an environment variable", envVar)
 		}
 		envVars[envVarSplit[0]] = envVarSplit[1]
 	}
@@ -213,7 +213,7 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 					case ctlconf.SecretRegistryBearerToken:
 						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_REGISTRY_TOKEN_%d=%s", i, val))
 					default:
-						return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+						return nil, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 					}
 				}
 			} else {
@@ -226,7 +226,7 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 					case ctlconf.SecretRegistryBearerToken:
 						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_TOKEN=%s", val))
 					default:
-						return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+						return nil, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 					}
 				}
 			}

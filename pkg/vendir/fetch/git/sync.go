@@ -63,7 +63,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	info, err := git.Retrieve(incomingTmpPath, tempArea, bundle)
 	if err != nil {
-		return gitLockConf, fmt.Errorf("Fetching git repository: %s", err)
+		return gitLockConf, fmt.Errorf("fetching git repository: %s", err)
 	}
 
 	gitLockConf.SHA = info.SHA
@@ -101,12 +101,12 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	err = os.RemoveAll(dstPath)
 	if err != nil {
-		return gitLockConf, fmt.Errorf("Deleting dir %s: %s", dstPath, err)
+		return gitLockConf, fmt.Errorf("deleting dir %s: %s", dstPath, err)
 	}
 
 	err = os.Rename(incomingTmpPath, dstPath)
 	if err != nil {
-		return gitLockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
+		return gitLockConf, fmt.Errorf("moving directory '%s' to staging dir: %s", incomingTmpPath, err)
 	}
 
 	return gitLockConf, nil

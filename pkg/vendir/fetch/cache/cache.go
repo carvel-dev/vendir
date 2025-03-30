@@ -37,7 +37,7 @@ func NewCache(cacheFolder string, maxContentCacheableSize string) (Cache, error)
 	}
 	q, err := resources.ParseQuantity(maxContentCacheableSize)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to process maximum amount allowed to cache: %s", err)
+		return nil, fmt.Errorf("unable to process maximum amount allowed to cache: %s", err)
 	}
 	return &FolderCache{folder: cacheFolder, maxSize: q}, nil
 }
@@ -66,7 +66,7 @@ func (c FolderCache) Has(artifactType string, id string) (string, bool) {
 func (c FolderCache) Save(artifactType string, id string, src string) error {
 	contentSize, err := c.dirSize(src)
 	if err != nil {
-		return fmt.Errorf("Unable to find size of folder to be cached: %s", err)
+		return fmt.Errorf("unable to find size of folder to be cached: %s", err)
 	}
 
 	// When the content size is bigger than the maximum allowed amount it should not try to save into the cache
@@ -90,7 +90,7 @@ func (c FolderCache) Save(artifactType string, id string, src string) error {
 func (c FolderCache) CopyFrom(artifactType string, id string, dst string) error {
 	src, hit := c.Has(artifactType, id)
 	if !hit {
-		return fmt.Errorf("There is no cache entry for '%s'", id)
+		return fmt.Errorf("there is no cache entry for '%s'", id)
 	}
 
 	return c.copyFolder(src, dst)

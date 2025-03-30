@@ -63,7 +63,7 @@ func TestGit_Retrieve(t *testing.T) {
 			ForceHTTPBasicAuth: true,
 		}, os.Stdout, secretFetcher, runner)
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
-		require.ErrorContains(t, err, "Username/password authentication is only supported for https remotes")
+		require.ErrorContains(t, err, "username/password authentication is only supported for https remotes")
 	})
 }
 

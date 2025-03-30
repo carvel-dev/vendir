@@ -16,13 +16,13 @@ func TestNewLockConfigFromBytes(t *testing.T) {
 	t.Run("invalid yaml returns an error", func(t *testing.T) {
 		invalidYaml := "this !== valid yaml"
 		_, err := config.NewLockConfigFromBytes([]byte(invalidYaml))
-		require.EqualError(t, err, "Unmarshaling lock config: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type config.LockConfig")
+		require.EqualError(t, err, "unmarshaling lock config: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type config.LockConfig")
 	})
 
 	t.Run("valid yaml, but not valid lock config returns an error", func(t *testing.T) {
 		invalidYaml := "apiVersion: not.the.right.apiVersion"
 		_, err := config.NewLockConfigFromBytes([]byte(invalidYaml))
-		require.EqualError(t, err, "Validating lock config: Validating apiVersion: Unknown version (known: vendir.k14s.io/v1alpha1)")
+		require.EqualError(t, err, "validating lock config: validating apiVersion: Unknown version (known: vendir.k14s.io/v1alpha1)")
 	})
 }
 
@@ -41,7 +41,7 @@ func TestValidate(t *testing.T) {
 			Kind:        "LockConfig",
 			Directories: []config.LockDirectory{},
 		}
-		require.EqualError(t, lockConfig.Validate(), "Validating apiVersion: Unknown version (known: vendir.k14s.io/v1alpha1)")
+		require.EqualError(t, lockConfig.Validate(), "validating apiVersion: Unknown version (known: vendir.k14s.io/v1alpha1)")
 	})
 	t.Run("invalid kind returns an error", func(t *testing.T) {
 		lockConfig := config.LockConfig{
@@ -49,7 +49,7 @@ func TestValidate(t *testing.T) {
 			Kind:        "LockedConfig",
 			Directories: []config.LockDirectory{},
 		}
-		require.EqualError(t, lockConfig.Validate(), "Validating kind: Unknown kind (known: LockConfig)")
+		require.EqualError(t, lockConfig.Validate(), "validating kind: Unknown kind (known: LockConfig)")
 	})
 }
 
@@ -98,9 +98,9 @@ func TestWriteToFile(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "test-vendir-write-to-file")
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile.yml"), lockConfigBytes, 0666))
-	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile-copy.yml"), lockConfigBytes, 0666))
-	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "other-lockfile.yml"), otherLockFileBytes, 0666))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile.yml"), lockConfigBytes, 0o666))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "lockfile-copy.yml"), lockConfigBytes, 0o666))
+	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "other-lockfile.yml"), otherLockFileBytes, 0o666))
 
 	t.Run("no prior lock config file will write", func(t *testing.T) {
 		lockFilePath := filepath.Join(tempDir, "new-lockfile.yml")

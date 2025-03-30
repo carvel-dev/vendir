@@ -31,7 +31,7 @@ func NewLockConfig() LockConfig {
 func NewLockConfigFromFile(path string) (LockConfig, error) {
 	bs, err := os.ReadFile(path)
 	if err != nil {
-		return LockConfig{}, fmt.Errorf("Reading lock config '%s': %s", path, err)
+		return LockConfig{}, fmt.Errorf("reading lock config '%s': %s", path, err)
 	}
 
 	return NewLockConfigFromBytes(bs)
@@ -42,12 +42,12 @@ func NewLockConfigFromBytes(bs []byte) (LockConfig, error) {
 
 	err := yaml.Unmarshal(bs, &config)
 	if err != nil {
-		return LockConfig{}, fmt.Errorf("Unmarshaling lock config: %s", err)
+		return LockConfig{}, fmt.Errorf("unmarshaling lock config: %s", err)
 	}
 
 	err = config.Validate()
 	if err != nil {
-		return LockConfig{}, fmt.Errorf("Validating lock config: %s", err)
+		return LockConfig{}, fmt.Errorf("validating lock config: %s", err)
 	}
 
 	return config, nil
@@ -56,18 +56,18 @@ func NewLockConfigFromBytes(bs []byte) (LockConfig, error) {
 func (c LockConfig) WriteToFile(path string) error {
 	existingBytes, err := os.ReadFile(path)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("Failed to check existing lock file: %w", err)
+		return fmt.Errorf("failed to check existing lock file: %w", err)
 	}
 
 	bs, err := c.AsBytes()
 	if err != nil {
-		return fmt.Errorf("Marshaling lock config: %s", err)
+		return fmt.Errorf("marshaling lock config: %s", err)
 	}
 
 	if bytes.Compare(existingBytes, bs) != 0 {
 		err = os.WriteFile(path, bs, 0600)
 		if err != nil {
-			return fmt.Errorf("Writing lock config: %s", err)
+			return fmt.Errorf("writing lock config: %s", err)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (c LockConfig) WriteToFile(path string) error {
 func (c LockConfig) AsBytes() ([]byte, error) {
 	bs, err := yaml.Marshal(c)
 	if err != nil {
-		return nil, fmt.Errorf("Marshaling lock config: %s", err)
+		return nil, fmt.Errorf("marshaling lock config: %s", err)
 	}
 
 	return bs, nil
@@ -90,10 +90,10 @@ func (c LockConfig) Validate() error {
 	)
 
 	if c.APIVersion != knownAPIVersion {
-		return fmt.Errorf("Validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
+		return fmt.Errorf("validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
 	}
 	if c.Kind != knownKind {
-		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
+		return fmt.Errorf("validating kind: Unknown kind (known: %s)", knownKind)
 	}
 	return nil
 }
@@ -106,12 +106,12 @@ func (c LockConfig) FindContents(dirPath, conPath string) (LockDirectoryContents
 					return con, nil
 				}
 			}
-			return LockDirectoryContents{}, fmt.Errorf("Expected to find contents '%s' "+
+			return LockDirectoryContents{}, fmt.Errorf("expected to find contents '%s' "+
 				"within directory '%s' in lock config, but did not", conPath, dirPath)
 		}
 	}
 	return LockDirectoryContents{}, fmt.Errorf(
-		"Expected to find directory '%s' within lock config, but did not", dirPath)
+		"expected to find directory '%s' within lock config, but did not", dirPath)
 }
 
 func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
@@ -121,7 +121,7 @@ func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
 		}
 	}
 	return LockDirectory{}, fmt.Errorf(
-		"Expected to find directory '%s' within lock config, but did not", dirPath)
+		"expected to find directory '%s' within lock config, but did not", dirPath)
 }
 
 func (c *LockConfig) Merge(other LockConfig) error {

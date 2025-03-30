@@ -75,7 +75,7 @@ func (v Semvers) Sorted() Semvers {
 func (v Semvers) FilterConstraints(constraintList string) (Semvers, error) {
 	constraints, err := semver.ParseRange(constraintList)
 	if err != nil {
-		return Semvers{}, fmt.Errorf("Parsing version constraint '%s': %s", constraintList, err)
+		return Semvers{}, fmt.Errorf("parsing version constraint '%s': %s", constraintList, err)
 	}
 
 	var matchingVersions []SemverWrap

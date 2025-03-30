@@ -60,7 +60,7 @@ func (t *HTTPSource) init(helmHomeDir string) error {
 			return nil
 		}
 
-		return fmt.Errorf("Init helm: %s (stderr: %s)", err, stderrStr)
+		return fmt.Errorf("init helm: %s (stderr: %s)", err, stderrStr)
 	}
 
 	return nil
@@ -89,7 +89,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 	if t.opts.Repository != nil {
 		if len(t.opts.Repository.URL) == 0 {
-			return fmt.Errorf("Expected non-empty repository URL")
+			return fmt.Errorf("expected non-empty repository URL")
 		}
 		repoURL = t.opts.Repository.URL
 	}
@@ -100,7 +100,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 			repoAddArgs := []string{"repo", "add", "vendir-unused", repoURL}
 			repoAddArgs, err := t.addAuthArgs(repoAddArgs)
 			if err != nil {
-				return fmt.Errorf("Adding helm chart auth info: %s", err)
+				return fmt.Errorf("adding helm chart auth info: %s", err)
 			}
 
 			var stdoutBs, stderrBs bytes.Buffer
@@ -112,7 +112,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 			err = cmd.Run()
 			if err != nil {
-				return fmt.Errorf("Add helm chart repository: %s (stderr: %s)", err, stderrBs.String())
+				return fmt.Errorf("add helm chart repository: %s (stderr: %s)", err, stderrBs.String())
 			}
 		}
 
@@ -122,7 +122,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 		fetchArgs, err = t.addAuthArgs(fetchArgs)
 		if err != nil {
-			return fmt.Errorf("Adding helm chart auth info: %s", err)
+			return fmt.Errorf("adding helm chart auth info: %s", err)
 		}
 	}
 
@@ -135,7 +135,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Fetching helm chart: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("fetching helm chart: %s (stderr: %s)", err, stderrBs.String())
 	}
 
 	return nil
@@ -157,7 +157,7 @@ func (t *HTTPSource) addAuthArgs(args []string) ([]string, error) {
 			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
 				authArgs = append(authArgs, []string{"--password", string(val)}...)
 			default:
-				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+				return nil, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 			}
 		}
 	}

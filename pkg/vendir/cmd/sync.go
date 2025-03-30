@@ -63,7 +63,7 @@ func (o *SyncOptions) Run() error {
 	if len(o.Chdir) > 0 {
 		err := os.Chdir(o.Chdir)
 		if err != nil {
-			return fmt.Errorf("Running chdir: %s", err)
+			return fmt.Errorf("running chdir: %s", err)
 		}
 	}
 
@@ -125,7 +125,7 @@ func (o *SyncOptions) Run() error {
 
 	cache, err := ctlcache.NewCache(os.Getenv("VENDIR_CACHE_DIR"), maxCacheableContentSize)
 	if err != nil {
-		return fmt.Errorf("Unable to create cache: %s", err)
+		return fmt.Errorf("unable to create cache: %s", err)
 	}
 	syncOpts := ctldir.SyncOpts{
 		RefFetcher:     ctldir.NewNamedRefFetcher(secrets, configMaps),
@@ -143,7 +143,7 @@ func (o *SyncOptions) Run() error {
 		directory := ctldir.NewDirectory(dirConf, dirExistingLockConf, o.ui)
 		dirLockConf, err := directory.Sync(syncOpts)
 		if err != nil {
-			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
+			return fmt.Errorf("syncing directory '%s': %s", dirConf.Path, err)
 		}
 		if !o.AllowAllSymlinkDestinations {
 			err = ctldir.ValidateSymlinks(dirConf.Path)
@@ -217,7 +217,7 @@ func (o *SyncOptions) applyUseDirectories(conf *ctlconf.Config, dirs []dirOverri
 
 		err := conf.UseDirectory(dir.Path, dir.LocalDir)
 		if err != nil {
-			return false, fmt.Errorf("Overriding '%s' with local directory: %s", dir.Path, err)
+			return false, fmt.Errorf("overriding '%s' with local directory: %s", dir.Path, err)
 		}
 	}
 	return usesLocalDir, nil
@@ -276,7 +276,7 @@ func (dirs dirOverrides) ExpandUserHomeDirs() error {
 func (dirOverrides) userHomeDir() (string, error) {
 	out, err := homedir.Dir()
 	if err != nil {
-		return "", fmt.Errorf("Expanding user home directory: %s", err)
+		return "", fmt.Errorf("expanding user home directory: %s", err)
 	}
 	return strings.TrimSpace(string(out)), nil
 }

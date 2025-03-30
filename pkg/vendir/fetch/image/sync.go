@@ -62,7 +62,7 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImage, error) 
 
 func (t *Sync) resolveURL() (string, error) {
 	if len(t.opts.URL) == 0 {
-		return "", fmt.Errorf("Expected non-empty URL")
+		return "", fmt.Errorf("expected non-empty URL")
 	}
 
 	if t.opts.TagSelection != nil {
@@ -73,7 +73,7 @@ func (t *Sync) resolveURL() (string, error) {
 
 		selectedTag, err := ctlver.HighestConstrainedVersion(tags, *t.opts.TagSelection)
 		if err != nil {
-			return "", fmt.Errorf("Determining tag selection: %s", err)
+			return "", fmt.Errorf("determining tag selection: %s", err)
 		}
 
 		// In case URL erroneously contains tag or digest,

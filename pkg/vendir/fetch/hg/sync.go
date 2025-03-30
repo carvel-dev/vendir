@@ -48,38 +48,38 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	hg, err := NewHg(d.opts, d.log, d.refFetcher, tempArea)
 	if err != nil {
-		return hgLockConf, fmt.Errorf("Setting up hg: %w", err)
+		return hgLockConf, fmt.Errorf("setting up hg: %w", err)
 	}
 	defer hg.Close()
 
 	if cachePath, ok := d.cache.Has("hg", hg.getCacheID()); ok {
 		// fetch from cachedDir
 		if err := d.cache.CopyFrom("hg", hg.getCacheID(), incomingTmpPath); err != nil {
-			return hgLockConf, fmt.Errorf("Extracting cached hg clone: %w", err)
+			return hgLockConf, fmt.Errorf("extracting cached hg clone: %w", err)
 		}
 		// Sync if needed
 		if !hg.cloneHasTargetRef(cachePath) {
 			if err := hg.syncClone(incomingTmpPath); err != nil {
-				return hgLockConf, fmt.Errorf("Syncing hg repository: %w", err)
+				return hgLockConf, fmt.Errorf("syncing hg repository: %w", err)
 			}
 			if err := d.cache.Save("hg", hg.getCacheID(), incomingTmpPath); err != nil {
-				return hgLockConf, fmt.Errorf("Saving hg repository to cache: %w", err)
+				return hgLockConf, fmt.Errorf("saving hg repository to cache: %w", err)
 			}
 		}
 	} else {
 		// fetch in the target directory
 		if err := hg.clone(incomingTmpPath); err != nil {
-			return hgLockConf, fmt.Errorf("Cloning hg repository: %w", err)
+			return hgLockConf, fmt.Errorf("cloning hg repository: %w", err)
 		}
 		if err := d.cache.Save("hg", hg.getCacheID(), incomingTmpPath); err != nil {
-			return hgLockConf, fmt.Errorf("Saving hg repository to cache: %w", err)
+			return hgLockConf, fmt.Errorf("saving hg repository to cache: %w", err)
 		}
 	}
 
 	// now checkout the wanted revision
 	info, err := hg.checkout(incomingTmpPath)
 	if err != nil {
-		return hgLockConf, fmt.Errorf("Checking out hg repository: %s", err)
+		return hgLockConf, fmt.Errorf("checking out hg repository: %s", err)
 	}
 
 	hgLockConf.SHA = info.SHA
@@ -87,12 +87,12 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	err = os.RemoveAll(dstPath)
 	if err != nil {
-		return hgLockConf, fmt.Errorf("Deleting dir %s: %s", dstPath, err)
+		return hgLockConf, fmt.Errorf("deleting dir %s: %s", dstPath, err)
 	}
 
 	err = os.Rename(incomingTmpPath, dstPath)
 	if err != nil {
-		return hgLockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
+		return hgLockConf, fmt.Errorf("moving directory '%s' to staging dir: %s", incomingTmpPath, err)
 	}
 
 	return hgLockConf, nil

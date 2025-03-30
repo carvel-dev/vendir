@@ -49,7 +49,7 @@ type GitInfo struct {
 
 func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string) (GitInfo, error) {
 	if len(t.opts.URL) == 0 {
-		return GitInfo{}, fmt.Errorf("Expected non-empty URL")
+		return GitInfo{}, fmt.Errorf("expected non-empty URL")
 	}
 
 	err := t.fetch(dstPath, tempArea, bundle)
@@ -105,7 +105,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 			// Ensure the private key ends with a newline character, as git requires it to work. (https://github.com/carvel-dev/vendir/issues/350)
 			err = os.WriteFile(path, []byte(*authOpts.PrivateKey+"\n"), 0600)
 			if err != nil {
-				return fmt.Errorf("Writing private key: %s", err)
+				return fmt.Errorf("writing private key: %s", err)
 			}
 
 			sshCmd = append(sshCmd, "-i", path, "-o", "IdentitiesOnly=yes")
@@ -116,7 +116,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 
 			err = os.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
 			if err != nil {
-				return fmt.Errorf("Writing known hosts: %s", err)
+				return fmt.Errorf("writing known hosts: %s", err)
 			}
 
 			sshCmd = append(sshCmd, "-o", "StrictHostKeyChecking=yes", "-o", "UserKnownHostsFile="+path)
@@ -144,7 +144,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 
 	if authOpts.Username != nil && authOpts.Password != nil {
 		if !strings.HasPrefix(gitURL, "https://") {
-			return fmt.Errorf("Username/password authentication is only supported for https remotes")
+			return fmt.Errorf("username/password authentication is only supported for https remotes")
 		}
 
 		if t.opts.ForceHTTPBasicAuth {
@@ -153,7 +153,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		} else {
 			gitCredsURL, err := url.Parse(gitURL)
 			if err != nil {
-				return fmt.Errorf("Parsing git remote url: %s", err)
+				return fmt.Errorf("parsing git remote url: %s", err)
 			}
 
 			gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
@@ -161,7 +161,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 
 			err = os.WriteFile(gitCredsPath, []byte(gitCredsURL.String()+"\n"), 0600)
 			if err != nil {
-				return fmt.Errorf("Writing %s: %s", gitCredsPath, err)
+				return fmt.Errorf("writing %s: %s", gitCredsPath, err)
 			}
 		}
 	}
@@ -232,7 +232,7 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 		return ctlver.HighestConstrainedVersion(tags, *t.opts.RefSelection)
 
 	default:
-		return "", fmt.Errorf("Expected either ref or ref selection to be specified")
+		return "", fmt.Errorf("expected either ref or ref selection to be specified")
 	}
 }
 
@@ -277,7 +277,7 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("git %s: %s (stderr: %s)", args, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
@@ -318,7 +318,7 @@ func (t *Git) getAuthOpts() (gitAuthOpts, error) {
 				password := string(val)
 				opts.Password = &password
 			default:
-				return opts, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, t.opts.SecretRef.Name)
+				return opts, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, t.opts.SecretRef.Name)
 			}
 		}
 	}

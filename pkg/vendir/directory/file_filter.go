@@ -62,7 +62,7 @@ func (d FileFilter) Apply(dirPath string) error {
 		if !matched {
 			err := os.RemoveAll(path)
 			if err != nil {
-				return fmt.Errorf("Deleting file %s: %s", path, err)
+				return fmt.Errorf("deleting file %s: %s", path, err)
 			}
 		}
 
@@ -120,7 +120,7 @@ func (d FileFilter) deleteEmptyDirs(dirPath string, topLevel bool) (bool, error)
 
 	if !hasFiles {
 		if topLevel {
-			return false, fmt.Errorf("Expected to find at least one file within directory")
+			return false, fmt.Errorf("expected to find at least one file within directory")
 		}
 		// not RemoveAll to double check directory is empty
 		return false, os.Remove(dirPath)

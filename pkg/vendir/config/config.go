@@ -38,7 +38,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 
 		err := yaml.Unmarshal(docBytes, &res)
 		if err != nil {
-			return fmt.Errorf("Unmarshaling doc: %s", err)
+			return fmt.Errorf("unmarshaling doc: %s", err)
 		}
 
 		switch {
@@ -47,7 +47,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 
 			err := yaml.Unmarshal(docBytes, &secret)
 			if err != nil {
-				return fmt.Errorf("Unmarshaling secret: %s", err)
+				return fmt.Errorf("unmarshaling secret: %s", err)
 			}
 
 			if s, ok := secretsNames[secret.Metadata.Name]; ok {
@@ -63,7 +63,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 
 			err := yaml.Unmarshal(docBytes, &cm)
 			if err != nil {
-				return fmt.Errorf("Unmarshaling config map: %s", err)
+				return fmt.Errorf("unmarshaling config map: %s", err)
 			}
 			configMaps = append(configMaps, cm)
 
@@ -71,12 +71,12 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 			config, err := NewConfigFromBytes(docBytes)
 			config.cleanPaths()
 			if err != nil {
-				return fmt.Errorf("Unmarshaling config: %s", err)
+				return fmt.Errorf("unmarshaling config: %s", err)
 			}
 			configs = append(configs, config)
 
 		default:
-			return fmt.Errorf("Unknown apiVersion '%s' or kind '%s' for resource",
+			return fmt.Errorf("unknown apiVersion '%s' or kind '%s' for resource",
 				res.APIVersion, res.Kind)
 		}
 		return nil
@@ -91,10 +91,10 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 	}
 
 	if len(configs) == 0 {
-		return Config{}, nil, nil, fmt.Errorf("Expected to find at least one config, but found none")
+		return Config{}, nil, nil, fmt.Errorf("expected to find at least one config, but found none")
 	}
 	if len(configs) > 1 {
-		return Config{}, nil, nil, fmt.Errorf("Expected to find exactly one config, but found multiple")
+		return Config{}, nil, nil, fmt.Errorf("expected to find exactly one config, but found multiple")
 	}
 
 	return configs[0], secrets, configMaps, nil
@@ -105,12 +105,12 @@ func NewConfigFromBytes(bs []byte) (Config, error) {
 
 	err := yaml.Unmarshal(bs, &config)
 	if err != nil {
-		return Config{}, fmt.Errorf("Unmarshaling config: %s", err)
+		return Config{}, fmt.Errorf("unmarshaling config: %s", err)
 	}
 
 	err = config.Validate()
 	if err != nil {
-		return Config{}, fmt.Errorf("Validating config: %s", err)
+		return Config{}, fmt.Errorf("validating config: %s", err)
 	}
 
 	return config, nil
@@ -118,25 +118,25 @@ func NewConfigFromBytes(bs []byte) (Config, error) {
 
 func (c Config) Validate() error {
 	if c.APIVersion != knownAPIVersion {
-		return fmt.Errorf("Validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
+		return fmt.Errorf("validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
 	}
 	if c.Kind != knownKind {
-		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
+		return fmt.Errorf("validating kind: Unknown kind (known: %s)", knownKind)
 	}
 
 	if len(c.MinimumRequiredVersion) > 0 {
 		if c.MinimumRequiredVersion[0] == 'v' {
-			return fmt.Errorf("Validating minimum version: Must not have prefix 'v' (e.g. '0.8.0')")
+			return fmt.Errorf("validating minimum version: Must not have prefix 'v' (e.g. '0.8.0')")
 		}
 
 		userConstraint, err := semver.NewConstraint(">=" + c.MinimumRequiredVersion)
 		if err != nil {
-			return fmt.Errorf("Parsing minimum version constraint: %s", err)
+			return fmt.Errorf("parsing minimum version constraint: %s", err)
 		}
 
 		vendirVersion, err := semver.NewVersion(version.Version)
 		if err != nil {
-			return fmt.Errorf("Parsing version constraint: %s", err)
+			return fmt.Errorf("parsing version constraint: %s", err)
 		}
 
 		if !userConstraint.Check(vendirVersion) {
@@ -148,7 +148,7 @@ func (c Config) Validate() error {
 	for i, dir := range c.Directories {
 		err := dir.Validate()
 		if err != nil {
-			return fmt.Errorf("Validating directory '%s' (%d): %s", dir.Path, i, err)
+			return fmt.Errorf("validating directory '%s' (%d): %s", dir.Path, i, err)
 		}
 	}
 
@@ -158,7 +158,7 @@ func (c Config) Validate() error {
 func (c Config) AsBytes() ([]byte, error) {
 	bs, err := yaml.Marshal(c)
 	if err != nil {
-		return nil, fmt.Errorf("Marshaling config: %s", err)
+		return nil, fmt.Errorf("marshaling config: %s", err)
 	}
 
 	return bs, nil
@@ -173,7 +173,7 @@ func (c Config) UseDirectory(path, dirPath string) error {
 				continue
 			}
 			if matched {
-				return fmt.Errorf("Expected to match exactly one directory, but matched multiple")
+				return fmt.Errorf("expected to match exactly one directory, but matched multiple")
 			}
 			matched = true
 
@@ -192,7 +192,7 @@ func (c Config) UseDirectory(path, dirPath string) error {
 	}
 
 	if !matched {
-		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
+		return fmt.Errorf("expected to match exactly one directory, but did not match any")
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (c Config) Subset(paths []string) (Config, error) {
 				continue
 			}
 			if seen {
-				return Config{}, fmt.Errorf("Expected to match path '%s' once, but matched multiple", entirePath)
+				return Config{}, fmt.Errorf("expected to match path '%s' once, but matched multiple", entirePath)
 			}
 			pathsToSeen[entirePath] = true
 
@@ -234,7 +234,7 @@ func (c Config) Subset(paths []string) (Config, error) {
 
 	for path, seen := range pathsToSeen {
 		if !seen {
-			return Config{}, fmt.Errorf("Expected to match path '%s' once, but did not match any", path)
+			return Config{}, fmt.Errorf("expected to match path '%s' once, but did not match any", path)
 		}
 	}
 
@@ -265,7 +265,7 @@ func (c Config) checkOverlappingPaths() error {
 		for i, path := range paths {
 			for i2, path2 := range paths {
 				if i != i2 && strings.HasPrefix(path2+string(filepath.Separator), path+string(filepath.Separator)) {
-					return fmt.Errorf("Expected to not manage overlapping paths: '%s' and '%s'", path2, path)
+					return fmt.Errorf("expected to not manage overlapping paths: '%s' and '%s'", path2, path)
 				}
 			}
 		}
