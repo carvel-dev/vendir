@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"carvel.dev/imgpkg/pkg/imgpkg/imagedesc"
 	"carvel.dev/imgpkg/pkg/imgpkg/imagetar"
@@ -27,7 +28,7 @@ func NewTarImageSet(imageSet ImageSet, concurrency int, logger Logger) TarImageS
 }
 
 // Export Creates a Tar with the provided Images
-func (i TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string, registry registry.ImagesReaderWriter, imageLayerWriterCheck imagetar.ImageLayerWriterFilter, resume bool) (d *imagedesc.ImageRefDescriptors, err error) {
+func (i *TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string, registry registry.ImagesReaderWriter, imageLayerWriterCheck imagetar.ImageLayerWriterFilter, resume bool) (d *imagedesc.ImageRefDescriptors, err error) {
 	ids, err := i.imageSet.Export(foundImages, registry)
 	if err != nil {
 		return nil, err
@@ -51,6 +52,7 @@ func (i TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string
 			}
 			defer os.Remove(tmpFile.Name())
 
+			start := time.Now()
 			var cErr error
 			_, cErr = io.Copy(tmpFile, outputFile)
 			err = tmpFile.Close()
@@ -64,11 +66,15 @@ func (i TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string
 			if cErr != nil {
 				return nil, err
 			}
+			i.logger.Debugf("Took %s to copy file", time.Since(start))
 
-			alreadyDownloadedLayers, err = imagetar.NewTarReader(tmpFile.Name()).PresentLayers()
+			start = time.Now()
+			reader := imagetar.NewTarReader(tmpFile.Name(), i.concurrency)
+			alreadyDownloadedLayers, err = reader.PresentLayers()
 			if err != nil {
 				return nil, fmt.Errorf("Reading previously created tar '%s': %s", outputPath, err)
 			}
+			i.logger.Debugf("Took %s to find all valid layers in tar", time.Since(start))
 
 			i.logger.Logf("Going to reuse %d layers from the tar already in disk\n", len(alreadyDownloadedLayers))
 		}
@@ -124,7 +130,7 @@ func (i TarImageSet) Export(foundImages *UnprocessedImageRefs, outputPath string
 
 // Import Copy tar with Images to the Registry
 func (i *TarImageSet) Import(path string, importRepo regname.Repository, registry registry.ImagesReaderWriter) (*ProcessedImages, error) {
-	imgOrIndexes, err := imagetar.NewTarReader(path).Read()
+	imgOrIndexes, err := imagetar.NewTarReader(path, i.concurrency).Read()
 	if err != nil {
 		return nil, err
 	}

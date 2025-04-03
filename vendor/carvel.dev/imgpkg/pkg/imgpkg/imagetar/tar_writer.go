@@ -18,6 +18,8 @@ import (
 )
 
 type Logger interface {
+	Debugf(msg string, args ...interface{})
+	Tracef(msg string, args ...interface{})
 	Logf(str string, args ...interface{})
 }
 
@@ -36,20 +38,28 @@ type TarWriter struct {
 	opts                  TarWriterOpts
 	logger                Logger
 	imageLayerWriterCheck ImageLayerWriterFilter
-	layersFromOtherSource []regv1.Layer
+	layersFromOtherSource map[string]regv1.Layer
 }
 
 // NewTarWriter constructor returning a mechanism to write image refs / layers to a tarball on disk.
 func NewTarWriter(ids *imagedesc.ImageRefDescriptors, dstOpener func() (io.WriteCloser, error),
 	opts TarWriterOpts, logger Logger, imageLayerWriterCheck ImageLayerWriterFilter,
 	layersFromOtherSource []regv1.Layer) *TarWriter {
+	knownlayers := map[string]regv1.Layer{}
+	for _, layer := range layersFromOtherSource {
+		d, err := layer.Digest()
+		if err != nil {
+			panic(fmt.Sprintf("Retrieving digest: %s", err))
+		}
+		knownlayers[d.String()] = layer
+	}
 	return &TarWriter{
 		ids:                   ids,
 		dstOpener:             dstOpener,
 		opts:                  opts,
 		logger:                logger,
 		imageLayerWriterCheck: imageLayerWriterCheck,
-		layersFromOtherSource: layersFromOtherSource,
+		layersFromOtherSource: knownlayers,
 	}
 }
 
@@ -144,6 +154,7 @@ func (w *TarWriter) writeLayers() error {
 	isInflatable := (w.opts.Concurrency > 1) && isSeekable
 	writtenLayers := map[string]writtenLayer{}
 
+	startWriteLayers := time.Now()
 	// Inflate tar file so that multiple writes can happen in parallel
 	for _, imgLayer := range w.layersToWrite {
 		digest, err := regv1.NewHash(imgLayer.Digest)
@@ -176,21 +187,15 @@ func (w *TarWriter) writeLayers() error {
 		if isInflatable {
 			stream = nil
 		} else {
-			for _, layer := range w.layersFromOtherSource {
-				d, err := layer.Digest()
+			if sourceLayer, ok := w.layersFromOtherSource[digest.String()]; ok {
+				stream, err = sourceLayer.Compressed()
 				if err != nil {
-					return fmt.Errorf("Retrieving digest: %s", err)
-				}
-				if d.String() == imgLayer.Digest {
-					stream, err = layer.Compressed()
-					if err != nil {
-						return fmt.Errorf("Retrieve layer from file: %s", err)
-					}
-					break
+					return fmt.Errorf("failed to get compressed stuff: %s", err)
 				}
 			}
 
 			if stream == nil {
+				w.logger.Debugf("did not find the layer: %s", digest.String())
 				foundLayer, err := w.ids.FindLayer(imgLayer)
 				if err != nil {
 					return err
@@ -200,6 +205,8 @@ func (w *TarWriter) writeLayers() error {
 				if err != nil {
 					return err
 				}
+			} else {
+				w.logger.Debugf("reusing layer: %s", digest.String())
 			}
 		}
 
@@ -214,6 +221,7 @@ func (w *TarWriter) writeLayers() error {
 			Offset: currPos,
 		}
 	}
+	w.logger.Tracef("Took %s to writing 0's  for %d layer(s)", time.Since(startWriteLayers), len(writtenLayers))
 
 	err := w.tf.Flush()
 	if err != nil {
@@ -221,6 +229,8 @@ func (w *TarWriter) writeLayers() error {
 	}
 
 	if isInflatable {
+		startWriteLayers = time.Now()
+		defer func() { w.logger.Tracef("Took %s to effectively write all layers", time.Since(startWriteLayers)) }()
 		return w.fillInLayers(writtenLayers)
 	}
 
@@ -274,6 +284,7 @@ func (w *TarWriter) fillInLayer(wl writtenLayer) error {
 
 	defer file.Close()
 
+	startFillingLayer := time.Now()
 	_, err = file.(*os.File).Seek(wl.Offset, 0)
 	if err != nil {
 		return fmt.Errorf("Seeking to offset: %s", err)
@@ -282,15 +293,29 @@ func (w *TarWriter) fillInLayer(wl writtenLayer) error {
 	tw := tar.NewWriter(file)
 	// Do not close tar writer as it would add unwanted footer
 
-	foundLayer, err := w.ids.FindLayer(wl.Layer)
-	if err != nil {
-		return err
+	var stream io.ReadCloser
+	if sourceLayer, ok := w.layersFromOtherSource[wl.Layer.Digest]; ok {
+		stream, err = sourceLayer.Compressed()
+		if err != nil {
+			return fmt.Errorf("failed to get compressed stuff: %s", err)
+		}
 	}
 
-	stream, err := foundLayer.Open()
-	if err != nil {
-		return err
+	if stream == nil {
+		w.logger.Debugf("did not find the layer: %s", wl.Layer.Digest)
+		foundLayer, err := w.ids.FindLayer(wl.Layer)
+		if err != nil {
+			return err
+		}
+
+		stream, err = foundLayer.Open()
+		if err != nil {
+			return err
+		}
+	} else {
+		w.logger.Debugf("reusing the layer: %s", wl.Layer.Digest)
 	}
+	w.logger.Tracef("took %s to prepare layer %s to be written", time.Since(startFillingLayer), wl.Layer.Digest)
 
 	err = w.writeTarEntry(tw, wl.Name, stream, wl.Layer.Size)
 	if err != nil {
@@ -328,7 +353,7 @@ func (w *TarWriter) writeTarEntry(tw *tar.Writer, path string, r io.Reader, size
 	}
 
 	if !zerosFill {
-		w.logger.Logf("done: file '%s' (%s)\n", path, time.Now().Sub(t1))
+		w.logger.Logf("done: file '%s' (%s)\n", path, time.Since(t1))
 	}
 
 	return nil

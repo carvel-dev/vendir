@@ -33,7 +33,7 @@ const (
 	ContentImage ImageType = "Image"
 	// SignatureImage Image that contains a signature
 	SignatureImage ImageType = "Signature"
-	// InternalImage Image that contains a signature
+	// InternalImage Image that contain the Locations information for the images associated with a bundle
 	InternalImage ImageType = "Internal"
 )
 
