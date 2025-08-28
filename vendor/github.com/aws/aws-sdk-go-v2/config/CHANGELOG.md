@@ -1,3 +1,96 @@
+# v1.31.5 (2025-08-28)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.4 (2025-08-27)
+
+* **Dependency Update**: Update to smithy-go v1.23.0.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.3 (2025-08-26)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.2 (2025-08-21)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.1 (2025-08-20)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.0 (2025-08-11)
+
+* **Feature**: Add support for configuring per-service Options via callback on global config.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.3 (2025-08-04)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.2 (2025-07-30)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.1 (2025-07-29)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.0 (2025-07-28)
+
+* **Feature**: Add support for HTTP interceptors.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.18 (2025-07-19)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.17 (2025-06-17)
+
+* **Dependency Update**: Update to smithy-go v1.22.4.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.16 (2025-06-10)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.15 (2025-06-06)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.14 (2025-04-10)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.13 (2025-04-03)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.12 (2025-03-27)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.11 (2025-03-25)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.10 (2025-03-24)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.9 (2025-03-04.2)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.8 (2025-02-27)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.7 (2025-02-18)
+
+* **Bug Fix**: Bump go version to 1.22
+* **Dependency Update**: Updated to the latest SDK module versions
+
 # v1.29.6 (2025-02-05)
 
 * **Dependency Update**: Updated to the latest SDK module versions

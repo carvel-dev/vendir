@@ -1,3 +1,4 @@
+//go:build !go1.8
 // +build !go1.8
 
 // Copyright 2017 Microsoft Corporation
@@ -18,7 +19,7 @@ package autorest
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -32,10 +33,10 @@ type RetriableRequest struct {
 func (rr *RetriableRequest) Prepare() (err error) {
 	// preserve the request body; this is to support retry logic as
 	// the underlying transport will always close the reqeust body
-	if rr.req.Body != nil {
+	if rr.req.Body != nil && rr.req.Body != http.NoBody {
 		if rr.br != nil {
 			_, err = rr.br.Seek(0, 0 /*io.SeekStart*/)
-			rr.req.Body = ioutil.NopCloser(rr.br)
+			rr.req.Body = io.NopCloser(rr.br)
 		}
 		if err != nil {
 			return err

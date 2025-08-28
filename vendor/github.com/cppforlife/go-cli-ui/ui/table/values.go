@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 func NewValueString(s string) ValueString { return ValueString{S: s} }
@@ -127,6 +127,19 @@ func (t ValueInterface) String() string {
 		return ""
 	} else if val.Kind() == reflect.Slice && val.Len() == 0 {
 		return ""
+	}
+
+	// Handles contract in older YAML library defined here:
+	// https://github.com/go-yaml/yaml/blob/v3/yaml.go#L44-L52
+	if i, ok := t.I.(interface{ MarshalYAML() (interface{}, error) }); ok {
+		v, err := i.MarshalYAML()
+		if err != nil {
+			return fmt.Sprintf("<serialization error> : %#v", t.I)
+		}
+		if v == nil {
+			return ""
+		}
+		t.I = v
 	}
 
 	bytes, err := yaml.Marshal(t.I)

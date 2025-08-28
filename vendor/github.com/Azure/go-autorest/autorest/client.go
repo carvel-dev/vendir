@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -31,7 +30,7 @@ import (
 
 const (
 	// DefaultPollingDelay is a reasonable delay between polling requests.
-	DefaultPollingDelay = 60 * time.Second
+	DefaultPollingDelay = 30 * time.Second
 
 	// DefaultPollingDuration is a reasonable total polling duration.
 	DefaultPollingDuration = 15 * time.Minute
@@ -106,14 +105,14 @@ func (li LoggingInspector) WithInspection() PrepareDecorator {
 
 			defer r.Body.Close()
 
-			r.Body = ioutil.NopCloser(io.TeeReader(r.Body, &body))
+			r.Body = io.NopCloser(io.TeeReader(r.Body, &body))
 			if err := r.Write(&b); err != nil {
 				return nil, fmt.Errorf("Failed to write response: %v", err)
 			}
 
 			li.Logger.Printf(requestFormat, b.String())
 
-			r.Body = ioutil.NopCloser(&body)
+			r.Body = io.NopCloser(&body)
 			return p.Prepare(r)
 		})
 	}
@@ -129,14 +128,14 @@ func (li LoggingInspector) ByInspecting() RespondDecorator {
 		return ResponderFunc(func(resp *http.Response) error {
 			var body, b bytes.Buffer
 			defer resp.Body.Close()
-			resp.Body = ioutil.NopCloser(io.TeeReader(resp.Body, &body))
+			resp.Body = io.NopCloser(io.TeeReader(resp.Body, &body))
 			if err := resp.Write(&b); err != nil {
 				return fmt.Errorf("Failed to write response: %v", err)
 			}
 
 			li.Logger.Printf(responseFormat, b.String())
 
-			resp.Body = ioutil.NopCloser(&body)
+			resp.Body = io.NopCloser(&body)
 			return r.Respond(resp)
 		})
 	}

@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/kube-openapi/pkg/util/sets"
 
-	"k8s.io/gengo/types"
+	"k8s.io/gengo/v2/types"
 )
 
 var (
@@ -30,14 +30,6 @@ var (
 	jsonTagBlacklist = sets.NewString(
 		// Omitted field is ignored by the package
 		"-",
-	)
-
-	// Blacklist of JSON names that should skip match evaluation
-	jsonNameBlacklist = sets.NewString(
-		// Empty name is used for inline struct field (e.g. metav1.TypeMeta)
-		"",
-		// Special case for object and list meta
-		"metadata",
 	)
 
 	// List of substrings that aren't allowed in Go name and JSON name
@@ -56,24 +48,28 @@ Go field names must be CamelCase. JSON field names must be camelCase. Other than
 initial letter, the two should almost always match. No underscores nor dashes in either.
 This rule verifies the convention "Other than capitalization of the initial letter, the two should almost always match."
 Examples (also in unit test):
-    Go name      | JSON name    | match
-                   podSpec        false
-    PodSpec        podSpec        true
-    PodSpec        PodSpec        false
-    podSpec        podSpec        false
-    PodSpec        spec           false
-    Spec           podSpec        false
-    JSONSpec       jsonSpec       true
-    JSONSpec       jsonspec       false
-    HTTPJSONSpec   httpJSONSpec   true
+
+	Go name      | JSON name    | match
+	               podSpec        false
+	PodSpec        podSpec        true
+	PodSpec        PodSpec        false
+	podSpec        podSpec        false
+	PodSpec        spec           false
+	Spec           podSpec        false
+	JSONSpec       jsonSpec       true
+	JSONSpec       jsonspec       false
+	HTTPJSONSpec   httpJSONSpec   true
+
 NOTE: this validator cannot tell two sequential all-capital words from one word, therefore the case below
 is also considered matched.
-    HTTPJSONSpec   httpjsonSpec   true
-NOTE: JSON names in jsonNameBlacklist should skip evaluation
-                                  true
-    podSpec                       true
-    podSpec        -              true
-    podSpec        metadata       true
+
+	HTTPJSONSpec   httpjsonSpec   true
+
+NOTE: an empty JSON name is valid only for inlined structs or pointer to structs.
+It cannot be empty for anything else because capitalization must be set explicitly.
+
+NOTE: metav1.ListMeta and metav1.ObjectMeta by convention must have "metadata" as name.
+Other fields may have that JSON name if the field name matches.
 */
 type NamesMatch struct{}
 
@@ -104,7 +100,7 @@ func (n *NamesMatch) Validate(t *types.Type) ([]string, error) {
 				continue
 			}
 			jsonName := strings.Split(jsonTag, ",")[0]
-			if !namesMatch(goName, jsonName) {
+			if !nameIsOkay(m, jsonName) {
 				fields = append(fields, goName)
 			}
 		}
@@ -112,24 +108,38 @@ func (n *NamesMatch) Validate(t *types.Type) ([]string, error) {
 	return fields, nil
 }
 
+func nameIsOkay(member types.Member, jsonName string) bool {
+	if jsonName == "" {
+		return member.Type.Kind == types.Struct ||
+			member.Type.Kind == types.Pointer && member.Type.Elem.Kind == types.Struct
+	}
+
+	typeName := member.Type.String()
+	switch typeName {
+	case "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta",
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta":
+		return jsonName == "metadata"
+	}
+
+	return namesMatch(member.Name, jsonName)
+}
+
 // namesMatch evaluates if goName and jsonName match the API rule
 // TODO: Use an off-the-shelf CamelCase solution instead of implementing this logic. The following existing
-//       packages have been tried out:
-//		github.com/markbates/inflect
-//		github.com/segmentio/go-camelcase
-//		github.com/iancoleman/strcase
-//		github.com/fatih/camelcase
-//	 Please see https://github.com/kubernetes/kube-openapi/pull/83#issuecomment-400842314 for more details
-//	 about why they don't satisfy our need. What we need can be a function that detects an acronym at the
-//	 beginning of a string.
+//
+//	      packages have been tried out:
+//			github.com/markbates/inflect
+//			github.com/segmentio/go-camelcase
+//			github.com/iancoleman/strcase
+//			github.com/fatih/camelcase
+//		 Please see https://github.com/kubernetes/kube-openapi/pull/83#issuecomment-400842314 for more details
+//		 about why they don't satisfy our need. What we need can be a function that detects an acronym at the
+//		 beginning of a string.
 func namesMatch(goName, jsonName string) bool {
-	if jsonNameBlacklist.Has(jsonName) {
-		return true
-	}
 	if !isAllowedName(goName) || !isAllowedName(jsonName) {
 		return false
 	}
-	if strings.ToLower(goName) != strings.ToLower(jsonName) {
+	if !strings.EqualFold(goName, jsonName) {
 		return false
 	}
 	// Go field names must be CamelCase. JSON field names must be camelCase.

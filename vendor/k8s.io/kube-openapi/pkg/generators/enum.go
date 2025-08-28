@@ -22,8 +22,9 @@ import (
 	"sort"
 	"strings"
 
-	"k8s.io/gengo/generator"
-	"k8s.io/gengo/types"
+	"k8s.io/gengo/v2"
+	"k8s.io/gengo/v2/generator"
+	"k8s.io/gengo/v2/types"
 )
 
 const tagEnumType = "enum"
@@ -55,6 +56,10 @@ func newEnumContext(c *generator.Context) *enumContext {
 // If the given type is a known enum type, returns the enumType, true
 // Otherwise, returns nil, false
 func (ec *enumContext) EnumType(t *types.Type) (enum *enumType, isEnum bool) {
+	// if t is a pointer, use its underlying type instead
+	if t.Kind == types.Pointer {
+		t = t.Elem
+	}
 	enum, ok := ec.enumTypes[t.Name]
 	return enum, ok
 }
@@ -74,9 +79,12 @@ func (et *enumType) ValueStrings() []string {
 // DescriptionLines returns a description of the enum in this format:
 //
 // Possible enum values:
-//  - `"value1"` description 1
-//  - `"value2"` description 2
+//   - `"value1"` description 1
+//   - `"value2"` description 2
 func (et *enumType) DescriptionLines() []string {
+	if len(et.Values) == 0 {
+		return nil
+	}
 	var lines []string
 	for _, value := range et.Values {
 		lines = append(lines, value.Description())
@@ -90,9 +98,9 @@ func parseEnums(c *generator.Context) enumMap {
 	// First, find the builtin "string" type
 	stringType := c.Universe.Type(types.Name{Name: "string"})
 
+	// find all enum types.
 	enumTypes := make(enumMap)
 	for _, p := range c.Universe {
-		// find all enum types.
 		for _, t := range p.Types {
 			if isEnumType(stringType, t) {
 				if _, ok := enumTypes[t.Name]; !ok {
@@ -102,7 +110,10 @@ func parseEnums(c *generator.Context) enumMap {
 				}
 			}
 		}
-		// find all enum values from constants, and try to match each with its type.
+	}
+
+	// find all enum values from constants, and try to match each with its type.
+	for _, p := range c.Universe {
 		for _, c := range p.Constants {
 			enumType := c.Underlying
 			if _, ok := enumTypes[enumType.Name]; ok {
@@ -111,7 +122,7 @@ func parseEnums(c *generator.Context) enumMap {
 					Value:   *c.ConstValue,
 					Comment: strings.Join(c.CommentLines, " "),
 				}
-				enumTypes[enumType.Name].appendValue(value)
+				enumTypes[enumType.Name].addIfNotPresent(value)
 			}
 		}
 	}
@@ -119,13 +130,27 @@ func parseEnums(c *generator.Context) enumMap {
 	return enumTypes
 }
 
-func (et *enumType) appendValue(value *enumValue) {
+func (et *enumType) addIfNotPresent(value *enumValue) {
+	// If we already have an enum case with the same value, then ignore this new
+	// one. This can happen if an enum aliases one from another package and
+	// re-exports the cases.
+	for i, existing := range et.Values {
+		if existing.Value == value.Value {
+
+			// Take the value of the longer comment (or some other deterministic tie breaker)
+			if len(existing.Comment) < len(value.Comment) || (len(existing.Comment) == len(value.Comment) && existing.Comment > value.Comment) {
+				et.Values[i] = value
+			}
+
+			return
+		}
+	}
 	et.Values = append(et.Values, value)
 }
 
 // Description returns the description line for the enumValue
 // with the format:
-//  - `"FooValue"` is the Foo value
+//   - `"FooValue"` is the Foo value
 func (ev *enumValue) Description() string {
 	comment := strings.TrimSpace(ev.Comment)
 	// The comment should starts with the type name, trim it first.
@@ -145,7 +170,7 @@ func isEnumType(stringType *types.Type, t *types.Type) bool {
 }
 
 func hasEnumTag(t *types.Type) bool {
-	return types.ExtractCommentTags("+", t.CommentLines)[tagEnumType] != nil
+	return gengo.ExtractCommentTags("+", t.CommentLines)[tagEnumType] != nil
 }
 
 // whitespaceRegex is the regex for consecutive whitespaces.
