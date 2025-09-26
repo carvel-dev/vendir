@@ -42,6 +42,7 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 	o.UIFlags.Set(cmd)
 
 	cmd.AddCommand(NewSyncCmd(NewSyncOptions(o.ui)))
+	cmd.AddCommand(NewStatusCmd(NewStatusOptions(o.ui)))
 	cmd.AddCommand(NewVersionCmd(NewVersionOptions(o.ui)))
 
 	toolsCmd := NewToolsCmd()
