@@ -72,6 +72,6 @@ func (d LockDirectory) FindContents(conPath string) (LockDirectoryContents, erro
 			return con, nil
 		}
 	}
-	return LockDirectoryContents{}, fmt.Errorf("Expected to find contents '%s' "+
+	return LockDirectoryContents{}, fmt.Errorf("expected to find contents '%s' "+
 		"within directory '%s' in lock config, but did not", conPath, d.Path)
 }

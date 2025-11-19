@@ -115,7 +115,7 @@ func (t *Hg) Close() {
 
 func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 	if len(t.opts.URL) == 0 {
-		return fmt.Errorf("Expected non-empty URL")
+		return fmt.Errorf("expected non-empty URL")
 	}
 
 	cacheID := t.opts.URL
@@ -144,11 +144,11 @@ func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 
 	if authOpts.Username != nil && authOpts.Password != nil {
 		if !strings.HasPrefix(hgURL, "https://") {
-			return fmt.Errorf("Username/password authentication is only supported for https remotes")
+			return fmt.Errorf("username/password authentication is only supported for https remotes")
 		}
 		hgCredsURL, err := url.Parse(hgURL)
 		if err != nil {
-			return fmt.Errorf("Parsing hg remote url: %s", err)
+			return fmt.Errorf("parsing hg remote url: %s", err)
 		}
 
 		hgRc = fmt.Sprintf(`%s
@@ -168,7 +168,7 @@ hgauth.password = %s
 
 			err = os.WriteFile(path, []byte(*authOpts.PrivateKey), 0600)
 			if err != nil {
-				return fmt.Errorf("Writing private key: %s", err)
+				return fmt.Errorf("writing private key: %s", err)
 			}
 
 			sshCmd = append(sshCmd, "-i", path, "-o", "IdentitiesOnly=yes")
@@ -179,7 +179,7 @@ hgauth.password = %s
 
 			err = os.WriteFile(path, []byte(*authOpts.KnownHosts), 0600)
 			if err != nil {
-				return fmt.Errorf("Writing known hosts: %s", err)
+				return fmt.Errorf("writing known hosts: %s", err)
 			}
 
 			sshCmd = append(sshCmd, "-o", "StrictHostKeyChecking=yes", "-o", "UserKnownHostsFile="+path)
@@ -194,7 +194,7 @@ hgauth.password = %s
 		hgRcPath := filepath.Join(authDir, "hgrc")
 		err = os.WriteFile(hgRcPath, []byte(hgRc), 0600)
 		if err != nil {
-			return fmt.Errorf("Writing %s: %s", hgRcPath, err)
+			return fmt.Errorf("writing %s: %s", hgRcPath, err)
 		}
 		t.env = append(t.env, "HGRCPATH="+hgRcPath)
 	}
@@ -217,7 +217,7 @@ func (t *Hg) initClone(dstPath string) error {
 	repoHgRc := fmt.Sprintf("[paths]\ndefault = %s\n", hgURL)
 
 	if err := os.WriteFile(repoHgRcPath, []byte(repoHgRc), 0600); err != nil {
-		return fmt.Errorf("Writing %s: %s", repoHgRcPath, err)
+		return fmt.Errorf("writing %s: %s", repoHgRcPath, err)
 	}
 
 	return nil
@@ -236,7 +236,7 @@ func (t *Hg) run(args []string, dstPath string) (string, string, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("hg %s: %s (stderr: %s)", args, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
@@ -277,7 +277,7 @@ func (t *Hg) getAuthOpts() (hgAuthOpts, error) {
 				password := string(val)
 				opts.Password = &password
 			default:
-				return opts, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, t.opts.SecretRef.Name)
+				return opts, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, t.opts.SecretRef.Name)
 			}
 		}
 	}

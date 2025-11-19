@@ -80,17 +80,17 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 
 	vendorDir, err := os.Stat(vendorPath)
 	if err != nil {
-		return fmt.Errorf("Expected no err for stat: %v", err)
+		return fmt.Errorf("expected no err for stat: %v", err)
 	}
 	if !vendorDir.IsDir() {
-		return fmt.Errorf("Expected to be dir")
+		return fmt.Errorf("expected to be dir")
 	}
 
 	// remove all vendored bits
 	if !et.SkipRemove {
 		err = os.RemoveAll(vendorPath)
 		if err != nil {
-			return fmt.Errorf("Expected no err for remove all")
+			return fmt.Errorf("expected no err for remove all")
 		}
 	}
 
@@ -103,13 +103,13 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 	if !et.OnlyLocked {
 		_, err = vendir.RunWithOpts([]string{"sync"}, RunOpts{Dir: path, Env: et.Env})
 		if err != nil {
-			return fmt.Errorf("Expected no err for sync")
+			return fmt.Errorf("expected no err for sync")
 		}
 
 		// This assumes that example's vendor directory is committed to git
 		gitOut := gitDiffExamplesDir(t, dir, "../../")
 		if gitOut != "" {
-			return fmt.Errorf("Expected no diff, but was: >>>%s<<<", gitOut)
+			return fmt.Errorf("expected no diff, but was: >>>%s<<<", gitOut)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 
 	_, err = vendir.RunWithOpts([]string{"sync", "--locked"}, RunOpts{Dir: path, Env: et.Env})
 	if err != nil {
-		return fmt.Errorf("Expected no err for sync locked")
+		return fmt.Errorf("expected no err for sync locked")
 	}
 
 	newLockFileStat, err := os.Stat(filepath.Join(path, "vendir.lock.yml"))
@@ -127,7 +127,7 @@ func (et example) check(t *testing.T, vendir Vendir) error {
 
 	gitOut := gitDiffExamplesDir(t, path, tmpDir)
 	if gitOut != "" {
-		return fmt.Errorf("Expected no diff, but was: >>>%s<<<", gitOut)
+		return fmt.Errorf("expected no diff, but was: >>>%s<<<", gitOut)
 	}
 
 	return nil

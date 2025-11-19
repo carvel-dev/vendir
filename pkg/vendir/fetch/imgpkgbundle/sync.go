@@ -71,7 +71,7 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsImgpkgBundle, 
 
 func (t *Sync) resolveImage() (string, error) {
 	if len(t.opts.Image) == 0 {
-		return "", fmt.Errorf("Expected non-empty image")
+		return "", fmt.Errorf("expected non-empty image")
 	}
 
 	if t.opts.TagSelection != nil {
@@ -82,7 +82,7 @@ func (t *Sync) resolveImage() (string, error) {
 
 		selectedTag, err := ctlver.HighestConstrainedVersion(tags, *t.opts.TagSelection)
 		if err != nil {
-			return "", fmt.Errorf("Determining tag selection: %s", err)
+			return "", fmt.Errorf("determining tag selection: %s", err)
 		}
 
 		// In case image erroneously contains tag or digest,

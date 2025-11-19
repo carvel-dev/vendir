@@ -39,7 +39,7 @@ func HighestConstrainedVersionWithAdditionalConstraints(versions []string, confi
 			var err error
 			matchedVers, err = matchedVers.FilterConstraints(config.Semver.Constraints)
 			if err != nil {
-				return "", fmt.Errorf("Selecting versions: %s", err)
+				return "", fmt.Errorf("selecting versions: %s", err)
 			}
 			details = append(details, fmt.Sprintf("after-constraints-filter=%d", matchedVers.Len()))
 		}
@@ -52,6 +52,6 @@ func HighestConstrainedVersionWithAdditionalConstraints(versions []string, confi
 		return highestVersion, nil
 
 	default:
-		return "", fmt.Errorf("Unsupported version selection type (currently supported: semver)")
+		return "", fmt.Errorf("unsupported version selection type (currently supported: semver)")
 	}
 }

@@ -36,7 +36,7 @@ func NewSync(opts ctlconf.DirectoryContentsGithubRelease,
 	sync := Sync{opts, defaultAPIToken, refFetcher, nil}
 	accessToken, err := sync.authToken()
 	if err != nil {
-		return Sync{}, fmt.Errorf("Getting auth token: %s", err.Error())
+		return Sync{}, fmt.Errorf("getting auth token: %s", err.Error())
 	}
 	if accessToken == "" {
 		sync.client = github.NewClient(nil)
@@ -68,7 +68,7 @@ func (d Sync) Desc() (string, error) {
 	case d.opts.Latest:
 		desc = d.opts.Slug + "@latest"
 	default:
-		return "", fmt.Errorf("Expected to have non-empty tag, tagSelection, latest or url")
+		return "", fmt.Errorf("expected to have non-empty tag, tagSelection, latest or url")
 	}
 	return desc, nil
 }
@@ -90,7 +90,7 @@ func (d Sync) url() (string, error) {
 	case d.opts.Latest:
 		url += "/latest"
 	default:
-		return "", fmt.Errorf("Expected to have non-empty tag, tagSelection, latest or url")
+		return "", fmt.Errorf("expected to have non-empty tag, tagSelection, latest or url")
 	}
 	return url, nil
 }
@@ -112,13 +112,13 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	releaseAPI, err := d.downloadRelease(authToken)
 	if err != nil {
-		return lockConf, fmt.Errorf("Downloading release info: %s", err)
+		return lockConf, fmt.Errorf("downloading release info: %s", err)
 	}
 
 	if d.opts.HTTP != nil {
 		_, err = d.syncHTTP(incomingTmpPath, tempArea, releaseAPI)
 		if err != nil {
-			return lockConf, fmt.Errorf("Fetching http asset: %s", err)
+			return lockConf, fmt.Errorf("fetching http asset: %s", err)
 		}
 	} else {
 		fileChecksums := map[string]string{}
@@ -127,7 +127,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 		for _, asset := range releaseAPI.Assets {
 			matched, err := d.matchesAssetName(asset.Name)
 			if err != nil {
-				return lockConf, fmt.Errorf("Matching asset name '%s': %s", asset.Name, err)
+				return lockConf, fmt.Errorf("matching asset name '%s': %s", asset.Name, err)
 			}
 			if matched {
 				matchedAssets = append(matchedAssets, asset)
@@ -140,7 +140,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 			if !d.opts.DisableAutoChecksumValidation {
 				fileChecksums, err = ReleaseNotesChecksums{}.Find(matchedAssets, releaseAPI.Body)
 				if err != nil {
-					return lockConf, fmt.Errorf("Finding checksums in release notes: %s", err)
+					return lockConf, fmt.Errorf("finding checksums in release notes: %s", err)
 				}
 			}
 		}
@@ -150,18 +150,18 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 			err = d.downloadFile(asset.URL, path, authToken)
 			if err != nil {
-				return lockConf, fmt.Errorf("Downloading asset '%s': %s", asset.Name, err)
+				return lockConf, fmt.Errorf("downloading asset '%s': %s", asset.Name, err)
 			}
 
 			err = d.checkFileSize(path, asset.Size)
 			if err != nil {
-				return lockConf, fmt.Errorf("Checking asset '%s' size: %s", asset.Name, err)
+				return lockConf, fmt.Errorf("checking asset '%s' size: %s", asset.Name, err)
 			}
 
 			if len(fileChecksums) > 0 {
 				err = d.checkFileChecksum(path, fileChecksums[asset.Name])
 				if err != nil {
-					return lockConf, fmt.Errorf("Checking asset '%s' checksum: %s", asset.Name, err)
+					return lockConf, fmt.Errorf("checking asset '%s' checksum: %s", asset.Name, err)
 				}
 			}
 		}
@@ -178,17 +178,17 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 		_, err = os.Stat(filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path))
 		if err != nil {
 			if os.IsNotExist(err) {
-				return lockConf, fmt.Errorf("Unpacking archive '%s' is not part of the github release", d.opts.UnpackArchive.Path)
+				return lockConf, fmt.Errorf("unpacking archive '%s' is not part of the github release", d.opts.UnpackArchive.Path)
 			}
 			return lockConf, err
 		}
 
 		final, err := ctlfetch.NewArchive(filepath.Join(incomingTmpPath, d.opts.UnpackArchive.Path), false, "").Unpack(newIncomingTmpPath)
 		if err != nil {
-			return lockConf, fmt.Errorf("Unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
+			return lockConf, fmt.Errorf("unpacking archive '%s': %s", d.opts.UnpackArchive.Path, err)
 		}
 		if !final {
-			return lockConf, fmt.Errorf("Expected known archive type (zip, tgz, tar)")
+			return lockConf, fmt.Errorf("expected known archive type (zip, tgz, tar)")
 		}
 
 		incomingTmpPath = newIncomingTmpPath
@@ -196,12 +196,12 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	err = os.RemoveAll(dstPath)
 	if err != nil {
-		return lockConf, fmt.Errorf("Deleting dir %s: %s", dstPath, err)
+		return lockConf, fmt.Errorf("deleting dir %s: %s", dstPath, err)
 	}
 
 	err = os.Rename(incomingTmpPath, dstPath)
 	if err != nil {
-		return lockConf, fmt.Errorf("Moving directory '%s' to staging dir: %s", incomingTmpPath, err)
+		return lockConf, fmt.Errorf("moving directory '%s' to staging dir: %s", incomingTmpPath, err)
 	}
 
 	lockConf.URL = releaseAPI.URL
@@ -252,13 +252,13 @@ func (d Sync) fetchTagSelection() (string, error) {
 					errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
 				}
 			}
-			return "", fmt.Errorf("Downloading tags info: %s", errMsg)
+			return "", fmt.Errorf("downloading tags info: %s", errMsg)
 		}
 		for _, tag := range tagList {
 			if tag != nil && tag.Name != nil {
 				tags = append(tags, *tag.Name)
 			} else {
-				return "", fmt.Errorf("Name not found for downloaded tag: %v", tag)
+				return "", fmt.Errorf("name not found for downloaded tag: %v", tag)
 			}
 		}
 		if resp.NextPage == 0 {
@@ -269,7 +269,7 @@ func (d Sync) fetchTagSelection() (string, error) {
 
 	tag, err := ctlver.HighestConstrainedVersion(tags, *d.opts.TagSelection)
 	if err != nil {
-		return "", fmt.Errorf("Failed to find tag matching tagSelection %v : %s", d.opts.TagSelection.Semver, err)
+		return "", fmt.Errorf("failed to find tag matching tagSelection %v : %s", d.opts.TagSelection.Semver, err)
 	}
 	return tag, err
 }
@@ -283,12 +283,12 @@ func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 	}
 	respBytes, err := d.downloadAPIResponse(url, authToken)
 	if err != nil {
-		return releaseAPI, fmt.Errorf("Downloading release details from %s : %s", url, err.Error())
+		return releaseAPI, fmt.Errorf("downloading release details from %s : %s", url, err.Error())
 	}
 
 	err = json.Unmarshal(respBytes, &releaseAPI)
 	if err != nil {
-		return releaseAPI, fmt.Errorf("Parsing response from: %s error: %s", url, err.Error())
+		return releaseAPI, fmt.Errorf("parsing response from: %s error: %s", url, err.Error())
 	}
 
 	return releaseAPI, nil
@@ -381,7 +381,7 @@ func (d Sync) checkFileSize(path string, expectedSize int64) error {
 		return err
 	}
 	if fi.Size() != expectedSize {
-		return fmt.Errorf("Expected file size to be %d, but was %d", expectedSize, fi.Size())
+		return fmt.Errorf("expected file size to be %d, but was %d", expectedSize, fi.Size())
 	}
 	return nil
 }
@@ -400,13 +400,13 @@ func (d Sync) checkFileChecksum(path string, expectedChecksum string) error {
 	hash := sha256.New()
 	_, err = io.Copy(hash, f)
 	if err != nil {
-		return fmt.Errorf("Calculating checksum: %s", err)
+		return fmt.Errorf("calculating checksum: %s", err)
 	}
 
 	actualChecksum := fmt.Sprintf("%x", hash.Sum(nil))
 
 	if actualChecksum != expectedChecksum {
-		return fmt.Errorf("Expected file checksum to be '%s', but was '%s'",
+		return fmt.Errorf("expected file checksum to be '%s', but was '%s'",
 			expectedChecksum, actualChecksum)
 	}
 	return nil
@@ -430,7 +430,7 @@ func (d Sync) authToken() (string, error) {
 			case ctlconf.SecretGithubAPIToken:
 				token = string(val)
 			default:
-				return "", fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+				return "", fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 			}
 		}
 	}

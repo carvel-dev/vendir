@@ -59,12 +59,12 @@ func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 		if len(auth.Password) == 0 && len(auth.Auth) > 0 {
 			decodedAuth, err := base64.StdEncoding.DecodeString(auth.Auth)
 			if err != nil {
-				return nil, fmt.Errorf("Decoding auth field: %s", err)
+				return nil, fmt.Errorf("decoding auth field: %s", err)
 			}
 
 			pieces := strings.SplitN(string(decodedAuth), ":", 2)
 			if len(pieces) != 2 {
-				return nil, fmt.Errorf("Expected auth field to have 'username:password' format, but did not")
+				return nil, fmt.Errorf("expected auth field to have 'username:password' format, but did not")
 			}
 			auth.Username = pieces[0]
 			auth.Password = pieces[1]

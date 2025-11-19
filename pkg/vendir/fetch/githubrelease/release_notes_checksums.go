@@ -32,7 +32,7 @@ func (ReleaseNotesChecksums) Find(assets []ReleaseAssetAPI, body string) (map[st
 		}
 
 		if !found {
-			return results, fmt.Errorf("Expected to find sha256 checksum for file '%s'", asset.Name)
+			return results, fmt.Errorf("expected to find sha256 checksum for file '%s'", asset.Name)
 		}
 	}
 

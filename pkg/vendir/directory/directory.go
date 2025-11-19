@@ -98,7 +98,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			// copy previously fetched contents to staging dir
 			err = dircopy.Copy(filepath.Join(d.opts.Path, contents.Path), stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Lazy content missing. Run sync with --lazy=false to fix. '%s': %s", d.opts.Path, err)
+				return lockConfig, fmt.Errorf("lazy content missing. Run sync with --lazy=false to fix. '%s': %s", d.opts.Path, err)
 			}
 			continue
 		}
@@ -114,7 +114,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := gitSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with git contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with git contents: %s", contents.Path, err)
 			}
 			lockDirContents.Git = &lock
 
@@ -125,7 +125,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := hgSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with hg contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with hg contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.Hg = &lock
@@ -135,7 +135,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := ctlhttp.NewSync(*contents.HTTP, syncOpts.RefFetcher).Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with HTTP contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with HTTP contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.HTTP = &lock
@@ -147,7 +147,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := imageSync.Sync(stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with image contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with image contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.Image = &lock
@@ -159,7 +159,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := imgpkgBundleSync.Sync(stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with imgpkgBundle contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with imgpkgBundle contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.ImgpkgBundle = &lock
@@ -175,7 +175,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := sync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with github release contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with github release contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.GithubRelease = &lock
@@ -188,7 +188,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := helmChartSync.Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with helm chart contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with helm chart contents: %s", contents.Path, err)
 			}
 			lockDirContents.HelmChart = &lock
 
@@ -199,7 +199,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			err := os.Rename(srcPath, stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Moving directory '%s' to staging dir: %s", srcPath, err)
+				return lockConfig, fmt.Errorf("moving directory '%s' to staging dir: %s", srcPath, err)
 			}
 
 			lockDirContents.Manual = &ctlconf.LockDirectoryContentsManual{}
@@ -211,7 +211,7 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			err := dircopy.Copy(contents.Directory.Path, stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Copying another directory contents into directory '%s': %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("copying another directory contents into directory '%s': %s", contents.Path, err)
 			}
 
 			lockDirContents.Directory = &ctlconf.LockDirectoryContentsDirectory{}
@@ -221,33 +221,33 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 			lock, err := ctlinl.NewSync(*contents.Inline, syncOpts.RefFetcher).Sync(stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Syncing directory '%s' with inline contents: %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("syncing directory '%s' with inline contents: %s", contents.Path, err)
 			}
 
 			lockDirContents.Inline = &lock
 
 		default:
-			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
+			return lockConfig, fmt.Errorf("unknown contents type for directory '%s'", contents.Path)
 		}
 
 		if !skipFileFilter {
 			err = FileFilter{contents}.Apply(stagingDstPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("filtering paths in directory '%s': %s", contents.Path, err)
 			}
 		}
 
 		if !skipNewRootPath && len(contents.NewRootPath) > 0 {
 			err = NewSubPath(contents.NewRootPath).Extract(stagingDstPath, stagingDstPath, stagingDir.TempArea())
 			if err != nil {
-				return lockConfig, fmt.Errorf("Changing to new root path '%s': %s", contents.Path, err)
+				return lockConfig, fmt.Errorf("changing to new root path '%s': %s", contents.Path, err)
 			}
 		}
 
 		// Copy files from current source if values are supposed to be ignored
 		err = stagingDir.CopyExistingFiles(d.opts.Path, stagingDstPath, contents.IgnorePaths)
 		if err != nil {
-			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
+			return lockConfig, fmt.Errorf("copying existing content to staging '%s': %s", d.opts.Path, err)
 		}
 
 		// after everything else is done, ensure the inner dir's access perms are set

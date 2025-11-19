@@ -15,7 +15,7 @@ func ReadArmoredKeys(keys string) (openpgp.EntityList, error) {
 
 	parts := strings.Split(keys, startMarker)
 	if len(parts) == 1 {
-		return nil, fmt.Errorf("Expected to find armored block, but did not")
+		return nil, fmt.Errorf("expected to find armored block, but did not")
 	}
 
 	var result openpgp.EntityList
@@ -27,7 +27,7 @@ func ReadArmoredKeys(keys string) (openpgp.EntityList, error) {
 
 		el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(startMarker + part))
 		if err != nil {
-			return nil, fmt.Errorf("Reading armored key [idx=%d]: %s", i, err)
+			return nil, fmt.Errorf("reading armored key [idx=%d]: %s", i, err)
 		}
 
 		result = append(result, el...)

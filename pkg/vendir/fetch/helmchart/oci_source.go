@@ -58,13 +58,13 @@ func NewOCISource(opts ctlconf.DirectoryContentsHelmChart,
 
 func (t *OCISource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 	if len(t.opts.Name) == 0 {
-		return fmt.Errorf("Expected non-empty name")
+		return fmt.Errorf("expected non-empty name")
 	}
 	if len(t.opts.Version) == 0 {
-		return fmt.Errorf("Expected non-empty version")
+		return fmt.Errorf("expected non-empty version")
 	}
 	if t.opts.Repository == nil || len(t.opts.Repository.URL) == 0 {
-		return fmt.Errorf("Expected non-empty repository URL")
+		return fmt.Errorf("expected non-empty repository URL")
 	}
 
 	helmHomeDir, err := tempArea.NewTempDir("helm-home")
@@ -97,7 +97,7 @@ func (t *OCISource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 func (t *OCISource) login(repo, helmHomeDir string) error {
 	authArgs, cmdStdin, err := t.addAuthArgs([]string{})
 	if err != nil {
-		return fmt.Errorf("Adding helm auth info: %s", err)
+		return fmt.Errorf("adding helm auth info: %s", err)
 	}
 
 	if len(authArgs) == 0 {
@@ -117,7 +117,7 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm registry login: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("helm registry login: %s (stderr: %s)", err, stderrBs.String())
 	}
 
 	return nil
@@ -135,7 +135,7 @@ func (t *OCISource) pull(ref, helmHomeDir, dstPath string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm chart pull: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("helm chart pull: %s (stderr: %s)", err, stderrBs.String())
 	}
 
 	return nil
@@ -158,7 +158,7 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 
 		if len(secrets) > 1 {
 			// If there are more than 1, then which one would we pick?
-			return nil, nil, fmt.Errorf("Expected 0 or 1 registry auth credential, but found %d", len(secrets))
+			return nil, nil, fmt.Errorf("expected 0 or 1 registry auth credential, but found %d", len(secrets))
 		}
 
 		for _, secret := range secrets {
@@ -173,7 +173,7 @@ func (t *OCISource) addAuthArgs(args []string) ([]string, io.Reader, error) {
 					authArgs = append(authArgs, []string{"--password-stdin"}...)
 					passwordStdin = strings.NewReader(string(val))
 				default:
-					return nil, nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+					return nil, nil, fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 				}
 			}
 		}

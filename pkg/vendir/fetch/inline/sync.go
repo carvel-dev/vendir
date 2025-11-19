@@ -46,7 +46,7 @@ func (t *Sync) Sync(dstPath string) (ctlconf.LockDirectoryContentsInline, error)
 			}
 
 		default:
-			return lockConf, fmt.Errorf("Expected either secretRef or configMapRef as a source")
+			return lockConf, fmt.Errorf("expected either secretRef or configMapRef as a source")
 		}
 	}
 
@@ -95,12 +95,12 @@ func (t *Sync) writeFile(dstPath, subPath string, content string) error {
 
 	err = os.MkdirAll(parentDir, 0700)
 	if err != nil {
-		return fmt.Errorf("Making parent directory '%s': %s", parentDir, err)
+		return fmt.Errorf("making parent directory '%s': %s", parentDir, err)
 	}
 
 	err = os.WriteFile(newPath, []byte(content), 0600)
 	if err != nil {
-		return fmt.Errorf("Writing file '%s': %s", newPath, err)
+		return fmt.Errorf("writing file '%s': %s", newPath, err)
 	}
 
 	return nil

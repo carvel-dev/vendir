@@ -115,7 +115,7 @@ func TestSecretToRegistryAuthSecretsWithAuthFieldFallback(t *testing.T) {
 		}
 
 		_, err := s1.ToRegistryAuthSecrets()
-		require.EqualError(t, err, "Decoding auth field: illegal base64 data at input byte 4")
+		require.EqualError(t, err, "decoding auth field: illegal base64 data at input byte 4")
 	})
 
 	t.Run("password is empty and auth is invalid due to missing password (errors)", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestSecretToRegistryAuthSecretsWithAuthFieldFallback(t *testing.T) {
 		}
 
 		_, err := s1.ToRegistryAuthSecrets()
-		require.EqualError(t, err, "Expected auth field to have 'username:password' format, but did not")
+		require.EqualError(t, err, "expected auth field to have 'username:password' format, but did not")
 	})
 
 	t.Run("password is empty, falls back on auth field username+password", func(t *testing.T) {

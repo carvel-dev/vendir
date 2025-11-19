@@ -30,7 +30,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 	lockConf := ctlconf.LockDirectoryContentsHTTP{}
 
 	if len(t.opts.URL) == 0 {
-		return lockConf, fmt.Errorf("Expected non-empty URL")
+		return lockConf, fmt.Errorf("expected non-empty URL")
 	}
 
 	tmpFile, err := tempArea.NewTempFile("vendir-http")
@@ -43,7 +43,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 	err = t.downloadFileAndChecksum(tmpFile)
 	if err != nil {
 		tmpFile.Close()
-		return lockConf, fmt.Errorf("Downloading URL: %s", err)
+		return lockConf, fmt.Errorf("downloading URL: %s", err)
 	}
 
 	incomingTmpPath := filepath.Dir(tmpFile.Name())
@@ -64,7 +64,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 
 		_, err = ctlfetch.NewArchive(archivePath, true, t.opts.URL).Unpack(incomingTmpPath)
 		if err != nil {
-			return lockConf, fmt.Errorf("Unpacking archive: %s", err)
+			return lockConf, fmt.Errorf("unpacking archive: %s", err)
 		}
 
 		err = ctlfetch.MoveDir(incomingTmpPath, dstPath)
@@ -78,28 +78,28 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 func (t *Sync) downloadFile(dst io.Writer) error {
 	req, err := http.NewRequest("GET", t.opts.URL, nil)
 	if err != nil {
-		return fmt.Errorf("Building request: %s", err)
+		return fmt.Errorf("building request: %s", err)
 	}
 
 	err = t.addAuth(req)
 	if err != nil {
-		return fmt.Errorf("Adding auth to request: %s", err)
+		return fmt.Errorf("adding auth to request: %s", err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("Initiating URL download: %s", err)
+		return fmt.Errorf("initiating URL download: %s", err)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Expected 200 OK, but was '%s'", resp.Status)
+		return fmt.Errorf("expected 200 OK, but was '%s'", resp.Status)
 	}
 
 	_, err = io.Copy(dst, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Writing downloaded content: %s", err)
+		return fmt.Errorf("writing downloaded content: %s", err)
 	}
 
 	return nil
@@ -149,7 +149,7 @@ func (t *Sync) addAuth(req *http.Request) error {
 		case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 		case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
 		default:
-			return fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
+			return fmt.Errorf("unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 		}
 	}
 

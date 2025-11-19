@@ -50,7 +50,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 	lockConf := ctlconf.LockDirectoryContentsHelmChart{}
 
 	if len(t.opts.Name) == 0 {
-		return lockConf, fmt.Errorf("Expected non-empty name")
+		return lockConf, fmt.Errorf("expected non-empty name")
 	}
 
 	chartsDir, err := tempArea.NewTempDir("helm-chart")
@@ -74,12 +74,12 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 
 	chartPath, err := t.findChartDir(chartsDir)
 	if err != nil {
-		return lockConf, fmt.Errorf("Finding single helm chart: %s", err)
+		return lockConf, fmt.Errorf("finding single helm chart: %s", err)
 	}
 
 	meta, err := t.retrieveChartMeta(chartPath)
 	if err != nil {
-		return lockConf, fmt.Errorf("Retrieving helm chart metadata: %s", err)
+		return lockConf, fmt.Errorf("retrieving helm chart metadata: %s", err)
 	}
 
 	err = ctlfetch.MoveDir(chartPath, dstPath)
@@ -103,7 +103,7 @@ func (t *Sync) retrieveChartMeta(chartPath string) (chartMeta, error) {
 
 	bs, err := os.ReadFile(filepath.Join(chartPath, "Chart.yaml"))
 	if err != nil {
-		return meta, fmt.Errorf("Reading Chart.yaml: %s", err)
+		return meta, fmt.Errorf("reading Chart.yaml: %s", err)
 	}
 
 	err = yaml.Unmarshal(bs, &meta)
@@ -112,7 +112,7 @@ func (t *Sync) retrieveChartMeta(chartPath string) (chartMeta, error) {
 	}
 
 	if len(meta.Version) == 0 {
-		return meta, fmt.Errorf("Expected non-empty chart version")
+		return meta, fmt.Errorf("expected non-empty chart version")
 	}
 
 	return meta, nil
@@ -134,7 +134,7 @@ func (t *Sync) findChartDir(chartsPath string) (string, error) {
 	}
 
 	if len(dirNames) != 1 {
-		return "", fmt.Errorf("Expected single directory in charts directory, but was: %s", dirNames)
+		return "", fmt.Errorf("expected single directory in charts directory, but was: %s", dirNames)
 	}
 	return filepath.Join(chartsPath, dirNames[0]), nil
 }

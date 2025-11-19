@@ -22,7 +22,7 @@ func ValidateSymlinks(path string) error {
 		if info.Type()&os.ModeSymlink == os.ModeSymlink {
 			resolvedPath, err := filepath.EvalSymlinks(path)
 			if err != nil {
-				return fmt.Errorf("Unable to resolve symlink: %w", err)
+				return fmt.Errorf("unable to resolve symlink: %w", err)
 			}
 			absPath, err := filepath.Abs(resolvedPath)
 			if err != nil {
@@ -31,11 +31,11 @@ func ValidateSymlinks(path string) error {
 			pathSegments := strings.Split(absPath, string(os.PathSeparator))
 
 			if len(rootSegments) > len(pathSegments) {
-				return fmt.Errorf("Invalid symlink found to outside parent directory: %q", absPath)
+				return fmt.Errorf("invalid symlink found to outside parent directory: %q", absPath)
 			}
 			for i, segment := range rootSegments {
 				if pathSegments[i] != segment {
-					return fmt.Errorf("Invalid symlink found to outside parent directory: %q", absPath)
+					return fmt.Errorf("invalid symlink found to outside parent directory: %q", absPath)
 				}
 			}
 		}

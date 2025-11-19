@@ -67,7 +67,7 @@ func (s SubPath) checkDirExists(path, srcPath string) error {
 		}
 	}
 
-	return fmt.Errorf("Expected directory '%s' (subpath) to exist%s", s.subPath, hintMsg)
+	return fmt.Errorf("expected directory '%s' (subpath) to exist%s", s.subPath, hintMsg)
 }
 
 func (s SubPath) findMissingDir(srcPath string) (string, error) {

@@ -24,9 +24,9 @@ func (f SingleSecretRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
 	if f.Secret != nil && f.Secret.Metadata.Name == name {
 		return *f.Secret, nil
 	}
-	return ctlconf.Secret{}, fmt.Errorf("Not found")
+	return ctlconf.Secret{}, fmt.Errorf("not found")
 }
 
 func (f SingleSecretRefFetcher) GetConfigMap(_ string) (ctlconf.ConfigMap, error) {
-	return ctlconf.ConfigMap{}, fmt.Errorf("Not found")
+	return ctlconf.ConfigMap{}, fmt.Errorf("not found")
 }
