@@ -179,7 +179,10 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 			exactRef = true
 		} else {
 			// Only fetch tags if not fetching exact ref
-			argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
+			argss = append(
+				argss,
+				[]string{"config", "remote.origin.tagOpt", "--tags"},
+			)
 		}
 		if t.opts.Depth > 0 {
 			fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
@@ -209,7 +212,11 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		checkoutRef = "FETCH_HEAD"
 	}
 
-	_, _, err = t.cmdRunner.Run([]string{"-c", "advice.detachedHead=false", "checkout", checkoutRef}, env, dstPath)
+	_, _, err = t.cmdRunner.Run(
+		[]string{"-c", "advice.detachedHead=false", "checkout", checkoutRef},
+		env,
+		dstPath,
+	)
 	if err != nil {
 		return err
 	}
