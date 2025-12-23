@@ -34,6 +34,8 @@ type SyncOptions struct {
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
+
+	Safe bool
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -55,6 +57,8 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
+
+	cmd.Flags().BoolVar(&o.Safe, "safe", false, "sync only if local DVCS clones are clean")
 
 	return cmd
 }
@@ -136,6 +140,17 @@ func (o *SyncOptions) Run() error {
 		Partial:        len(dirs) > 0,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
+
+	if o.Safe {
+		status, err := fullStatus(conf, syncOpts, existingLockConfig, o.ui)
+		if err != nil {
+			return err
+		}
+
+		if !status.IsSafe() {
+			return fmt.Errorf("--safe mode forbids a sync: %s", status.String())
+		}
+	}
 
 	for _, dirConf := range conf.Directories {
 		// error safe to ignore, since lock file might not exist
