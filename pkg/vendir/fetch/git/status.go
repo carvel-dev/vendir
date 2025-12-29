@@ -20,7 +20,9 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 
 	git := NewGit(d.opts, d.log, d.refFetcher)
 
-	status := ctlstatus.Status{}
+	status := ctlstatus.Status{
+		TargetRef: d.opts.Ref,
+	}
 
 	out, _, err := git.cmdRunner.Run([]string{"rev-parse", "HEAD"}, []string{}, target)
 	if err != nil {

@@ -5,6 +5,7 @@ package status
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -15,6 +16,7 @@ type CompleteReference struct {
 }
 
 type Status struct {
+	TargetRef         string
 	Ref               CompleteReference
 	UncommitedChanges []string
 	LocalCsets        []string
@@ -25,17 +27,23 @@ func (s Status) IsSafe() bool {
 }
 
 func (s Status) String() string {
-	if s.IsSafe() {
-		return "clean"
-	}
+	messages := make([]string, 0, 3)
 
-	messages := make([]string, 0, 2)
+	if s.IsSafe() {
+		messages = append(messages, "clean")
+	}
 
 	if len(s.UncommitedChanges) != 0 {
 		messages = append(messages, fmt.Sprintf("%d uncommited changes", len(s.UncommitedChanges)))
 	}
 	if len(s.LocalCsets) != 0 {
 		messages = append(messages, fmt.Sprintf("%d unpushed commits", len(s.LocalCsets)))
+	}
+
+	if !strings.HasPrefix(s.Ref.SHA, s.TargetRef) &&
+		!slices.Contains(s.Ref.Tags, s.TargetRef) &&
+		!slices.Contains(s.Ref.Others, s.TargetRef) {
+		messages = append(messages, "ref mismatch")
 	}
 
 	return strings.Join(messages, ", ")

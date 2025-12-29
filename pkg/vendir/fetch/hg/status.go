@@ -43,6 +43,7 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 	bookmarks := splitted[4]
 
 	status := ctlstatus.Status{
+		TargetRef: d.opts.Ref,
 		Ref: ctlstatus.CompleteReference{
 			SHA: sha,
 		},
