@@ -16,6 +16,8 @@ type CompleteReference struct {
 }
 
 type Status struct {
+	DirectoryPath     string
+	ContentPath       string
 	TargetRef         string
 	Ref               CompleteReference
 	UncommitedChanges []string
@@ -49,14 +51,14 @@ func (s Status) String() string {
 	return strings.Join(messages, ", ")
 }
 
-type StatusMap map[string]*Status
+type StatusList []*Status
 
-func (sm StatusMap) String() string {
+func (sm StatusList) String() string {
 	var s string
 
 	s += "Detailled status:\n"
-	for dir, status := range sm {
-		s += "- " + dir + ": " + status.String() + "\n"
+	for _, status := range sm {
+		s += "- " + status.DirectoryPath + "/" + status.ContentPath + ": " + status.String() + "\n"
 	}
 
 	if !sm.IsSafe() {
@@ -66,7 +68,7 @@ func (sm StatusMap) String() string {
 	return s
 }
 
-func (sm StatusMap) IsSafe() bool {
+func (sm StatusList) IsSafe() bool {
 	isSafe := true
 	for _, status := range sm {
 		if !status.IsSafe() {

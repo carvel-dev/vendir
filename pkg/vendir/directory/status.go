@@ -8,8 +8,8 @@ import (
 	ctlstatus "carvel.dev/vendir/pkg/vendir/status"
 )
 
-func (d *Directory) Status(syncOpts SyncOpts) (map[string]*ctlstatus.Status, error) {
-	res := map[string]*ctlstatus.Status{}
+func (d *Directory) Status(syncOpts SyncOpts) (ctlstatus.StatusList, error) {
+	var res ctlstatus.StatusList
 
 	for _, contents := range d.opts.Contents {
 		path := path.Join(d.opts.Path, contents.Path)
@@ -23,7 +23,9 @@ func (d *Directory) Status(syncOpts SyncOpts) (map[string]*ctlstatus.Status, err
 			}
 
 			if gitStatus != nil {
-				res[path] = gitStatus
+				gitStatus.DirectoryPath = d.opts.Path
+				gitStatus.ContentPath = contents.Path
+				res = append(res, gitStatus)
 			}
 		case contents.Hg != nil:
 			hgSync := ctlhg.NewSync(
@@ -35,7 +37,9 @@ func (d *Directory) Status(syncOpts SyncOpts) (map[string]*ctlstatus.Status, err
 			}
 
 			if hgStatus != nil {
-				res[path] = hgStatus
+				hgStatus.DirectoryPath = d.opts.Path
+				hgStatus.ContentPath = contents.Path
+				res = append(res, hgStatus)
 			}
 		}
 	}

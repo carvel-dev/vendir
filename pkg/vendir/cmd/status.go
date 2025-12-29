@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"maps"
 	"os"
 
 	"github.com/cppforlife/go-cli-ui/ui"
@@ -90,8 +89,8 @@ func fullStatus(
 	syncOpts ctldir.SyncOpts,
 	existingLockConfig ctlconf.LockConfig,
 	ui ui.UI,
-) (ctlstatus.StatusMap, error) {
-	status := ctlstatus.StatusMap{}
+) (ctlstatus.StatusList, error) {
+	status := ctlstatus.StatusList{}
 	for _, dirConf := range conf.Directories {
 		dirExistingLockConf, _ := existingLockConfig.FindDirectory(dirConf.Path)
 		directory := ctldir.NewDirectory(dirConf, dirExistingLockConf, ui)
@@ -101,7 +100,7 @@ func fullStatus(
 			return nil, fmt.Errorf("Reading directory '%s': %s", dirConf.Path, err)
 		}
 
-		maps.Copy(status, dirStatus)
+		status = append(status, dirStatus...)
 	}
 
 	return status, nil
