@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 
 	ctlstatus "carvel.dev/vendir/pkg/vendir/status"
@@ -50,6 +51,8 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 	}
 	if tags != "" {
 		status.Ref.Tags = strings.Split(tags, " ")
+		status.Ref.Tags = slices.DeleteFunc(
+			status.Ref.Tags, func(t string) bool { return t == "tip" })
 	}
 	if branch != "" {
 		status.Ref.Others = append(status.Ref.Others, branch)

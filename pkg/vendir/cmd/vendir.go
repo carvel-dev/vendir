@@ -44,6 +44,7 @@ func NewVendirCmd(o *VendirOptions) *cobra.Command {
 	cmd.AddCommand(NewSyncCmd(NewSyncOptions(o.ui)))
 	cmd.AddCommand(NewStatusCmd(NewStatusOptions(o.ui)))
 	cmd.AddCommand(NewVersionCmd(NewVersionOptions(o.ui)))
+	cmd.AddCommand(NewBaselineCmd(NewBaselineOptions(o.ui)))
 
 	toolsCmd := NewToolsCmd()
 	toolsCmd.AddCommand(NewSortSemverCmd(NewSortSemverOptions(o.ui)))

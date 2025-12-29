@@ -22,6 +22,7 @@ require (
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/tools v0.34.0
 	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.24.3
 	k8s.io/code-generator v0.17.2
 	sigs.k8s.io/yaml v1.4.0
@@ -103,7 +104,6 @@ require (
 	golang.org/x/text v0.26.0 // indirect
 	gonum.org/v1/gonum v0.0.0-20190331200053-3d26580ed485 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect

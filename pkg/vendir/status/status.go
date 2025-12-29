@@ -5,6 +5,7 @@ package status
 
 import (
 	"fmt"
+	"path"
 	"slices"
 	"strings"
 )
@@ -24,8 +25,22 @@ type Status struct {
 	LocalCsets        []string
 }
 
+func (s Status) Path() string {
+	return path.Join(s.DirectoryPath, s.ContentPath)
+}
+
 func (s Status) IsSafe() bool {
 	return len(s.UncommitedChanges) == 0 && len(s.LocalCsets) == 0
+}
+
+func (s Status) MatchTarget() bool {
+	return strings.HasPrefix(s.Ref.SHA, s.TargetRef) ||
+		slices.Contains(s.Ref.Tags, s.TargetRef) ||
+		slices.Contains(s.Ref.Others, s.TargetRef)
+}
+
+func (s Status) MatchTargetTag() bool {
+	return slices.Contains(s.Ref.Tags, s.TargetRef)
 }
 
 func (s Status) String() string {
@@ -42,9 +57,7 @@ func (s Status) String() string {
 		messages = append(messages, fmt.Sprintf("%d unpushed commits", len(s.LocalCsets)))
 	}
 
-	if !strings.HasPrefix(s.Ref.SHA, s.TargetRef) &&
-		!slices.Contains(s.Ref.Tags, s.TargetRef) &&
-		!slices.Contains(s.Ref.Others, s.TargetRef) {
+	if !s.MatchTarget() {
 		messages = append(messages, "ref mismatch")
 	}
 
