@@ -58,7 +58,8 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
 
-	cmd.Flags().BoolVar(&o.Safe, "safe", false, "sync only if local DVCS clones are clean")
+	cmd.Flags().BoolVar(
+		&o.Safe, "safe", false, "sync only if local DVCS clones are clean")
 
 	return cmd
 }

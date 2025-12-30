@@ -1,3 +1,6 @@
+// Copyright 2025 The Carvel Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package cmd
 
 import (
@@ -23,7 +26,7 @@ type StatusOptions struct {
 	ExitCode bool
 }
 
-func NewStatusOptions(ui ui.UI) *StatusOptions {
+func NewStatusOptions(ui ui.UI) *StatusOptions { //nolint:revive
 	return &StatusOptions{ui: ui}
 }
 
@@ -34,16 +37,23 @@ func NewStatusCmd(o *StatusOptions) *cobra.Command {
 		RunE:  func(_ *cobra.Command, _ []string) error { return o.Run() },
 	}
 
-	cmd.Flags().StringSliceVarP(&o.Files, "file", "f", []string{defaultConfigName}, "Set configuration file")
-	cmd.Flags().StringVar(&o.LockFile, "lock-file", defaultLockName, "Set lock file")
-	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
-	cmd.Flags().BoolVar(&o.ExitCode, "exit-code", false, "Set to 'true', it exits with a non-0 code if any subproject is not clean")
+	cmd.Flags().StringSliceVarP(
+		&o.Files, "file", "f",
+		[]string{defaultConfigName}, "Set configuration file")
+	cmd.Flags().StringVar(
+		&o.LockFile, "lock-file", defaultLockName, "Set lock file")
+	cmd.Flags().StringVar(
+		&o.Chdir, "chdir", "", "Set current directory for process")
+	cmd.Flags().BoolVar(
+		&o.ExitCode, "exit-code", false,
+		"Set to 'true', it exits with a non-0 code if any "+
+			"subproject is not clean")
 
 	return cmd
 }
 
 func (o *StatusOptions) Run() error {
-	if len(o.Chdir) > 0 {
+	if len(o.Chdir) > 0 { //nolint:revive
 		err := os.Chdir(o.Chdir)
 		if err != nil {
 			return fmt.Errorf("Running chdir: %s", err)
@@ -88,7 +98,7 @@ func fullStatus(
 	conf ctlconf.Config,
 	syncOpts ctldir.SyncOpts,
 	existingLockConfig ctlconf.LockConfig,
-	ui ui.UI,
+	ui ui.UI, //nolint:revive
 ) (ctlstatus.StatusList, error) {
 	status := ctlstatus.StatusList{}
 	for _, dirConf := range conf.Directories {
@@ -97,7 +107,8 @@ func fullStatus(
 
 		dirStatus, err := directory.Status(syncOpts)
 		if err != nil {
-			return nil, fmt.Errorf("Reading directory '%s': %s", dirConf.Path, err)
+			return nil, fmt.Errorf(
+				"Reading directory '%s': %s", dirConf.Path, err)
 		}
 
 		status = append(status, dirStatus...)

@@ -1,3 +1,6 @@
+// Copyright 2025 The Carvel Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package hg
 
 import (
@@ -11,6 +14,8 @@ import (
 
 	ctlstatus "carvel.dev/vendir/pkg/vendir/status"
 )
+
+const emptyString = ""
 
 func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 	_, err := os.Stat(path.Join(target, ".hg"))
@@ -37,11 +42,11 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 	}
 
 	splitted := strings.Split(out, "\n")
-	sha := splitted[0]
-	tags := splitted[1]
-	branch := splitted[2]
-	topic := splitted[3]
-	bookmarks := splitted[4]
+	sha := splitted[0]       //nolint:revive
+	tags := splitted[1]      //nolint:revive
+	branch := splitted[2]    //nolint:revive
+	topic := splitted[3]     //nolint:revive
+	bookmarks := splitted[4] //nolint:revive
 
 	status := ctlstatus.Status{
 		TargetRef: d.opts.Ref,
@@ -49,18 +54,18 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 			SHA: sha,
 		},
 	}
-	if tags != "" {
+	if tags != emptyString {
 		status.Ref.Tags = strings.Split(tags, " ")
 		status.Ref.Tags = slices.DeleteFunc(
 			status.Ref.Tags, func(t string) bool { return t == "tip" })
 	}
-	if branch != "" {
+	if branch != emptyString {
 		status.Ref.Others = append(status.Ref.Others, branch)
 	}
-	if topic != "" {
+	if topic != emptyString {
 		status.Ref.Others = append(status.Ref.Others, topic)
 	}
-	if bookmarks != "" {
+	if bookmarks != emptyString {
 		status.Ref.Others = append(status.Ref.Others, bookmarks)
 	}
 
@@ -68,7 +73,7 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 	if err != nil {
 		return nil, err
 	}
-	if out != "" {
+	if out != emptyString {
 		status.UncommitedChanges = strings.Split(strings.TrimSpace(out), "\n")
 	}
 
@@ -80,7 +85,7 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 		}
 	}
 
-	if out != "" {
+	if out != emptyString {
 		status.LocalCsets = strings.Split(strings.TrimSpace(out), "\n")
 	}
 

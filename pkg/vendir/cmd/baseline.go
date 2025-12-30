@@ -1,3 +1,6 @@
+// Copyright 2024 The Carvel Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package cmd
 
 import (
@@ -14,7 +17,7 @@ import (
 	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
 )
 
-func NewBaselineOptions(ui ui.UI) *BaselineOptions {
+func NewBaselineOptions(ui ui.UI) *BaselineOptions { //nolint:revive
 	return &BaselineOptions{ui: ui}
 }
 
@@ -29,10 +32,15 @@ func NewBaselineCmd(o *BaselineOptions) *cobra.Command {
 		&o.Yes, "yes", "y", false,
 		"If true, automatically answer 'yes' to all the questions")
 
-	cmd.Flags().StringSliceVarP(&o.Files, "file", "f", []string{defaultConfigName}, "Set configuration file")
-	cmd.Flags().StringVar(&o.LockFile, "lock-file", defaultLockName, "Set lock file")
-	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
-	cmd.Flags().BoolVar(&o.PreferSHA, "prefer-sha", false, "Prefer sha instead of tags")
+	cmd.Flags().StringSliceVarP(
+		&o.Files, "file", "f", []string{defaultConfigName},
+		"Set configuration file")
+	cmd.Flags().StringVar(
+		&o.LockFile, "lock-file", defaultLockName, "Set lock file")
+	cmd.Flags().StringVar(
+		&o.Chdir, "chdir", "", "Set current directory for process")
+	cmd.Flags().BoolVar(
+		&o.PreferSHA, "prefer-sha", false, "Prefer sha instead of tags")
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", false, "List what would be done")
 
 	return &cmd
@@ -53,7 +61,7 @@ type BaselineOptions struct {
 }
 
 func (o *BaselineOptions) Run() error {
-	if len(o.Chdir) > 0 {
+	if len(o.Chdir) > 0 { //nolint:revive
 		err := os.Chdir(o.Chdir)
 		if err != nil {
 			return fmt.Errorf("Running chdir: %s", err)
@@ -91,19 +99,23 @@ func (o *BaselineOptions) Run() error {
 	newRefs := make(map[string]string)
 
 	for _, status := range statusMap {
-		if !status.MatchTarget() || !o.PreferSHA && !status.MatchTargetTag() && len(status.Ref.Tags) != 0 {
+		if !status.MatchTarget() ||
+			!o.PreferSHA &&
+				!status.MatchTargetTag() &&
+				len(status.Ref.Tags) != 0 { //nolint:revive
 			var newRef string
-			if o.PreferSHA || len(status.Ref.Tags) == 0 {
+			if o.PreferSHA || len(status.Ref.Tags) == 0 { //nolint:revive
 				newRef = status.Ref.SHA
 			} else {
-				newRef = status.Ref.Tags[0]
+				newRef = status.Ref.Tags[0] //nolint:revive
 			}
 			newRefs[status.Path()] = newRef
 		}
 	}
 
-	if len(newRefs) == 0 {
-		o.ui.PrintLinef("All references already match current state, no update needed")
+	if len(newRefs) == 0 { //nolint:revive
+		o.ui.PrintLinef(
+			"All references already match current state, no update needed")
 
 		return nil
 	}
@@ -114,7 +126,9 @@ func (o *BaselineOptions) Run() error {
 		if newRef != "" {
 			newRef = " -> " + newRef
 		}
-		o.ui.PrintLinef("%s/%s: %s%s", status.DirectoryPath, status.ContentPath, status.TargetRef, newRef)
+		o.ui.PrintLinef(
+			"%s/%s: %s%s",
+			status.DirectoryPath, status.ContentPath, status.TargetRef, newRef)
 	}
 
 	if !o.DryRun {
@@ -152,7 +166,7 @@ func saveFile(fname string, doc *yaml.Node) error {
 	}
 
 	enc := yaml.NewEncoder(f)
-	enc.SetIndent(2)
+	enc.SetIndent(2) //nolint:revive
 	if err := enc.Encode(doc); err != nil {
 		_ = f.Close()
 
@@ -172,7 +186,7 @@ func updateRefs(fname string, newRefs map[string]string) error {
 		panic("expects the root node")
 	}
 
-	top := doc.Content[0]
+	top := doc.Content[0] //nolint:revive
 	if top.Kind != yaml.MappingNode {
 		panic("top content must be a mapping")
 	}
@@ -193,14 +207,16 @@ func updateRefs(fname string, newRefs map[string]string) error {
 				if hg := getMappingNodeChild(content, "hg"); hg != nil {
 					ref := getMappingNodeChild(hg, "ref")
 					if ref == nil {
-						return fmt.Errorf("could not find 'ref' for '%s'", fullPath)
+						return fmt.Errorf(
+							"could not find 'ref' for '%s'", fullPath)
 					}
 					ref.Value = newRef
 				}
 				if git := getMappingNodeChild(content, "git"); git != nil {
 					ref := getMappingNodeChild(git, "ref")
 					if ref == nil {
-						return fmt.Errorf("could not find 'ref' for '%s'", fullPath)
+						return fmt.Errorf(
+							"could not find 'ref' for '%s'", fullPath)
 					}
 					ref.Value = newRef
 				}
@@ -212,9 +228,9 @@ func updateRefs(fname string, newRefs map[string]string) error {
 }
 
 func getMappingNodeChild(node *yaml.Node, name string) *yaml.Node {
-	for i := 0; i < len(node.Content); i += 2 {
+	for i := 0; i < len(node.Content); i += 2 { //nolint:revive
 		if node.Content[i].Value == name {
-			return node.Content[i+1]
+			return node.Content[i+1] //nolint:revive
 		}
 	}
 

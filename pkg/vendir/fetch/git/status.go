@@ -1,3 +1,6 @@
+// Copyright 2025 The Carvel Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package git
 
 import (
@@ -24,13 +27,15 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 		TargetRef: d.opts.Ref,
 	}
 
-	out, _, err := git.cmdRunner.Run([]string{"rev-parse", "HEAD"}, []string{}, target)
+	out, _, err := git.cmdRunner.Run(
+		[]string{"rev-parse", "HEAD"}, []string{}, target)
 	if err != nil {
 		return nil, err
 	}
 	status.Ref.SHA = strings.TrimSpace(out)
 
-	out, _, err = git.cmdRunner.Run([]string{"tag", "--contains"}, []string{}, target)
+	out, _, err = git.cmdRunner.Run(
+		[]string{"tag", "--contains"}, []string{}, target)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +43,8 @@ func (d Sync) Status(target string) (*ctlstatus.Status, error) {
 		status.Ref.Tags = strings.Split(strings.TrimSpace(out), "\n")
 	}
 
-	out, _, err = git.cmdRunner.Run([]string{"branch", "--contains"}, []string{}, target)
+	out, _, err = git.cmdRunner.Run(
+		[]string{"branch", "--contains"}, []string{}, target)
 	if err != nil {
 		return nil, err
 	}

@@ -1,3 +1,6 @@
+// Copyright 2025 The Carvel Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package directory
 
 import (
@@ -12,12 +15,14 @@ func (d *Directory) Status(syncOpts SyncOpts) (ctlstatus.StatusList, error) {
 	var res ctlstatus.StatusList
 
 	for _, contents := range d.opts.Contents {
-		path := path.Join(d.opts.Path, contents.Path)
+		contentPath := path.Join(d.opts.Path, contents.Path)
 		switch {
 		case contents.Git != nil:
-			gitSync := ctlgit.NewSync(*contents.Git, NewInfoLog(d.ui), syncOpts.RefFetcher, syncOpts.Cache)
+			gitSync := ctlgit.NewSync(
+				*contents.Git, NewInfoLog(d.ui),
+				syncOpts.RefFetcher, syncOpts.Cache)
 
-			gitStatus, err := gitSync.Status(path)
+			gitStatus, err := gitSync.Status(contentPath)
 			if err != nil {
 				return nil, err
 			}
@@ -29,9 +34,10 @@ func (d *Directory) Status(syncOpts SyncOpts) (ctlstatus.StatusList, error) {
 			}
 		case contents.Hg != nil:
 			hgSync := ctlhg.NewSync(
-				*contents.Hg, NewInfoLog(d.ui), syncOpts.RefFetcher, syncOpts.Cache)
+				*contents.Hg, NewInfoLog(d.ui),
+				syncOpts.RefFetcher, syncOpts.Cache)
 
-			hgStatus, err := hgSync.Status(path)
+			hgStatus, err := hgSync.Status(contentPath)
 			if err != nil {
 				return nil, err
 			}
