@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
@@ -20,6 +21,12 @@ import (
 const (
 	defaultConfigName = "vendir.yml"
 	defaultLockName   = "vendir.lock.yml"
+)
+
+var (
+	defaultSafeFlagValue = slices.Contains([]string{
+		"y", "yes", "Y", "YES", "1", "t", "True", "true", "TRUE",
+	}, os.Getenv("VENDIR_SYNC_SAFE"))
 )
 
 type SyncOptions struct {
@@ -59,7 +66,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
 
 	cmd.Flags().BoolVar(
-		&o.Safe, "safe", false, "sync only if local DVCS clones are clean")
+		&o.Safe, "safe", defaultSafeFlagValue, "sync only if local DVCS clones are clean")
 
 	return cmd
 }
