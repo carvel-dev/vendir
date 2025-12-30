@@ -99,7 +99,7 @@ type StatusList []*Status
 func (sm StatusList) String() string {
 	var s string
 
-	s += "Detailled status:\n"
+	s += "Detailed status:\n"
 	for _, status := range sm {
 		s += "- " + status.DirectoryPath + "/" + status.ContentPath + ": " + status.String() + "\n"
 	}
