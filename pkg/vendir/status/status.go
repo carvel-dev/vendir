@@ -8,6 +8,8 @@ import (
 	"path"
 	"slices"
 	"strings"
+
+	"github.com/cppforlife/go-cli-ui/ui/table"
 )
 
 type CompleteReference struct {
@@ -64,6 +66,34 @@ func (s Status) String() string {
 	return strings.Join(messages, ", ")
 }
 
+func (s Status) toRow() []table.Value {
+	row := make([]table.Value, 5)
+
+	row[0] = table.NewValueString(s.DirectoryPath + "/" + s.ContentPath)
+
+	if len(s.UncommitedChanges) != 0 {
+		row[1] = table.NewValueInt(len(s.UncommitedChanges))
+	}
+
+	if len(s.LocalCsets) != 0 {
+		row[2] = table.NewValueInt(len(s.LocalCsets))
+	}
+
+	if s.MatchTarget() {
+		row[3] = table.NewValueFmt(table.NewValueString("up-to-date"), false)
+	} else {
+		row[3] = table.NewValueFmt(table.NewValueString("mismatch"), true)
+	}
+
+	if s.IsSafe() {
+		row[4] = table.NewValueFmt(table.NewValueString("safe"), false)
+	} else {
+		row[4] = table.NewValueFmt(table.NewValueString("not safe"), true)
+	}
+
+	return row
+}
+
 type StatusList []*Status
 
 func (sm StatusList) String() string {
@@ -79,6 +109,34 @@ func (sm StatusList) String() string {
 	}
 
 	return s
+}
+
+func (sm StatusList) Table() table.Table {
+	t := table.Table{
+		Title: "Detailled status",
+		Header: []table.Header{{
+			Key:   "path",
+			Title: "path",
+		}, {
+			Key:   "changes",
+			Title: "changes",
+		}, {
+			Key:   "commits",
+			Title: "commits",
+		}, {
+			Key:   "match",
+			Title: "match",
+		}, {
+			Key:   "safe",
+			Title: "safe",
+		}},
+	}
+
+	for _, status := range sm {
+		t.Rows = append(t.Rows, status.toRow())
+	}
+
+	return t
 }
 
 func (sm StatusList) IsSafe() bool {

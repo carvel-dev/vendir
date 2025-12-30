@@ -89,7 +89,8 @@ func (o *StatusOptions) Run() error {
 	}
 
 	o.ui.PrintBlock([]byte("---------------\n\n"))
-	o.ui.PrintBlock([]byte(status.String()))
+
+	o.ui.PrintTable(status.Table())
 
 	return nil
 }

@@ -120,21 +120,25 @@ func (o *BaselineOptions) Run() error {
 		return nil
 	}
 
-	o.ui.PrintLinef("New baseline:")
+	block := "New baseline:\n"
 	for _, status := range statusMap {
 		newRef := newRefs[status.Path()]
 		if newRef != "" {
 			newRef = " -> " + newRef
 		}
-		o.ui.PrintLinef(
-			"%s/%s: %s%s",
+		block += fmt.Sprintf(
+			"- %s/%s: %s%s\n",
 			status.DirectoryPath, status.ContentPath, status.TargetRef, newRef)
 	}
+	o.ui.PrintBlock([]byte(block))
 
 	if !o.DryRun {
-		for _, fname := range o.Files {
-			if err := updateRefs(fname, newRefs); err != nil {
-				return err
+		if o.Yes || o.ui.AskForConfirmation() == nil {
+			for _, fname := range o.Files {
+				if err := updateRefs(fname, newRefs); err != nil {
+					return err
+				}
+				o.ui.PrintLinef("Updated '%s'", fname)
 			}
 		}
 	}

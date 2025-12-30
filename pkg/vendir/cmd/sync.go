@@ -149,7 +149,8 @@ func (o *SyncOptions) Run() error {
 		}
 
 		if !status.IsSafe() {
-			return fmt.Errorf("--safe mode forbids a sync: %s", status.String())
+			o.ui.PrintTable(status.Table())
+			return fmt.Errorf("--safe mode forbids a sync")
 		}
 	}
 
