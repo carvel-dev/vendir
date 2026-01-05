@@ -36,13 +36,17 @@ func (s Status) IsSafe() bool {
 }
 
 func (s Status) MatchTarget() bool {
-	return strings.HasPrefix(s.Ref.SHA, s.TargetRef) ||
-		slices.Contains(s.Ref.Tags, s.TargetRef) ||
+	return s.MatchTargetSHA() ||
+		s.MatchTargetTag() ||
 		slices.Contains(s.Ref.Others, s.TargetRef)
 }
 
 func (s Status) MatchTargetTag() bool {
 	return slices.Contains(s.Ref.Tags, s.TargetRef)
+}
+
+func (s Status) MatchTargetSHA() bool {
+	return strings.HasPrefix(s.Ref.SHA, s.TargetRef)
 }
 
 func (s Status) String() string {

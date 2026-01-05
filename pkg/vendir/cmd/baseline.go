@@ -100,9 +100,8 @@ func (o *BaselineOptions) Run() error {
 
 	for _, status := range statusMap {
 		if !status.MatchTarget() ||
-			!o.PreferSHA &&
-				!status.MatchTargetTag() &&
-				len(status.Ref.Tags) != 0 { //nolint:revive
+			o.PreferSHA && !status.MatchTargetSHA() ||
+			!o.PreferSHA && !status.MatchTargetTag() && len(status.Ref.Tags) != 0 { //nolint:revive
 			var newRef string
 			if o.PreferSHA || len(status.Ref.Tags) == 0 { //nolint:revive
 				newRef = status.Ref.SHA
