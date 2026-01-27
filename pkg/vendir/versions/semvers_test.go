@@ -190,3 +190,27 @@ func TestHighestVersionWithConstraints(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "myConstraint")
 }
+
+func TestHighestPrefersGAOverRCInBuildMetadata(t *testing.T) {
+	// Bug 1: RC version was considered higher than GA/RTM
+	t.Run("PreRelease_ShouldBeLowerThan_GA_EvenWithMetadata", func(t *testing.T) {
+		versionsList := []string{"3.4.0+v1.33-rc.2", "3.4.0+v1.33"}
+		result := versions.NewRelaxedSemversNoErr(versionsList).Sorted().All()
+
+		// The first element should be the RC, the last (highest) should be GA
+		expected := []string{"3.4.0+v1.33-rc.2", "3.4.0+v1.33"}
+		require.Equal(t, expected, result, "GA version must be sorted higher than RC version")
+	})
+}
+
+func TestVersionSortHandlesNumericBuildMetadata(t *testing.T) {
+	// Bug 2: Lexicographical sorting instead of Natural sorting (9 > 10)
+	t.Run("BuildMetadata_ShouldUseNaturalSort", func(t *testing.T) {
+		versionsList := []string{"v1.2.3+vmware.10-fips", "v1.2.3+vmware.9-fips"}
+		result := versions.NewRelaxedSemversNoErr(versionsList).Sorted().All()
+
+		// 'vmware.9' should come before 'vmware.10'
+		expected := []string{"v1.2.3+vmware.9-fips", "v1.2.3+vmware.10-fips"}
+		require.Equal(t, expected, result, "Version with metadata .10 should be higher than .9")
+	})
+}
