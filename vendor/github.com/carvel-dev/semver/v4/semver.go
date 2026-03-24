@@ -3,6 +3,7 @@ package semver
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -18,6 +19,8 @@ const (
 	prereleaseType versionExtType = "PreRelease"
 	buildmetaType                 = "BuildMeta"
 )
+
+var chunkRegexp = regexp.MustCompile(`(\d+|\D+)`)
 
 // SpecVersion is the latest fully supported spec version of semver
 var SpecVersion = Version{
@@ -193,10 +196,10 @@ func (v Version) Validate() error {
 
 	for _, build := range v.Build {
 		if len(build.VersionStr) == 0 {
-			return fmt.Errorf("Build meta data can not be empty %q", build)
+			return fmt.Errorf("Build meta data can not be empty %q", build.VersionStr)
 		}
 		if !containsOnly(build.VersionStr, alphanum) {
-			return fmt.Errorf("Invalid character(s) found in build meta data %q", build)
+			return fmt.Errorf("Invalid character(s) found in build meta data %q", build.VersionStr)
 		}
 	}
 
@@ -285,9 +288,7 @@ func Parse(s string) (Version, error) {
 		return Version{}, err
 	}
 
-	v := Version{}
-	v.Major = major
-	v.Minor = minor
+	v := Version{Major: major, Minor: minor}
 
 	var build, prerelease []string
 	patchStr := parts[2]
@@ -368,10 +369,8 @@ func (ve BuildMeta) Compare(o BuildMeta) int {
 	for ; i < len(ve) && i < len(o); i++ {
 		if comp := ve[i].Compare(o[i]); comp == 0 {
 			continue
-		} else if comp == 1 {
-			return 1
 		} else {
-			return -1
+			return comp
 		}
 	}
 
@@ -399,10 +398,8 @@ func (ve PRVersion) Compare(o PRVersion) int {
 	for ; i < len(ve) && i < len(o); i++ {
 		if comp := ve[i].Compare(o[i]); comp == 0 {
 			continue
-		} else if comp == 1 {
-			return 1
 		} else {
-			return -1
+			return comp
 		}
 	}
 
@@ -431,7 +428,7 @@ func newVersionExtension(s string, extType versionExtType, additionalValidations
 
 		// Might never be hit, but just in case
 		if err != nil {
-			return versionExtension{}, err
+			return versionExtension{}, fmt.Errorf("Invalid numeric %s %q: %s", extType, s, err)
 		}
 		v.VersionNum = num
 		v.IsNum = true
@@ -450,7 +447,7 @@ func newVersionExtension(s string, extType versionExtType, additionalValidations
 	return v, nil
 }
 
-// IsNumeric checks if this extension is numeric is numeric
+// IsNumeric checks if this extension is numeric
 func (v versionExtension) IsNumeric() bool {
 	return v.IsNum
 }
@@ -460,27 +457,62 @@ func (v versionExtension) IsNumeric() bool {
 // 0 == v is equal to o
 // 1 == v is greater than o
 func (v versionExtension) Compare(o versionExtension) int {
-	if v.IsNum && !o.IsNum {
-		return -1
-	} else if !v.IsNum && o.IsNum {
-		return 1
-	} else if v.IsNum && o.IsNum {
+	// 1. Numeric vs Numeric: Standard comparison
+	if v.IsNum && o.IsNum {
 		if v.VersionNum == o.VersionNum {
 			return 0
-		} else if v.VersionNum > o.VersionNum {
-			return 1
-		} else {
-			return -1
 		}
-	} else { // both are Alphas
-		if v.VersionStr == o.VersionStr {
-			return 0
-		} else if v.VersionStr > o.VersionStr {
+		if v.VersionNum > o.VersionNum {
 			return 1
-		} else {
-			return -1
 		}
+		return -1
 	}
+
+	// 2. Handle Numeric vs Alphanumeric
+	// Identify segments containing pre-release identifiers (rc, alpha, beta).
+	isPreReleaseLabel := func(s string) bool {
+		sl := strings.ToLower(s)
+		return strings.Contains(sl, "rc") || (strings.Contains(sl, "-") &&
+			(strings.Contains(sl, "alpha") || strings.Contains(sl, "beta")))
+	}
+
+	if v.IsNum && !o.IsNum {
+		if isPreReleaseLabel(o.VersionStr) {
+			return 1 // Stability Priority: Stable > Pre-release
+		}
+		return -1 // Standard SemVer: Number < String
+	}
+	if !v.IsNum && o.IsNum {
+		if isPreReleaseLabel(v.VersionStr) {
+			return -1 // Stability Priority: Pre-release < Stable
+		}
+		return 1 // Standard SemVer: String > Number
+	}
+
+	// 3. Both are Alphanumeric
+	if v.VersionStr == o.VersionStr {
+		return 0
+	}
+
+	// Pre-release marker check for string-vs-string
+	isPre := func(s string) bool {
+		sl := strings.ToLower(s)
+		return strings.Contains(sl, "rc") || strings.Contains(sl, "alpha") || strings.Contains(sl, "beta")
+	}
+
+	preV, preO := isPre(v.VersionStr), isPre(o.VersionStr)
+	if preV != preO {
+		if preV {
+			return -1
+		}
+		return 1
+	}
+
+	// Natural sort fallback for generic segments (e.g. "9-fips" vs "10-fips")
+	if naturalLess(v.VersionStr, o.VersionStr) {
+		return -1
+	}
+	return 1
 }
 
 func (v versionExtension) String() string {
@@ -507,8 +539,7 @@ func validatePRLeading0s(ext versionExtension) error {
 	return nil
 }
 
-// FinalizeVersion returns the major, minor and patch number only and discards
-// prerelease and build number.
+// FinalizeVersion returns the major, minor and patch number only.
 func FinalizeVersion(s string) (string, error) {
 	v, err := Parse(s)
 	if err != nil {
@@ -516,7 +547,34 @@ func FinalizeVersion(s string) (string, error) {
 	}
 	v.Pre = nil
 	v.Build = nil
+	return v.String(), nil
+}
 
-	finalVer := v.String()
-	return finalVer, nil
+func naturalLess(s1, s2 string) bool {
+	chunks1 := chunkRegexp.FindAllString(s1, -1)
+	chunks2 := chunkRegexp.FindAllString(s2, -1)
+
+	n := len(chunks1)
+	if len(chunks2) < n {
+		n = len(chunks2)
+	}
+
+	for i := 0; i < n; i++ {
+		c1, c2 := chunks1[i], chunks2[i]
+		if c1 == c2 {
+			continue
+		}
+
+		n1, err1 := strconv.ParseUint(c1, 10, 64)
+		n2, err2 := strconv.ParseUint(c2, 10, 64)
+
+		if err1 == nil && err2 == nil {
+			if n1 != n2 {
+				return n1 < n2
+			}
+			continue
+		}
+		return c1 < c2
+	}
+	return len(chunks1) < len(chunks2)
 }

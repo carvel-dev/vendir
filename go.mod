@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	carvel.dev/imgpkg v0.47.2
 	github.com/bmatcuk/doublestar v1.2.1
-	github.com/carvel-dev/semver/v4 v4.0.1-0.20240402203627-beb83fbf25e4
+	github.com/carvel-dev/semver/v4 v4.0.1-0.20260311163729-b294599075b1
 	github.com/cppforlife/cobrautil v0.0.0-20221021151949-d60711905d65
 	github.com/cppforlife/go-cli-ui v0.0.0-20220425131040-94f26b16bc14
 	github.com/gogo/protobuf v1.3.2
