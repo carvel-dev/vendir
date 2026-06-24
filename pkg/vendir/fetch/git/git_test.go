@@ -11,6 +11,7 @@ import (
 	"carvel.dev/vendir/pkg/vendir/config"
 	"carvel.dev/vendir/pkg/vendir/fetch"
 	"carvel.dev/vendir/pkg/vendir/fetch/git"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,10 +66,159 @@ func TestGit_Retrieve(t *testing.T) {
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
 		require.ErrorContains(t, err, "Username/password authentication is only supported for https remotes")
 	})
+
+	t.Run("Named tag ref uses targeted fetch with --no-tags", func(t *testing.T) {
+		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL: "https://some.git/repo",
+			Ref: "v1.2.3",
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs, "expected a fetch command")
+		assert.Contains(t, fetchArgs, "v1.2.3", "expected specific ref in fetch")
+		assert.Contains(t, fetchArgs, "--no-tags", "expected --no-tags for named ref fetch")
+
+		tagOptArgs := findConfigArgs(runner.commandsToRun, "remote.origin.tagOpt")
+		require.NotNil(t, tagOptArgs, "expected tagOpt config command")
+		assert.Equal(t, "--no-tags", tagOptArgs[len(tagOptArgs)-1], "expected --no-tags tagOpt for named ref")
+
+		checkoutArgs := findCheckoutArgs(runner.commandsToRun)
+		require.NotNil(t, checkoutArgs, "expected a checkout command")
+		assert.Contains(t, checkoutArgs, "FETCH_HEAD", "expected FETCH_HEAD checkout for targeted fetch")
+	})
+
+	t.Run("origin/ branch ref uses branch-scoped fetch without --no-tags on refspec", func(t *testing.T) {
+		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL: "https://some.git/repo",
+			Ref: "origin/main",
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs, "expected a fetch command")
+		assert.Contains(t, fetchArgs, "main", "expected branch name in fetch for origin/ ref")
+		assert.NotContains(t, fetchArgs, "--no-tags", "expected no --no-tags on the refspec for origin/ branch")
+
+		checkoutArgs := findCheckoutArgs(runner.commandsToRun)
+		require.NotNil(t, checkoutArgs, "expected a checkout command")
+		assert.Contains(t, checkoutArgs, "main", "expected branch name checkout for origin/ ref")
+		assert.NotContains(t, checkoutArgs, "FETCH_HEAD", "expected direct checkout for origin/ ref, not FETCH_HEAD")
+	})
+
+	t.Run("Locked SHA with OriginalRef uses OriginalRef for targeted fetch", func(t *testing.T) {
+		lockedSHA := "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+		runner := &cmdRunnerLocal{
+			commandsToRun: [][]string{},
+			// rev-parse HEAD must return the locked SHA for the post-checkout verification to pass
+			responses: map[string]string{"rev-parse HEAD": lockedSHA},
+		}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL:         "https://some.git/repo",
+			Ref:         lockedSHA,
+			OriginalRef: "v1.2.3",
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs, "expected a fetch command")
+		assert.Contains(t, fetchArgs, "v1.2.3", "expected OriginalRef in fetch for locked SHA mode")
+		assert.Contains(t, fetchArgs, "--no-tags", "expected --no-tags for locked SHA with OriginalRef")
+
+		tagOptArgs := findConfigArgs(runner.commandsToRun, "remote.origin.tagOpt")
+		require.NotNil(t, tagOptArgs)
+		assert.Equal(t, "--no-tags", tagOptArgs[len(tagOptArgs)-1], "expected --no-tags tagOpt for locked SHA with OriginalRef")
+
+		checkoutArgs := findCheckoutArgs(runner.commandsToRun)
+		require.NotNil(t, checkoutArgs)
+		assert.Contains(t, checkoutArgs, "FETCH_HEAD", "expected FETCH_HEAD checkout in locked SHA mode")
+
+		revParseArgs := findCommandArgs(runner.commandsToRun, "rev-parse")
+		require.NotNil(t, revParseArgs, "expected rev-parse for SHA verification")
+		assert.Contains(t, revParseArgs, "HEAD")
+	})
+
+	t.Run("Plain SHA ref without OriginalRef uses full fetch with --tags", func(t *testing.T) {
+		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL: "https://some.git/repo",
+			Ref: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2", // 40-char hex SHA, no OriginalRef
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs, "expected a fetch command")
+		// full fetch: only "fetch" and "origin", no extra refspec
+		assert.Equal(t, []string{"fetch", "origin"}, fetchArgs, "expected bare full fetch for plain SHA")
+
+		tagOptArgs := findConfigArgs(runner.commandsToRun, "remote.origin.tagOpt")
+		require.NotNil(t, tagOptArgs)
+		assert.Equal(t, "--tags", tagOptArgs[len(tagOptArgs)-1], "expected --tags tagOpt for plain SHA ref")
+	})
+
+	t.Run("Depth flag is appended after refspec for named ref targeted fetch", func(t *testing.T) {
+		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL:   "https://some.git/repo",
+			Ref:   "v1.2.3",
+			Depth: 1,
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs)
+		fetchStr := strings.Join(fetchArgs, " ")
+		assert.Contains(t, fetchStr, "v1.2.3 --no-tags --depth 1", "expected refspec, --no-tags, then --depth in order")
+	})
+}
+
+// findCommandArgs finds the first command in commandsToRun whose first arg matches firstArg.
+func findCommandArgs(commands [][]string, firstArg string) []string {
+	for _, args := range commands {
+		if len(args) > 0 && args[0] == firstArg {
+			return args
+		}
+	}
+	return nil
+}
+
+// findCheckoutArgs finds the git checkout command (issued as "-c advice.detachedHead=false checkout ...").
+func findCheckoutArgs(commands [][]string) []string {
+	for _, args := range commands {
+		for i, a := range args {
+			if a == "checkout" {
+				return args[i:]
+			}
+		}
+	}
+	return nil
+}
+
+// findConfigArgs finds the git config command that sets the given key.
+func findConfigArgs(commands [][]string, key string) []string {
+	for _, args := range commands {
+		if len(args) >= 2 && args[0] == "config" {
+			for _, a := range args[1:] {
+				if a == key {
+					return args
+				}
+			}
+		}
+	}
+	return nil
 }
 
 type cmdRunnerLocal struct {
 	commandsToRun [][]string
+	// responses maps "arg0 arg1 ..." to the stdout value Run should return.
+	responses map[string]string
 }
 
 func (c *cmdRunnerLocal) RunMultiple(argss [][]string, _ []string, _ string) error {
@@ -78,6 +228,11 @@ func (c *cmdRunnerLocal) RunMultiple(argss [][]string, _ []string, _ string) err
 
 func (c *cmdRunnerLocal) Run(args []string, _ []string, _ string) (string, string, error) {
 	c.commandsToRun = append(c.commandsToRun, args)
+	if c.responses != nil {
+		if out, ok := c.responses[strings.Join(args, " ")]; ok {
+			return out, "", nil
+		}
+	}
 	return "", "", nil
 }
 

@@ -73,6 +73,9 @@ type DirectoryContentsGit struct {
 	SkipInitSubmodules     bool `json:"skipInitSubmodules,omitempty"`
 	Depth                  int  `json:"depth,omitempty"`
 	ForceHTTPBasicAuth     bool `json:"forceHTTPBasicAuth,omitempty"`
+	// OriginalRef holds the ref before it was replaced by a locked SHA.
+	// Not serialized; set by Lock() to enable targeted fetching in locked mode.
+	OriginalRef string `json:"-" yaml:"-"`
 }
 
 type DirectoryContentsGitVerification struct {
@@ -348,6 +351,7 @@ func (c *DirectoryContentsGit) Lock(lockConfig *LockDirectoryContentsGit) error 
 	if len(lockConfig.SHA) == 0 {
 		return fmt.Errorf("Expected git SHA to be non-empty")
 	}
+	c.OriginalRef = c.Ref
 	c.Ref = lockConfig.SHA
 	return nil
 }
