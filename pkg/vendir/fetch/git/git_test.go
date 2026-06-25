@@ -114,8 +114,8 @@ func TestGit_Retrieve(t *testing.T) {
 		lockedSHA := "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
 		runner := &cmdRunnerLocal{
 			commandsToRun: [][]string{},
-			// rev-parse HEAD must return the locked SHA for the post-checkout verification to pass
-			responses: map[string]string{"rev-parse HEAD": lockedSHA},
+			// rev-parse FETCH_HEAD^{commit} must return the locked SHA for verification to pass
+			responses: map[string]string{"rev-parse FETCH_HEAD^{commit}": lockedSHA},
 		}
 		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
 			URL:         "https://some.git/repo",
@@ -134,13 +134,37 @@ func TestGit_Retrieve(t *testing.T) {
 		require.NotNil(t, tagOptArgs)
 		assert.Equal(t, "--no-tags", tagOptArgs[len(tagOptArgs)-1], "expected --no-tags tagOpt for locked SHA with OriginalRef")
 
+		// Checkout must use the locked SHA directly, not FETCH_HEAD, so mutable
+		// refs (e.g. origin/main) don't cause locked sync to track the branch tip.
 		checkoutArgs := findCheckoutArgs(runner.commandsToRun)
 		require.NotNil(t, checkoutArgs)
-		assert.Contains(t, checkoutArgs, "FETCH_HEAD", "expected FETCH_HEAD checkout in locked SHA mode")
+		assert.Contains(t, checkoutArgs, lockedSHA, "expected locked SHA checkout in locked SHA mode")
+		assert.NotContains(t, checkoutArgs, "FETCH_HEAD", "expected locked SHA, not FETCH_HEAD, for checkout")
 
+		// Verification: rev-parse FETCH_HEAD^{commit} must be called before checkout
 		revParseArgs := findCommandArgs(runner.commandsToRun, "rev-parse")
 		require.NotNil(t, revParseArgs, "expected rev-parse for SHA verification")
-		assert.Contains(t, revParseArgs, "HEAD")
+		assert.Contains(t, revParseArgs, "FETCH_HEAD^{commit}")
+	})
+
+	t.Run("Locked SHA with origin/ OriginalRef strips prefix before fetch", func(t *testing.T) {
+		lockedSHA := "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+		runner := &cmdRunnerLocal{
+			commandsToRun: [][]string{},
+			responses:     map[string]string{"rev-parse FETCH_HEAD^{commit}": lockedSHA},
+		}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL:         "https://some.git/repo",
+			Ref:         lockedSHA,
+			OriginalRef: "origin/main", // common in vendir configs
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{}, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
+		require.NotNil(t, fetchArgs)
+		assert.Contains(t, fetchArgs, "main", "expected origin/ prefix stripped from OriginalRef")
+		assert.NotContains(t, fetchArgs, "origin/main", "expected origin/ prefix stripped before fetch refspec")
 	})
 
 	t.Run("Plain SHA ref without OriginalRef uses full fetch with --tags", func(t *testing.T) {

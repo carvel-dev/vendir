@@ -283,14 +283,18 @@ directories:
 		var vendirOutput VendirOutput
 		require.NoError(t, json.NewDecoder(&stdout).Decode(&vendirOutput))
 
-		var foundTargetedFetch bool
+		var foundTargetedFetch, foundBareFetch bool
 		for _, l := range vendirOutput.Lines {
 			if strings.Contains(l, "fetch origin signed-trusted-tag --no-tags") {
 				foundTargetedFetch = true
 			}
-			assert.NotContains(t, l, "--> git fetch origin\n", "expected no bare full fetch for named tag ref")
+			// "--> git fetch origin" followed by a depth/no refspec is the old slow path
+			if strings.Contains(l, "--> git fetch origin") && !strings.Contains(l, "signed-trusted-tag") {
+				foundBareFetch = true
+			}
 		}
 		assert.True(t, foundTargetedFetch, "expected targeted fetch line 'fetch origin signed-trusted-tag --no-tags'")
+		assert.False(t, foundBareFetch, "expected no bare full fetch for named tag ref")
 
 		_, err = os.Stat(filepath.Join(dstPath, "vendor", "test"))
 		assert.NoError(t, err, "expected vendored directory to exist after sync")

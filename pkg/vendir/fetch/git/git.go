@@ -197,8 +197,11 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 			fetchArgs = append(fetchArgs, t.opts.Ref, "--no-tags")
 			useFetchHead = true
 		case isHexSHA(t.opts.Ref) && len(t.opts.OriginalRef) > 0 && !isHexSHA(t.opts.OriginalRef):
-			// locked mode: fetch by the original named ref so we avoid a full fetch
-			fetchArgs = append(fetchArgs, t.opts.OriginalRef, "--no-tags")
+			// locked mode: fetch by the original named ref so we avoid a full fetch.
+			// Strip any "origin/" prefix — that prefix is a local tracking convention
+			// and is not a valid remote refspec.
+			originalRef := strings.TrimPrefix(t.opts.OriginalRef, "origin/")
+			fetchArgs = append(fetchArgs, originalRef, "--no-tags")
 			useFetchHead = true
 		}
 		if t.opts.Depth > 0 {
@@ -216,7 +219,22 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	if err != nil {
 		return err
 	}
-	if useFetchHead {
+
+	// In locked mode we fetch by the original named ref for performance, but must
+	// check out the exact locked SHA. Verify FETCH_HEAD resolves to that SHA before
+	// checkout so a force-pushed tag is caught early.
+	if useFetchHead && isHexSHA(t.opts.Ref) {
+		out, _, err := t.cmdRunner.Run([]string{"rev-parse", "FETCH_HEAD^{commit}"}, nil, dstPath)
+		if err != nil {
+			return err
+		}
+		if strings.TrimSpace(out) != t.opts.Ref {
+			return fmt.Errorf("Locked SHA %s does not match fetched commit %s — tag may have been moved", t.opts.Ref, strings.TrimSpace(out))
+		}
+		// Use the locked SHA for checkout so mutable refs (e.g. origin/main) don't
+		// cause locked syncs to track the branch tip instead of the pinned commit.
+		ref = t.opts.Ref
+	} else if useFetchHead {
 		ref = "FETCH_HEAD"
 	}
 
@@ -230,18 +248,6 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	_, _, err = t.cmdRunner.Run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath)
 	if err != nil {
 		return err
-	}
-
-	// In locked mode we fetched by the original named ref; verify the resulting
-	// commit matches the SHA recorded in the lock file.
-	if useFetchHead && isHexSHA(t.opts.Ref) {
-		out, _, err := t.cmdRunner.Run([]string{"rev-parse", "HEAD"}, nil, dstPath)
-		if err != nil {
-			return err
-		}
-		if strings.TrimSpace(out) != t.opts.Ref {
-			return fmt.Errorf("Locked SHA %s does not match fetched commit %s — tag may have been moved", t.opts.Ref, strings.TrimSpace(out))
-		}
 	}
 
 	if !t.opts.SkipInitSubmodules {
@@ -284,14 +290,14 @@ func (t *Git) tags(dstPath string) ([]string, error) {
 }
 
 // isHexSHA reports whether s looks like a full or abbreviated git commit SHA
-// (7–40 lowercase hex characters). SHAs cannot be fetched by refspec name and
-// require a full fetch to be resolved.
+// (7–40 hex characters, case-insensitive). SHAs cannot be fetched by refspec
+// name and require a full fetch to be resolved.
 func isHexSHA(s string) bool {
 	if len(s) < 7 || len(s) > 40 {
 		return false
 	}
 	for _, c := range s {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
 			return false
 		}
 	}
