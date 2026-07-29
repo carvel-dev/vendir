@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/crypto/openpgp" //nolint:staticcheck
+	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
 func ReadArmoredKeys(keys string) (openpgp.EntityList, error) {

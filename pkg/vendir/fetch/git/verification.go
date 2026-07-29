@@ -15,9 +15,9 @@ import (
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	oarmor "carvel.dev/vendir/pkg/vendir/openpgparmor"
-	"golang.org/x/crypto/openpgp"        //nolint:staticcheck
-	"golang.org/x/crypto/openpgp/armor"  //nolint:staticcheck
-	"golang.org/x/crypto/openpgp/packet" //nolint:staticcheck
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 // Verification verifies Git commit/tag against a set of public keys
@@ -68,7 +68,7 @@ func (v Verification) Verify(ref string) error {
 	sig := strings.NewReader(signedObj.Signature)
 
 	verify := func() {
-		_, err = openpgp.CheckArmoredDetachedSignature(publicKeys, target, sig)
+		_, err = openpgp.CheckArmoredDetachedSignature(publicKeys, target, sig, nil)
 	}
 	if v.opts.AllowLegacySignatures {
 		// May be a non-approved algorithm let through above.
@@ -139,8 +139,6 @@ func signatureAlgorithms(r io.Reader) (
 
 	switch sig := p.(type) {
 	case *packet.Signature:
-		return sig.Hash, sig.PubKeyAlgo, nil
-	case *packet.SignatureV3:
 		return sig.Hash, sig.PubKeyAlgo, nil
 	default:
 		return 0, 0, fmt.Errorf("expected a signature packet, got %T", p)

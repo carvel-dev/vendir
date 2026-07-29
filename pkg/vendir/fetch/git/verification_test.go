@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/openpgp/packet" //nolint:staticcheck
 )
 
 // Fixed armored detached signatures over the literal text "hello world\n",
