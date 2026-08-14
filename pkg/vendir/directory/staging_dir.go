@@ -14,6 +14,10 @@ import (
 	"github.com/bmatcuk/doublestar"
 )
 
+// stagingDirPerms are the permissions directories are created with while
+// vendir owns them, before the configured ones are applied
+const stagingDirPerms os.FileMode = 0700
+
 type StagingDir struct {
 	rootDir     string
 	stagingDir  string
@@ -128,15 +132,16 @@ func isPathIgnored(path string, ignorePaths []string) (bool, error) {
 	return false, nil
 }
 
-// Replaces entire final location directory with staging directory
-func (d StagingDir) Replace(path string) error {
-
+// Replace makes the entire final location directory hold the staging
+// directory's contents. Files that already hold those are left untouched, and
+// so are the unmanaged paths, given relative to the final location.
+func (d StagingDir) Replace(path string, unmanagedPaths []string) error {
 	err := d.prepareOutputDirectory(path)
 	if err != nil {
 		return err
 	}
 
-	err = os.Rename(d.stagingDir, path)
+	err = reconcileDir(d.stagingDir, path, newPreservedPaths(unmanagedPaths))
 	if err != nil {
 		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, path, err)
 	}
@@ -144,14 +149,18 @@ func (d StagingDir) Replace(path string) error {
 	return nil
 }
 
-// Replaces single directory of final location dir with single directory of staging dir
+// PartialRepace makes a single directory of the final location dir hold the
+// matching staging dir's contents. Files that already hold those are left
+// untouched.
 func (d StagingDir) PartialRepace(contentPath string, directoryPath string) error {
 	err := d.prepareOutputDirectory(directoryPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.Rename(filepath.Join(d.stagingDir, contentPath), directoryPath)
+	stagedPath := filepath.Join(d.stagingDir, contentPath)
+
+	err = reconcileDir(stagedPath, directoryPath, nil)
 	if err != nil {
 		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
 	}
@@ -160,15 +169,10 @@ func (d StagingDir) PartialRepace(contentPath string, directoryPath string) erro
 }
 
 func (d StagingDir) prepareOutputDirectory(directoryPath string) error {
-	err := os.RemoveAll(directoryPath)
-	if err != nil {
-		return fmt.Errorf("Deleting dir %s: %s", directoryPath, err)
-	}
-
 	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
 	parentPath := filepath.Dir(filepath.Clean(directoryPath))
 
-	err = os.MkdirAll(parentPath, 0700)
+	err := os.MkdirAll(parentPath, stagingDirPerms)
 	if err != nil {
 		return fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
 	}

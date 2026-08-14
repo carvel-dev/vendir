@@ -71,6 +71,9 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 
 	defer stagingDir.CleanUp()
 
+	var contentPerms []pendingChmod
+	var unmanagedPaths []string
+
 	for _, contents := range d.opts.Contents {
 		stagingDstPath, err := stagingDir.NewChild(contents.Path)
 		if err != nil {
@@ -102,9 +105,6 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			}
 			continue
 		}
-
-		skipFileFilter := false
-		skipNewRootPath := false
 
 		switch {
 		case contents.Git != nil:
@@ -195,16 +195,32 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 		case contents.Manual != nil:
 			d.ui.PrintLinef("Fetching: %s + %s (manual)", d.opts.Path, contents.Path)
 
+			// Manually managed contents are never staged, so that vendir does
+			// not have to move them out of the way and back, which would leave
+			// their parent directory looking modified
 			srcPath := filepath.Join(d.opts.Path, contents.Path)
 
-			err := os.Rename(srcPath, stagingDstPath)
+			_, err := os.Stat(srcPath)
 			if err != nil {
-				return lockConfig, fmt.Errorf("Moving directory '%s' to staging dir: %s", srcPath, err)
+				return lockConfig, fmt.Errorf(
+					"Checking manual directory '%s': %s", srcPath, err)
 			}
 
 			lockDirContents.Manual = &ctlconf.LockDirectoryContentsManual{}
-			skipFileFilter = true
-			skipNewRootPath = true
+			unmanagedPaths = append(unmanagedPaths, contents.Path)
+
+			perms := newPendingChmod(srcPath,
+				contents.Permissions, d.opts.Permissions)
+			contentPerms = append(contentPerms, perms)
+
+			// config digest is always added if lazy syncing is enabled
+			if contents.Lazy {
+				lockDirContents.ConfigDigest = configDigest
+			}
+
+			lockConfig.Contents = append(lockConfig.Contents, lockDirContents)
+
+			continue
 
 		case contents.Directory != nil:
 			d.ui.PrintLinef("Fetching: %s + %s (directory)", d.opts.Path, contents.Path)
@@ -230,14 +246,13 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
 		}
 
-		if !skipFileFilter {
-			err = FileFilter{contents}.Apply(stagingDstPath)
-			if err != nil {
-				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
-			}
+		err = FileFilter{contents}.Apply(stagingDstPath)
+		if err != nil {
+			return lockConfig, fmt.Errorf(
+				"Filtering paths in directory '%s': %s", contents.Path, err)
 		}
 
-		if !skipNewRootPath && len(contents.NewRootPath) > 0 {
+		if len(contents.NewRootPath) > 0 {
 			err = NewSubPath(contents.NewRootPath).Extract(stagingDstPath, stagingDstPath, stagingDir.TempArea())
 			if err != nil {
 				return lockConfig, fmt.Errorf("Changing to new root path '%s': %s", contents.Path, err)
@@ -250,12 +265,12 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Copying existing content to staging '%s': %s", d.opts.Path, err)
 		}
 
-		// after everything else is done, ensure the inner dir's access perms are set
-		// chmod to the content's permission, fall back to the directory's
-		err = maybeChmod(stagingDstPath, contents.Permissions, d.opts.Permissions)
-		if err != nil {
-			return lockConfig, fmt.Errorf("chmod on '%s': %s", stagingDstPath, err)
-		}
+		// perms are applied once the contents reached their final location,
+		// since restrictive ones would keep the staging dir from being read
+		// back. chmod to the content's permission, fall back to the directory's
+		contentPerms = append(contentPerms,
+			newPendingChmod(filepath.Join(d.opts.Path, contents.Path),
+				contents.Permissions, d.opts.Permissions))
 
 		// config digest is always added if lazy syncing is enabled in the config
 		if contents.Lazy {
@@ -273,9 +288,19 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	if !syncOpts.Partial {
-		err = stagingDir.Replace(d.opts.Path)
+		err = stagingDir.Replace(d.opts.Path, unmanagedPaths)
 		if err != nil {
 			return lockConfig, err
+		}
+	}
+
+	// ensure the inner dirs' access perms are set before the outer dir's, since
+	// the latter may no longer allow descending into it
+	for _, pending := range contentPerms {
+		err = maybeChmod(pending.path, pending.potentialPerms...)
+		if err != nil {
+			return lockConfig, fmt.Errorf("chmod on '%s': %s",
+				pending.path, err)
 		}
 	}
 
@@ -286,6 +311,17 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 	}
 
 	return lockConfig, nil
+}
+
+// pendingChmod is a chmod that can only be carried out once the contents
+// reached their final location
+type pendingChmod struct {
+	path           string
+	potentialPerms []*os.FileMode
+}
+
+func newPendingChmod(path string, perms ...*os.FileMode) pendingChmod {
+	return pendingChmod{path: path, potentialPerms: perms}
 }
 
 // maybeChmod will chmod the path with the first non-nil permission provided.
