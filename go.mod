@@ -1,9 +1,9 @@
 module carvel.dev/vendir
 
-go 1.25.7
+go 1.26.5
 
 require (
-	carvel.dev/imgpkg v0.48.0
+	carvel.dev/imgpkg v0.48.1
 	github.com/bmatcuk/doublestar v1.2.1
 	github.com/carvel-dev/semver/v4 v4.0.1
 	github.com/cppforlife/cobrautil v0.0.0-20221021151949-d60711905d65
@@ -18,7 +18,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/tools v0.44.0
 	gopkg.in/inf.v0 v0.9.1
@@ -92,10 +92,10 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	github.com/vito/go-interact v1.0.1 // indirect
-	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
