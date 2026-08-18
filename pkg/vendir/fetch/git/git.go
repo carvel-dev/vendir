@@ -166,49 +166,26 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		}
 	}
 
-	// Suppress tag fetching when a targeted refspec fetch is possible:
-	//   - named ref (tag/branch): targeted fetch by name
-	//   - locked SHA with a known named original ref: fetch by original ref name
-	// RefSelection needs all tags for semver matching. A bare SHA with no
-	// OriginalRef has no named ref to target and must fall back to a full fetch.
-	canTargetFetch := (len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref) && t.opts.RefSelection == nil) ||
-		(isHexSHA(t.opts.Ref) && len(t.opts.OriginalRef) > 0 && !isHexSHA(t.opts.OriginalRef))
-	if canTargetFetch {
-		argss = append(argss, []string{"config", "remote.origin.tagOpt", "--no-tags"})
-	} else {
-		argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
+	// A targeted refspec fetch (named ref, or locked SHA with a known
+	// OriginalRef) doesn't need all tags. RefSelection needs them for semver
+	// matching, and a bare SHA with no OriginalRef can't be targeted at all.
+	tagOpt := "--tags"
+	if t.canTargetFetch() {
+		tagOpt = noTagsFlag
 	}
+	argss = append(argss, []string{"config", "remote.origin.tagOpt", tagOpt})
 
 	if bundle != "" {
 		argss = append(argss, []string{"bundle", "unbundle", bundle})
 	}
 
 	// When fetching a single named ref, git places it in FETCH_HEAD only —
-	// no local ref is created. Track this so we can use FETCH_HEAD for checkout.
-	var useFetchHead bool
-	{
-		fetchArgs := []string{"fetch", "origin"}
-		switch {
-		case strings.HasPrefix(t.opts.Ref, "origin/"):
-			// only fetch the exact remote branch we're seeking
-			fetchArgs = append(fetchArgs, t.opts.Ref[7:])
-		case len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref):
-			// fetch only the named tag or branch; SHAs must use a full fetch
-			fetchArgs = append(fetchArgs, t.opts.Ref, "--no-tags")
-			useFetchHead = true
-		case isHexSHA(t.opts.Ref) && len(t.opts.OriginalRef) > 0 && !isHexSHA(t.opts.OriginalRef):
-			// locked mode: fetch by the original named ref so we avoid a full fetch.
-			// Strip any "origin/" prefix — that prefix is a local tracking convention
-			// and is not a valid remote refspec.
-			originalRef := strings.TrimPrefix(t.opts.OriginalRef, "origin/")
-			fetchArgs = append(fetchArgs, originalRef, "--no-tags")
-			useFetchHead = true
-		}
-		if t.opts.Depth > 0 {
-			fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
-		}
-		argss = append(argss, fetchArgs)
+	// no local ref is created. Track this to use FETCH_HEAD for checkout.
+	fetchArgs, useFetchHead := t.targetedFetchArgs()
+	if t.opts.Depth > 0 {
+		fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
 	}
+	argss = append(argss, fetchArgs)
 
 	err = t.cmdRunner.RunMultiple(argss, env, dstPath)
 	if err != nil {
@@ -220,19 +197,22 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		return err
 	}
 
-	// In locked mode we fetch by the original named ref for performance, but must
-	// check out the exact locked SHA. Verify FETCH_HEAD resolves to that SHA before
-	// checkout so a force-pushed tag is caught early.
+	// In locked mode we fetch by the original named ref for speed, but must
+	// check out the exact locked SHA. Verify FETCH_HEAD resolves to that SHA
+	// before checkout so a force-pushed tag is caught early.
 	if useFetchHead && isHexSHA(t.opts.Ref) {
-		out, _, err := t.cmdRunner.Run([]string{"rev-parse", "FETCH_HEAD^{commit}"}, nil, dstPath)
-		if err != nil {
-			return err
+		rp := []string{"rev-parse", fetchHeadCommit}
+		out, _, runErr := t.cmdRunner.Run(rp, nil, dstPath)
+		if runErr != nil {
+			return runErr
 		}
-		if strings.TrimSpace(out) != t.opts.Ref {
-			return fmt.Errorf("Locked SHA %s does not match fetched commit %s — tag may have been moved", t.opts.Ref, strings.TrimSpace(out))
+		fetchedSHA := strings.TrimSpace(out)
+		if fetchedSHA != t.opts.Ref {
+			return fmt.Errorf("Locked SHA %s does not match fetched "+
+				"commit %s — tag may have been moved", t.opts.Ref, fetchedSHA)
 		}
-		// Use the locked SHA for checkout so mutable refs (e.g. origin/main) don't
-		// cause locked syncs to track the branch tip instead of the pinned commit.
+		// Use the locked SHA for checkout so mutable refs (e.g. origin/main)
+		// don't cause locked syncs to track the branch tip, not the pin.
 		ref = t.opts.Ref
 	} else if useFetchHead {
 		ref = "FETCH_HEAD"
@@ -260,13 +240,58 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	return nil
 }
 
+const (
+	noTagsFlag      = "--no-tags"
+	fetchHeadCommit = "FETCH_HEAD^{commit}"
+	originPrefix    = "origin/"
+)
+
+// isLockedSHAWithNamedOriginal reports whether Ref is a locked SHA with a
+// known named OriginalRef, i.e. a locked sync that can still target a fetch
+// by name instead of resolving the bare SHA via a full fetch.
+func (t *Git) isLockedSHAWithNamedOriginal() bool {
+	return isHexSHA(t.opts.Ref) &&
+		len(t.opts.OriginalRef) > 0 &&
+		!isHexSHA(t.opts.OriginalRef)
+}
+
+// canTargetFetch reports whether fetch can target a single named ref
+// instead of fetching all branches/tags.
+func (t *Git) canTargetFetch() bool {
+	hasNamedRef := len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref)
+	namedRef := hasNamedRef && t.opts.RefSelection == nil
+	return namedRef || t.isLockedSHAWithNamedOriginal()
+}
+
+// targetedFetchArgs builds the "fetch origin ..." args for t.opts.Ref,
+// targeting a single named ref where possible. It reports whether the
+// result lands only in FETCH_HEAD (true) or creates a local ref (false).
+func (t *Git) targetedFetchArgs() ([]string, bool) {
+	fetchArgs := []string{"fetch", "origin"}
+	switch {
+	case strings.HasPrefix(t.opts.Ref, originPrefix):
+		// only fetch the exact remote branch we're seeking
+		branch := strings.TrimPrefix(t.opts.Ref, originPrefix)
+		return append(fetchArgs, branch, noTagsFlag), true
+	case len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref):
+		// fetch only the named tag or branch; SHAs must use a full fetch
+		return append(fetchArgs, t.opts.Ref, noTagsFlag), true
+	case t.isLockedSHAWithNamedOriginal():
+		// locked mode: fetch by the original named ref to avoid a full fetch.
+		// origin/ is a local tracking prefix, not a valid remote refspec.
+		originalRef := strings.TrimPrefix(t.opts.OriginalRef, originPrefix)
+		return append(fetchArgs, originalRef, noTagsFlag), true
+	default:
+		// no targeted ref available (e.g. RefSelection, or a bare SHA with
+		// no OriginalRef) — fall back to a full fetch of all branches/tags.
+		return fetchArgs, false
+	}
+}
+
 func (t *Git) resolveRef(dstPath string) (string, error) {
 	switch {
 	case len(t.opts.Ref) > 0:
-		if strings.HasPrefix(t.opts.Ref, "origin/") {
-			return t.opts.Ref[7:], nil
-		}
-		return t.opts.Ref, nil
+		return strings.TrimPrefix(t.opts.Ref, originPrefix), nil
 
 	case t.opts.RefSelection != nil:
 		tags, err := t.tags(dstPath)
@@ -289,19 +314,35 @@ func (t *Git) tags(dstPath string) ([]string, error) {
 	return strings.Split(out, "\n"), nil
 }
 
+const (
+	minAbbreviatedSHALen = 7
+	fullSHALen           = 40
+)
+
 // isHexSHA reports whether s looks like a full or abbreviated git commit SHA
 // (7–40 hex characters, case-insensitive). SHAs cannot be fetched by refspec
 // name and require a full fetch to be resolved.
 func isHexSHA(s string) bool {
-	if len(s) < 7 || len(s) > 40 {
+	if len(s) < minAbbreviatedSHALen || len(s) > fullSHALen {
 		return false
 	}
+	return isHex(s)
+}
+
+func isHex(s string) bool {
 	for _, c := range s {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		if !isHexDigit(c) {
 			return false
 		}
 	}
 	return true
+}
+
+func isHexDigit(c rune) bool {
+	isDigit := c >= '0' && c <= '9'
+	isLower := c >= 'a' && c <= 'f'
+	isUpper := c >= 'A' && c <= 'F'
+	return isDigit || isLower || isUpper
 }
 
 type CommandRunner interface {

@@ -5,6 +5,7 @@ package git_test
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -90,7 +91,7 @@ func TestGit_Retrieve(t *testing.T) {
 		assert.Contains(t, checkoutArgs, "FETCH_HEAD", "expected FETCH_HEAD checkout for targeted fetch")
 	})
 
-	t.Run("origin/ branch ref uses branch-scoped fetch without --no-tags on refspec", func(t *testing.T) {
+	t.Run("origin/ branch ref uses targeted fetch with --no-tags", func(t *testing.T) {
 		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
 		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
 			URL: "https://some.git/repo",
@@ -102,12 +103,11 @@ func TestGit_Retrieve(t *testing.T) {
 		fetchArgs := findCommandArgs(runner.commandsToRun, "fetch")
 		require.NotNil(t, fetchArgs, "expected a fetch command")
 		assert.Contains(t, fetchArgs, "main", "expected branch name in fetch for origin/ ref")
-		assert.NotContains(t, fetchArgs, "--no-tags", "expected no --no-tags on the refspec for origin/ branch")
+		assert.Contains(t, fetchArgs, "--no-tags", "expected --no-tags on the refspec for origin/ branch")
 
 		checkoutArgs := findCheckoutArgs(runner.commandsToRun)
 		require.NotNil(t, checkoutArgs, "expected a checkout command")
-		assert.Contains(t, checkoutArgs, "main", "expected branch name checkout for origin/ ref")
-		assert.NotContains(t, checkoutArgs, "FETCH_HEAD", "expected direct checkout for origin/ ref, not FETCH_HEAD")
+		assert.Contains(t, checkoutArgs, "FETCH_HEAD", "expected FETCH_HEAD checkout for targeted fetch")
 	})
 
 	t.Run("Locked SHA with OriginalRef uses OriginalRef for targeted fetch", func(t *testing.T) {
@@ -225,15 +225,14 @@ func findCheckoutArgs(commands [][]string) []string {
 	return nil
 }
 
+// minConfigArgs is "config" plus at least the key being configured.
+const minConfigArgs = 2
+
 // findConfigArgs finds the git config command that sets the given key.
 func findConfigArgs(commands [][]string, key string) []string {
 	for _, args := range commands {
-		if len(args) >= 2 && args[0] == "config" {
-			for _, a := range args[1:] {
-				if a == key {
-					return args
-				}
-			}
+		if len(args) >= minConfigArgs && args[0] == "config" && slices.Contains(args[1:], key) {
+			return args
 		}
 	}
 	return nil
