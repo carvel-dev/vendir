@@ -5,14 +5,19 @@ package git
 
 import (
 	"bytes"
+	"crypto"
+	"crypto/fips140"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	oarmor "carvel.dev/vendir/pkg/vendir/openpgparmor"
-	"golang.org/x/crypto/openpgp" //nolint:staticcheck
+	"golang.org/x/crypto/openpgp"        //nolint:staticcheck
+	"golang.org/x/crypto/openpgp/armor"  //nolint:staticcheck
+	"golang.org/x/crypto/openpgp/packet" //nolint:staticcheck
 )
 
 // Verification verifies Git commit/tag against a set of public keys
@@ -21,6 +26,7 @@ type Verification struct {
 	repoPath   string
 	opts       ctlconf.DirectoryContentsGitVerification
 	refFetcher ctlfetch.RefFetcher
+	infoLog    io.Writer
 }
 
 func (v Verification) Verify(ref string) error {
@@ -49,10 +55,27 @@ func (v Verification) Verify(ref string) error {
 		return err
 	}
 
+	// Non-FIPS-approved algorithms (SHA-1, MD5, DSA) panic under
+	// GODEBUG=fips140=only; reject or warn before that happens.
+	if fips140.Enforced() {
+		err := v.checkFIPSApproved(ref, signedObj.Signature)
+		if err != nil {
+			return err
+		}
+	}
+
 	target := strings.NewReader(signedObj.Contents)
 	sig := strings.NewReader(signedObj.Signature)
 
-	_, err = openpgp.CheckArmoredDetachedSignature(publicKeys, target, sig)
+	verify := func() {
+		_, err = openpgp.CheckArmoredDetachedSignature(publicKeys, target, sig)
+	}
+	if v.opts.AllowLegacySignatures {
+		// May be a non-approved algorithm let through above.
+		fips140.WithoutEnforcement(verify)
+	} else {
+		verify()
+	}
 	if err != nil {
 		hintMsg := ""
 		if strings.Contains(err.Error(), "signature made by unknown entity") {
@@ -62,6 +85,83 @@ func (v Verification) Verify(ref string) error {
 	}
 
 	return nil
+}
+
+// checkFIPSApproved errors on a non-FIPS-approved sig, or just warns
+// if v.opts.AllowLegacySignatures is set.
+func (v Verification) checkFIPSApproved(ref, sig string) error {
+	hashFunc, pubKeyAlgo, err := signatureAlgorithms(strings.NewReader(sig))
+	if err != nil {
+		return fmt.Errorf("Reading signature: %s", err)
+	}
+
+	var nonApprovedReasons []string
+	if !fipsApprovedHash(hashFunc) {
+		nonApprovedReasons = append(nonApprovedReasons,
+			fmt.Sprintf("hash algorithm %s", hashFunc))
+	}
+	if !fipsApprovedPubKeyAlgo(pubKeyAlgo) {
+		nonApprovedReasons = append(nonApprovedReasons,
+			fmt.Sprintf("pubkey algorithm %v", pubKeyAlgo))
+	}
+	if len(nonApprovedReasons) == 0 {
+		return nil
+	}
+	list := strings.Join(nonApprovedReasons, ", ")
+
+	if !v.opts.AllowLegacySignatures {
+		return fmt.Errorf("Checking signature for '%s': uses"+
+			" non-FIPS-approved %s; set verification.allowLegacySignatures"+
+			" to sync repositories with legacy-signed commits/tags under"+
+			" GODEBUG=fips140=only", ref, list)
+	}
+
+	fmt.Fprintf(v.infoLog, "Warning: signature for '%s' uses"+
+		" non-FIPS-approved %s\n", ref, list)
+
+	return nil
+}
+
+// signatureAlgorithms returns an armored detached signature's hash and
+// public-key algorithms, without verifying it.
+func signatureAlgorithms(r io.Reader) (
+	crypto.Hash, packet.PublicKeyAlgorithm, error,
+) {
+	block, err := armor.Decode(r)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	p, err := packet.Read(block.Body)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	switch sig := p.(type) {
+	case *packet.Signature:
+		return sig.Hash, sig.PubKeyAlgo, nil
+	case *packet.SignatureV3:
+		return sig.Hash, sig.PubKeyAlgo, nil
+	default:
+		return 0, 0, fmt.Errorf("expected a signature packet, got %T", p)
+	}
+}
+
+// fipsApprovedHash reports whether hash is FIPS 140-3 approved.
+// SHA-1 and MD5 are not, and panic under GODEBUG=fips140=only.
+func fipsApprovedHash(hash crypto.Hash) bool {
+	switch hash {
+	case crypto.SHA1, crypto.MD5, crypto.MD5SHA1:
+		return false
+	default:
+		return true
+	}
+}
+
+// fipsApprovedPubKeyAlgo reports whether algo is FIPS 140-3 approved.
+// DSA is not, and panics under GODEBUG=fips140=only.
+func fipsApprovedPubKeyAlgo(algo packet.PublicKeyAlgorithm) bool {
+	return algo != packet.PubKeyAlgoDSA
 }
 
 type signedObj struct {

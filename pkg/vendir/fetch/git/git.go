@@ -195,7 +195,10 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	}
 
 	if t.opts.Verification != nil {
-		err := Verification{dstPath, *t.opts.Verification, t.refFetcher}.Verify(ref)
+		verification := Verification{
+			dstPath, *t.opts.Verification, t.refFetcher, t.infoLog,
+		}
+		err := verification.Verify(ref)
 		if err != nil {
 			return err
 		}
