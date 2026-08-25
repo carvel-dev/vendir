@@ -19,16 +19,17 @@ import (
 const gitCacheType = "git-bundle"
 
 type Sync struct {
-	opts       ctlconf.DirectoryContentsGit
-	log        io.Writer
-	refFetcher ctlfetch.RefFetcher
-	cache      ctlcache.Cache
+	opts         ctlconf.DirectoryContentsGit
+	contentPaths ctlconf.ContentPaths
+	log          io.Writer
+	refFetcher   ctlfetch.RefFetcher
+	cache        ctlcache.Cache
 }
 
-func NewSync(opts ctlconf.DirectoryContentsGit,
-	log io.Writer, refFetcher ctlfetch.RefFetcher, cache ctlcache.Cache) Sync {
-
-	return Sync{opts, log, refFetcher, cache}
+func NewSync(opts ctlconf.DirectoryContentsGit, contentPaths ctlconf.ContentPaths,
+	log io.Writer, refFetcher ctlfetch.RefFetcher, cache ctlcache.Cache,
+) Sync {
+	return Sync{opts, contentPaths, log, refFetcher, cache}
 }
 
 func (d Sync) Desc() string {
@@ -54,7 +55,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 
 	cacheID := fmt.Sprintf("%x", sha256.Sum256([]byte(d.opts.URL)))
 
-	git := NewGit(d.opts, d.log, d.refFetcher)
+	git := NewGit(d.opts, d.contentPaths, d.log, d.refFetcher)
 
 	var bundle string
 	if cacheEntry, hasCache := d.cache.Has(gitCacheType, cacheID); hasCache {

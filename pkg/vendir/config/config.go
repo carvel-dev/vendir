@@ -178,13 +178,15 @@ func (c Config) UseDirectory(path, dirPath string) error {
 			matched = true
 
 			newCon := DirectoryContents{
-				Path:         con.Path,
-				Directory:    &DirectoryContentsDirectory{Path: dirPath},
-				IncludePaths: con.IncludePaths,
-				ExcludePaths: con.ExcludePaths,
-				IgnorePaths:  con.IgnorePaths,
-				LegalPaths:   con.LegalPaths,
-				Lazy:         con.Lazy,
+				Path:      con.Path,
+				Directory: &DirectoryContentsDirectory{Path: dirPath},
+				ContentPaths: ContentPaths{
+					IncludePaths: con.IncludePaths,
+					ExcludePaths: con.ExcludePaths,
+					IgnorePaths:  con.IgnorePaths,
+				},
+				LegalPaths: con.LegalPaths,
+				Lazy:       con.Lazy,
 			}
 			dir.Contents[j] = newCon
 			c.Directories[i] = dir

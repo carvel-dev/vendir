@@ -31,7 +31,7 @@ func TestGit_Retrieve(t *testing.T) {
 			Ref:                "origin/main",
 			SecretRef:          &config.DirectoryContentsLocalRef{Name: "some-secret"},
 			ForceHTTPBasicAuth: true,
-		}, os.Stdout, secretFetcher, runner)
+		}, config.ContentPaths{}, os.Stdout, secretFetcher, runner)
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
 		require.NoError(t, err)
 		isPresent := false
@@ -61,7 +61,7 @@ func TestGit_Retrieve(t *testing.T) {
 			Ref:                "origin/main",
 			SecretRef:          &config.DirectoryContentsLocalRef{Name: "some-secret"},
 			ForceHTTPBasicAuth: true,
-		}, os.Stdout, secretFetcher, runner)
+		}, config.ContentPaths{}, os.Stdout, secretFetcher, runner)
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
 		require.ErrorContains(t, err, "Username/password authentication is only supported for https remotes")
 	})
