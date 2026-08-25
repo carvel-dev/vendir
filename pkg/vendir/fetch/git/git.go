@@ -166,30 +166,81 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		}
 	}
 
-	// A targeted refspec fetch (named ref, or locked SHA with a known
-	// OriginalRef) doesn't need all tags. RefSelection needs them for semver
-	// matching, and a bare SHA with no OriginalRef can't be targeted at all.
-	tagOpt := "--tags"
-	if t.canTargetFetch() {
-		tagOpt = noTagsFlag
-	}
-	argss = append(argss, []string{"config", "remote.origin.tagOpt", tagOpt})
-
 	if bundle != "" {
 		argss = append(argss, []string{"bundle", "unbundle", bundle})
 	}
 
-	// When fetching a single named ref, git places it in FETCH_HEAD only —
-	// no local ref is created. Track this to use FETCH_HEAD for checkout.
-	fetchArgs, useFetchHead := t.targetedFetchArgs()
-	if t.opts.Depth > 0 {
-		fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
-	}
-	argss = append(argss, fetchArgs)
-
 	err = t.cmdRunner.RunMultiple(argss, env, dstPath)
 	if err != nil {
 		return err
+	}
+
+	// Resolve an ambiguous ref (which may be either a branch or a tag) before
+	// constructing the refspec. This lets us preserve tags without fetching
+	// every tag in the repository.
+	refType := remoteRefUnknown
+	fetchRef := t.opts.Ref
+	if t.isLockedSHAWithNamedOriginal() {
+		fetchRef = t.opts.OriginalRef
+	}
+	if t.canTargetFetch() {
+		var err error
+		refType, err = t.remoteRefType(dstPath, fetchRef)
+		if err != nil {
+			return err
+		}
+	}
+
+	// RefSelection needs all tags for semver matching, and a bare SHA has no
+	// named ref to target. A targeted tag fetch explicitly creates just that
+	// tag; a targeted branch fetch uses Git's default auto-follow behavior,
+	// which fetches only tags reachable from the branch tip.
+	if !t.canTargetFetch() || refType == remoteRefUnknown ||
+		refType == remoteRefTag {
+		tagOpt := "--tags"
+		if t.canTargetFetch() {
+			tagOpt = noTagsFlag
+		}
+		_, _, err = t.cmdRunner.Run(
+			[]string{"config", "remote.origin.tagOpt", tagOpt}, nil, dstPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// When fetching a single named ref, track the result in FETCH_HEAD for
+	// checkout. Branches/tags also get local refs to support bundle caching.
+	fetchArgs, useFetchHead := t.targetedFetchArgs(fetchRef, refType)
+	if t.opts.Depth > 0 {
+		fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
+	}
+
+	_, _, err = t.cmdRunner.Run(fetchArgs, env, dstPath)
+	lockedFetchByOriginal := t.isLockedSHAWithNamedOriginal() &&
+		fetchRef != t.opts.Ref
+	if err != nil && lockedFetchByOriginal {
+		// The original ref may have been deleted or renamed since the config
+		// was locked. Fetching the locked object directly retains locked-sync
+		// behavior without requiring the old name to remain available.
+		fallbackArgs := []string{"fetch", "origin", t.opts.Ref, noTagsFlag}
+		if t.opts.Depth > 0 {
+			fallbackArgs = append(
+				fallbackArgs, "--depth", strconv.Itoa(t.opts.Depth),
+			)
+		}
+		_, _, err = t.cmdRunner.Run(fallbackArgs, env, dstPath)
+	}
+	if err != nil {
+		return err
+	}
+
+	if useFetchHead {
+		_, _, err = t.cmdRunner.Run([]string{
+			"update-ref", "refs/vendir/fetched", "FETCH_HEAD",
+		}, nil, dstPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	ref, err := t.resolveRef(dstPath)
@@ -241,9 +292,13 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 }
 
 const (
-	noTagsFlag      = "--no-tags"
-	fetchHeadCommit = "FETCH_HEAD^{commit}"
-	originPrefix    = "origin/"
+	noTagsFlag         = "--no-tags"
+	fetchHeadCommit    = "FETCH_HEAD^{commit}"
+	originName         = "origin"
+	originPrefix       = originName + "/"
+	remoteHeadsPrefix  = "refs/heads/"
+	remoteTagsPrefix   = "refs/tags/"
+	minRemoteRefFields = 2
 )
 
 // isLockedSHAWithNamedOriginal reports whether Ref is a locked SHA with a
@@ -266,26 +321,71 @@ func (t *Git) canTargetFetch() bool {
 // targetedFetchArgs builds the "fetch origin ..." args for t.opts.Ref,
 // targeting a single named ref where possible. It reports whether the
 // result lands only in FETCH_HEAD (true) or creates a local ref (false).
-func (t *Git) targetedFetchArgs() ([]string, bool) {
-	fetchArgs := []string{"fetch", "origin"}
-	switch {
-	case strings.HasPrefix(t.opts.Ref, originPrefix):
-		// only fetch the exact remote branch we're seeking
-		branch := strings.TrimPrefix(t.opts.Ref, originPrefix)
-		return append(fetchArgs, branch, noTagsFlag), true
-	case len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref):
-		// fetch only the named tag or branch; SHAs must use a full fetch
-		return append(fetchArgs, t.opts.Ref, noTagsFlag), true
-	case t.isLockedSHAWithNamedOriginal():
-		// locked mode: fetch by the original named ref to avoid a full fetch.
-		// origin/ is a local tracking prefix, not a valid remote refspec.
-		originalRef := strings.TrimPrefix(t.opts.OriginalRef, originPrefix)
-		return append(fetchArgs, originalRef, noTagsFlag), true
-	default:
+func (t *Git) targetedFetchArgs(
+	fetchRef string, refType remoteRefType,
+) ([]string, bool) {
+	fetchArgs := []string{"fetch", originName}
+	if !t.canTargetFetch() {
 		// no targeted ref available (e.g. RefSelection, or a bare SHA with
 		// no OriginalRef) — fall back to a full fetch of all branches/tags.
 		return fetchArgs, false
 	}
+
+	ref := strings.TrimPrefix(fetchRef, originPrefix)
+	ref = strings.TrimPrefix(ref, remoteHeadsPrefix)
+	ref = strings.TrimPrefix(ref, remoteTagsPrefix)
+	switch refType {
+	case remoteRefBranch:
+		return append(fetchArgs, ref+":refs/remotes/origin/"+ref), true
+	case remoteRefTag:
+		return append(
+			fetchArgs, remoteTagsPrefix+ref+":"+remoteTagsPrefix+ref,
+			noTagsFlag,
+		), true
+	default:
+		return append(fetchArgs, ref, noTagsFlag), true
+	}
+}
+
+type remoteRefType int
+
+const (
+	remoteRefUnknown remoteRefType = iota
+	remoteRefBranch
+	remoteRefTag
+)
+
+func (t *Git) remoteRefType(dstPath, ref string) (remoteRefType, error) {
+	normalizedRef := strings.TrimPrefix(ref, originPrefix)
+	switch {
+	case strings.HasPrefix(normalizedRef, remoteHeadsPrefix):
+		return remoteRefBranch, nil
+	case strings.HasPrefix(normalizedRef, remoteTagsPrefix):
+		return remoteRefTag, nil
+	}
+
+	out, _, err := t.cmdRunner.Run(
+		[]string{"ls-remote", "origin", normalizedRef}, nil, dstPath)
+	if err != nil {
+		return remoteRefUnknown, err
+	}
+
+	branchRef := remoteHeadsPrefix + normalizedRef
+	tagRef := remoteTagsPrefix + normalizedRef
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < minRemoteRefFields {
+			continue
+		}
+		switch fields[1] {
+		case branchRef:
+			return remoteRefBranch, nil
+		case tagRef:
+			return remoteRefTag, nil
+		}
+	}
+
+	return remoteRefUnknown, nil
 }
 
 func (t *Git) resolveRef(dstPath string) (string, error) {

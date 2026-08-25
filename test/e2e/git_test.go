@@ -20,6 +20,7 @@ import (
 )
 
 const gitRepoAssetDir = "git-repo"
+const signedTrustedTag = "signed-trusted-tag"
 
 func TestGitVerification(t *testing.T) {
 	env := BuildEnv(t)
@@ -89,7 +90,7 @@ directories:
 	})
 
 	logger.Section("signed trusted tag", func() {
-		ref := "signed-trusted-tag"
+		ref := signedTrustedTag
 		vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref)})
 	})
 
@@ -197,7 +198,7 @@ directories:
 		[]string{"sync", "-f", "-", "--json"},
 		RunOpts{
 			Dir:          dstPath,
-			StdinReader:  yamlConfig("signed-trusted-tag"),
+			StdinReader:  yamlConfig(signedTrustedTag),
 			StdoutWriter: &stdout,
 			Env: []string{
 				"VENDIR_CACHE_DIR=" + tmpDir,
@@ -218,7 +219,7 @@ directories:
 		[]string{"sync", "-f", "-", "--json"},
 		RunOpts{
 			Dir:          dstPath,
-			StdinReader:  yamlConfig("signed-trusted-tag"),
+			StdinReader:  yamlConfig(signedTrustedTag),
 			StdoutWriter: &stdout,
 			Env: []string{
 				"VENDIR_CACHE_DIR=" + tmpDir,
@@ -286,7 +287,7 @@ func TestGitFetchOptimizationsNamedTag(t *testing.T) {
 	var stdout bytes.Buffer
 	_, err = vendir.RunWithOpts(
 		[]string{"sync", "-f", "-", "--json"},
-		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig("signed-trusted-tag")), StdoutWriter: &stdout},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag)), StdoutWriter: &stdout},
 	)
 	require.NoError(t, err)
 
@@ -295,11 +296,14 @@ func TestGitFetchOptimizationsNamedTag(t *testing.T) {
 
 	var foundTargetedFetch, foundBareFetch bool
 	for _, l := range vendirOutput.Lines {
-		if strings.Contains(l, "fetch origin signed-trusted-tag --no-tags") {
+		if strings.Contains(l, "fetch origin") &&
+			strings.Contains(l, signedTrustedTag) &&
+			strings.Contains(l, "--no-tags") {
 			foundTargetedFetch = true
 		}
 		// "--> git fetch origin" followed by a depth/no refspec is the old slow path
-		if strings.Contains(l, "--> git fetch origin") && !strings.Contains(l, "signed-trusted-tag") {
+		if strings.Contains(l, "--> git fetch origin") &&
+			!strings.Contains(l, signedTrustedTag) {
 			foundBareFetch = true
 		}
 	}
@@ -320,7 +324,7 @@ func TestGitFetchOptimizationsLockedSync(t *testing.T) {
 	// First sync to produce a lock file
 	_, err = vendir.RunWithOpts(
 		[]string{"sync", "-f", "-"},
-		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig("signed-trusted-tag"))},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag))},
 	)
 	require.NoError(t, err)
 
@@ -328,7 +332,7 @@ func TestGitFetchOptimizationsLockedSync(t *testing.T) {
 	var stdout bytes.Buffer
 	_, err = vendir.RunWithOpts(
 		[]string{"sync", "--locked", "-f", "-", "--json"},
-		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig("signed-trusted-tag")), StdoutWriter: &stdout},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag)), StdoutWriter: &stdout},
 	)
 	require.NoError(t, err)
 
@@ -337,7 +341,9 @@ func TestGitFetchOptimizationsLockedSync(t *testing.T) {
 
 	var foundTargetedFetch bool
 	for _, l := range vendirOutput.Lines {
-		if strings.Contains(l, "fetch origin signed-trusted-tag --no-tags") {
+		if strings.Contains(l, "fetch origin") &&
+			strings.Contains(l, signedTrustedTag) &&
+			strings.Contains(l, "--no-tags") {
 			foundTargetedFetch = true
 		}
 	}
@@ -352,7 +358,7 @@ func TestGitFetchOptimizationsTamperedLockSHA(t *testing.T) {
 	defer os.RemoveAll(dstPath)
 
 	// Write a vendir.yml pointing at the tag
-	err = os.WriteFile(filepath.Join(dstPath, "vendir.yml"), []byte(yamlConfig("signed-trusted-tag")), ownerReadWrite)
+	err = os.WriteFile(filepath.Join(dstPath, "vendir.yml"), []byte(yamlConfig(signedTrustedTag)), ownerReadWrite)
 	require.NoError(t, err)
 
 	// Write a lock file with a different (valid) SHA — masterHeadSHA ≠ the tag's SHA
