@@ -327,3 +327,84 @@ metadata:
 		assert.Contains(t, err.Error(), "Expected to find one secret 'ssh-key-secret', but found multiple")
 	})
 }
+
+func TestSecretStringData(t *testing.T) {
+	writeConfig := func(t *testing.T, secret string) string {
+		t.Helper()
+		path := filepath.Join(t.TempDir(), "config.yml")
+		contents := secret + `
+---
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: charts
+  contents:
+  - path: myChart
+    helmChart:
+      name: mychart
+      version: "1.1.1"
+      repository:
+        url: https://registry.example.com/charts/
+        secretRef:
+          name: auth
+`
+		require.NoError(t, os.WriteFile(path, []byte(contents), 0666))
+		return path
+	}
+
+	t.Run("stringData is read", func(t *testing.T) {
+		path := writeConfig(t, `apiVersion: v1
+kind: Secret
+metadata:
+  name: auth
+stringData:
+  username: admin
+  password: hunter2`)
+
+		_, secrets, _, err := config.NewConfigFromFiles([]string{path})
+		require.NoError(t, err)
+		require.Len(t, secrets, 1)
+		assert.Equal(t, map[string][]byte{
+			"username": []byte("admin"),
+			"password": []byte("hunter2"),
+		}, secrets[0].Data)
+	})
+
+	t.Run("data is still read", func(t *testing.T) {
+		path := writeConfig(t, `apiVersion: v1
+kind: Secret
+metadata:
+  name: auth
+data:
+  username: YWRtaW4=
+  password: aHVudGVyMg==`)
+
+		_, secrets, _, err := config.NewConfigFromFiles([]string{path})
+		require.NoError(t, err)
+		require.Len(t, secrets, 1)
+		assert.Equal(t, map[string][]byte{
+			"username": []byte("admin"),
+			"password": []byte("hunter2"),
+		}, secrets[0].Data)
+	})
+
+	t.Run("stringData wins over data for the same key", func(t *testing.T) {
+		path := writeConfig(t, `apiVersion: v1
+kind: Secret
+metadata:
+  name: auth
+data:
+  username: YWRtaW4=
+  password: ZnJvbS1kYXRh
+stringData:
+  password: from-string-data`)
+
+		_, secrets, _, err := config.NewConfigFromFiles([]string{path})
+		require.NoError(t, err)
+		require.Len(t, secrets, 1)
+		assert.Equal(t, map[string][]byte{
+			"username": []byte("admin"),
+			"password": []byte("from-string-data"),
+		}, secrets[0].Data)
+	})
+}
