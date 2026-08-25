@@ -46,7 +46,7 @@ func (p PrefixedLogger) Logf(msg string, args ...interface{}) {
 	p.writerLock.Lock()
 	defer p.writerLock.Unlock()
 
-	p.parent.Logf(string(newData))
+	p.parent.Logf("%s", string(newData))
 }
 
 // UIPrefixWriter prints a prefix when the underlying ui prints a message

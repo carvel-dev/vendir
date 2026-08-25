@@ -114,6 +114,6 @@ func (l *ProgressBarNoTTYLogger) End() {
 		l.cancelFunc()
 	}
 	if l.logger != nil && l.finalMessage != "" {
-		l.logger.Logf(l.finalMessage)
+		l.logger.Logf("%s", l.finalMessage)
 	}
 }

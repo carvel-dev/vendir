@@ -77,6 +77,11 @@ type DirectoryContentsGit struct {
 
 type DirectoryContentsGitVerification struct {
 	PublicKeysSecretRef *DirectoryContentsLocalRef `json:"publicKeysSecretRef,omitempty"`
+	// AllowLegacySignatures, under GODEBUG=fips140=only, downgrades a
+	// non-FIPS-approved signature algorithm (SHA-1, MD5, DSA) from an
+	// error to a warning instead of rejecting it.
+	// +optional
+	AllowLegacySignatures bool `json:"allowLegacySignatures,omitempty"`
 }
 
 type DirectoryContentsHg struct {
