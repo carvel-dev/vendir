@@ -107,6 +107,9 @@ type DirectoryContentsHTTP struct {
 	SecretRef *DirectoryContentsLocalRef `json:"secretRef,omitempty"`
 	// +optional
 	DisableUnpack bool `json:"disableUnpack,omitempty"`
+	// Secret containing HTTP Headers for the HTTP request when fetching the URL
+	// +optional
+	HTTPHeadersSecretRef *DirectoryContentsLocalRef `json:"httpHeadersSecretRef,omitempty"`
 }
 
 type DirectoryContentsImage struct {
