@@ -14,21 +14,27 @@ import (
 	"github.com/bmatcuk/doublestar"
 )
 
+// stagingDirPerms are the permissions directories are created with while
+// vendir owns them, before the configured ones are applied
+const stagingDirPerms os.FileMode = 0700
+
 type StagingDir struct {
-	rootDir     string
-	stagingDir  string
-	incomingDir string
+	rootDir       string
+	stagingDir    string
+	incomingDir   string
+	mergeDiffOnly bool
 }
 
-func NewStagingDir() (StagingDir, error) {
+func NewStagingDir(mergeDiffOnly bool) (StagingDir, error) {
 	rootDir, err := os.MkdirTemp(".", ".vendir-tmp-")
 	if err != nil {
 		return StagingDir{}, err
 	}
 	return StagingDir{
-		rootDir:     rootDir,
-		stagingDir:  filepath.Join(rootDir, "staging"),
-		incomingDir: filepath.Join(rootDir, "incoming"),
+		rootDir:       rootDir,
+		stagingDir:    filepath.Join(rootDir, "staging"),
+		incomingDir:   filepath.Join(rootDir, "incoming"),
+		mergeDiffOnly: mergeDiffOnly,
 	}, nil
 }
 
@@ -128,15 +134,17 @@ func isPathIgnored(path string, ignorePaths []string) (bool, error) {
 	return false, nil
 }
 
-// Replaces entire final location directory with staging directory
-func (d StagingDir) Replace(path string) error {
-
+// Replace makes the entire final location directory hold the staging
+// directory's contents. When merging diffs only, files that already hold those
+// are left untouched, and so are the unmanaged paths, given relative to the
+// final location; otherwise the whole directory is swapped over.
+func (d StagingDir) Replace(path string, unmanagedPaths []string) error {
 	err := d.prepareOutputDirectory(path)
 	if err != nil {
 		return err
 	}
 
-	err = os.Rename(d.stagingDir, path)
+	err = d.materialize(d.stagingDir, path, newPreservedPaths(unmanagedPaths))
 	if err != nil {
 		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, path, err)
 	}
@@ -144,14 +152,18 @@ func (d StagingDir) Replace(path string) error {
 	return nil
 }
 
-// Replaces single directory of final location dir with single directory of staging dir
+// PartialRepace makes a single directory of the final location dir hold the
+// matching staging dir's contents. When merging diffs only, files that already
+// hold those are left untouched; otherwise the directory is swapped over.
 func (d StagingDir) PartialRepace(contentPath string, directoryPath string) error {
 	err := d.prepareOutputDirectory(directoryPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.Rename(filepath.Join(d.stagingDir, contentPath), directoryPath)
+	stagedPath := filepath.Join(d.stagingDir, contentPath)
+
+	err = d.materialize(stagedPath, directoryPath, nil)
 	if err != nil {
 		return fmt.Errorf("Moving staging directory '%s' to final location '%s': %s", d.stagingDir, directoryPath, err)
 	}
@@ -159,16 +171,30 @@ func (d StagingDir) PartialRepace(contentPath string, directoryPath string) erro
 	return nil
 }
 
+// materialize makes the dir at dstPath hold what is staged at srcPath,
+// consuming srcPath in the process
+func (d StagingDir) materialize(srcPath, dstPath string, preserved preservedPaths) error {
+	if !d.mergeDiffOnly {
+		return os.Rename(srcPath, dstPath)
+	}
+
+	return reconcileDir(srcPath, dstPath, preserved)
+}
+
 func (d StagingDir) prepareOutputDirectory(directoryPath string) error {
-	err := os.RemoveAll(directoryPath)
-	if err != nil {
-		return fmt.Errorf("Deleting dir %s: %s", directoryPath, err)
+	// the whole final location is swapped out, so whatever is there has to go
+	// first; when merging diffs only it is reconciled in place instead
+	if !d.mergeDiffOnly {
+		err := os.RemoveAll(directoryPath)
+		if err != nil {
+			return fmt.Errorf("Deleting dir %s: %s", directoryPath, err)
+		}
 	}
 
 	// Clean to avoid getting 'out/in/' from 'out/in/' instead of just 'out'
 	parentPath := filepath.Dir(filepath.Clean(directoryPath))
 
-	err = os.MkdirAll(parentPath, 0700)
+	err := os.MkdirAll(parentPath, stagingDirPerms)
 	if err != nil {
 		return fmt.Errorf("Creating final location parent dir %s: %s", parentPath, err)
 	}
