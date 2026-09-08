@@ -63,8 +63,12 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 		return "", err
 	}
 
-	if _, hit := t.cache.Has(ImgpkgBundleArtifactType, ref.Identifier()); hit {
-		return imageRef, t.cache.CopyFrom(ImgpkgBundleArtifactType, ref.Identifier(), destination)
+	if _, hit := t.cache.Has(ImgpkgBundleArtifactType, ref.Name()); hit {
+		return imageRef, t.cache.CopyFrom(
+			ImgpkgBundleArtifactType,
+			ref.Name(),
+			destination,
+		)
 	}
 
 	opts, err := t.RegistryOpts()
@@ -83,7 +87,7 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 	}
 
 	if status.Cacheable {
-		err := t.cache.Save(ImgpkgBundleArtifactType, ref.Identifier(), destination)
+		err := t.cache.Save(ImgpkgBundleArtifactType, ref.Name(), destination)
 		if err != nil {
 			return "", err
 		}
@@ -103,8 +107,8 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 		return "", err
 	}
 
-	if _, hit := t.cache.Has(artifactType, ref.Identifier()); hit {
-		return imageRef, t.cache.CopyFrom(artifactType, ref.Identifier(), destination)
+	if _, hit := t.cache.Has(artifactType, ref.Name()); hit {
+		return imageRef, t.cache.CopyFrom(artifactType, ref.Name(), destination)
 	}
 
 	opts, err := t.RegistryOpts()
@@ -123,7 +127,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 	}
 
 	if status.Cacheable {
-		err := t.cache.Save(artifactType, ref.Identifier(), destination)
+		err := t.cache.Save(artifactType, ref.Name(), destination)
 		if err != nil {
 			return "", err
 		}
