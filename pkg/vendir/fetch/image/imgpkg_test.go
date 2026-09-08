@@ -232,6 +232,52 @@ func TestImgpkgCache(t *testing.T) {
 		require.Equal(t, 1, localCache.numCallCopyFrom, "Called CopyFrom 1 time")
 	})
 
+	t.Run("does not share cache entries between images with the same digest hosted in different repositories", func(t *testing.T) {
+		// Regression test for https://github.com/carvel-dev/vendir/issues/399.
+		//
+		// When a bundle is relocated (e.g. imgpkg copy) to a different
+		// registry/repository, the OCI content (and therefore the digest)
+		// stays the same, but content that gets rewritten based on the
+		// pull location (e.g. .imgpkg/images.yml) can differ. The cache key
+		// must therefore be based on the fully qualified reference
+		// (registry+repository+digest), not just the bare digest, otherwise
+		// a cache entry populated from one repository would incorrectly be
+		// served for the very same digest pulled from a different
+		// repository.
+		otherRef, err := regname.ParseReference(fmt.Sprintf("%s/img2:test-img", localRegistryAddress))
+		require.NoError(t, err)
+		err = regremote.Write(otherRef, b)
+		require.NoError(t, err)
+
+		localCache := &fakeCache{cache: map[string]map[string]string{}}
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{EnvironFunc: func() []string { return []string{} }},
+			nil,
+			localCache,
+		)
+
+		temp, err := os.MkdirTemp("", "vendir-fetch-image")
+		require.NoError(t, err)
+		defer os.RemoveAll(temp)
+
+		digest := ref.Context().Digest(d.String())
+		otherDigest := otherRef.Context().Digest(d.String())
+		require.Equal(t, digest.DigestStr(), otherDigest.DigestStr(), "both images must share the same digest")
+		require.NotEqual(t, digest.Name(), otherDigest.Name(), "images must live in different repositories")
+
+		_, err = imgpkg.FetchImage(digest.String(), temp)
+		require.NoError(t, err)
+		require.Equal(t, 1, localCache.numCallSave, "first fetch should populate the cache")
+		require.Equal(t, 0, localCache.numCallCopyFrom, "first fetch should not be served from the cache")
+
+		_, err = imgpkg.FetchImage(otherDigest.String(), temp)
+		require.NoError(t, err)
+		require.Equal(t, 2, localCache.numCallSave,
+			"fetch from a different repository must not reuse the cache entry from the other repository")
+		require.Equal(t, 0, localCache.numCallCopyFrom,
+			"fetch from a different repository must not be served from the cache")
+	})
+
 	t.Run("does not use cache when fetching is a Not cacheable image", func(t *testing.T) {
 		localCache := &fakeCache{cache: map[string]map[string]string{}}
 		imgpkg := ctlimg.NewImgpkg(
