@@ -128,12 +128,13 @@ func (o *SyncOptions) Run() error {
 		return fmt.Errorf("Unable to create cache: %s", err)
 	}
 	syncOpts := ctldir.SyncOpts{
-		RefFetcher:     ctldir.NewNamedRefFetcher(secrets, configMaps),
-		GithubAPIToken: os.Getenv("VENDIR_GITHUB_API_TOKEN"),
-		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
-		Cache:          cache,
-		Lazy:           o.Lazy,
-		Partial:        len(dirs) > 0,
+		RefFetcher:                  ctldir.NewNamedRefFetcher(secrets, configMaps),
+		GithubAPIToken:              os.Getenv("VENDIR_GITHUB_API_TOKEN"),
+		HelmBinary:                  os.Getenv("VENDIR_HELM_BINARY"),
+		Cache:                       cache,
+		Lazy:                        o.Lazy,
+		Partial:                     len(dirs) > 0,
+		AllowAllSymlinkDestinations: o.AllowAllSymlinkDestinations,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
 
@@ -144,12 +145,6 @@ func (o *SyncOptions) Run() error {
 		dirLockConf, err := directory.Sync(syncOpts)
 		if err != nil {
 			return fmt.Errorf("Syncing directory '%s': %s", dirConf.Path, err)
-		}
-		if !o.AllowAllSymlinkDestinations {
-			err = ctldir.ValidateSymlinks(dirConf.Path)
-			if err != nil {
-				return err
-			}
 		}
 
 		newLockConfig.Directories = append(newLockConfig.Directories, dirLockConf)
