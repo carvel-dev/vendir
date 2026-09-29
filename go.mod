@@ -18,7 +18,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.52.0
+	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/tools v0.44.0
 	gopkg.in/inf.v0 v0.9.1
@@ -26,6 +26,8 @@ require (
 	k8s.io/code-generator v0.17.2
 	sigs.k8s.io/yaml v1.4.0
 )
+
+require github.com/ProtonMail/go-crypto v1.4.1
 
 require (
 	cloud.google.com/go/compute/metadata v0.7.0 // indirect
@@ -60,6 +62,7 @@ require (
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.12.0 // indirect
 	github.com/cheggaaa/pb/v3 v3.1.7 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20220327082430-c57b701bfc08 // indirect
+	github.com/cloudflare/circl v1.6.2 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/cppforlife/color v1.9.1-0.20200716202919-6706ac40b835 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
