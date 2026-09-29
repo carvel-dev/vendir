@@ -28,9 +28,10 @@ type SyncOptions struct {
 	Files    []string
 	LockFile string
 
-	Directories []string
-	Locked      bool
-	Lazy        bool
+	Directories   []string
+	Locked        bool
+	Lazy          bool
+	MergeDiffOnly bool
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
@@ -52,6 +53,7 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 	cmd.Flags().StringSliceVarP(&o.Directories, "directory", "d", nil, "Sync specific directory (format: dir/sub-dir[=local-dir])")
 	cmd.Flags().BoolVarP(&o.Locked, "locked", "l", false, "Consult lock file to pull exact references (e.g. use git sha instead of branch name)")
 	cmd.Flags().BoolVar(&o.Lazy, "lazy", true, "Set to 'false' it ignores the 'lazy' flag in the directory content configuration")
+	cmd.Flags().BoolVar(&o.MergeDiffOnly, "merge-diff-only", false, "Set to 'true' to only write contents that actually changed, leaving up to date files and manually managed contents untouched (slower, since every file is read back and compared)")
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
@@ -133,6 +135,7 @@ func (o *SyncOptions) Run() error {
 		HelmBinary:     os.Getenv("VENDIR_HELM_BINARY"),
 		Cache:          cache,
 		Lazy:           o.Lazy,
+		MergeDiffOnly:  o.MergeDiffOnly,
 		Partial:        len(dirs) > 0,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
