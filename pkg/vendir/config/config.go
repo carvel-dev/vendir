@@ -49,6 +49,7 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 			if err != nil {
 				return fmt.Errorf("Unmarshaling secret: %s", err)
 			}
+			secret.FoldStringData()
 
 			if s, ok := secretsNames[secret.Metadata.Name]; ok {
 				if !reflect.DeepEqual(s.Data, secret.Data) {
