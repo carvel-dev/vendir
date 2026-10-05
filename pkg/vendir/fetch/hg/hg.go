@@ -19,6 +19,8 @@ import (
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 )
 
+const privateFileMode = 0600
+
 type Hg struct {
 	opts       ctlconf.DirectoryContentsHg
 	infoLog    io.Writer
@@ -143,7 +145,7 @@ func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 	}
 
 	if authOpts.Username != nil && authOpts.Password != nil {
-		if !strings.HasPrefix(hgURL, "https://") {
+		if !strings.HasPrefix(strings.ToLower(hgURL), "https://") {
 			return fmt.Errorf("Username/password authentication is only supported for https remotes")
 		}
 		hgCredsURL, err := url.Parse(hgURL)
@@ -151,12 +153,20 @@ func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 			return fmt.Errorf("Parsing hg remote url: %s", err)
 		}
 
+		netrcPath := filepath.Join(authDir, "netrc")
+		netrc := fmt.Sprintf("machine %s\nlogin %s\npassword %s\n",
+			hgCredsURL.Host, *authOpts.Username, *authOpts.Password)
+		err = os.WriteFile(netrcPath, []byte(netrc), privateFileMode)
+		if err != nil {
+			return fmt.Errorf("Writing netrc file: %s", err)
+		}
+		t.env = append(t.env, "HOME="+authDir)
+
 		hgRc = fmt.Sprintf(`%s
 [auth]
 hgauth.prefix = https://%s
 hgauth.username = %s
-hgauth.password = %s
-`, hgRc, hgCredsURL.Host, *authOpts.Username, *authOpts.Password)
+`, hgRc, hgCredsURL.Host, *authOpts.Username)
 
 	}
 
@@ -229,14 +239,17 @@ func (t *Hg) run(args []string, dstPath string) (string, string, error) {
 	cmd := exec.Command("hg", args...)
 	cmd.Env = t.env
 	cmd.Dir = dstPath
-	cmd.Stdout = io.MultiWriter(t.infoLog, &stdoutBs)
-	cmd.Stderr = io.MultiWriter(t.infoLog, &stderrBs)
+	cmd.Stdout = io.MultiWriter(
+		ctlfetch.NewSanitizingWriter(t.infoLog), &stdoutBs)
+	cmd.Stderr = io.MultiWriter(
+		ctlfetch.NewSanitizingWriter(t.infoLog), &stderrBs)
 
 	t.infoLog.Write([]byte(fmt.Sprintf("--> hg %s\n", strings.Join(args, " "))))
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)", args, err,
+			ctlfetch.RedactSensitiveData(stderrBs.String()))
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil

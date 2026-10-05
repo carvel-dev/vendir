@@ -74,7 +74,14 @@ func (t *OCISource) Fetch(dstPath string, tempArea ctlfetch.TempArea) error {
 
 	defer os.RemoveAll(helmHomeDir)
 
-	repo := strings.TrimPrefix(t.opts.Repository.URL, "oci://")
+	const ociScheme = "oci://"
+	urlLower := strings.ToLower(t.opts.Repository.URL)
+	var repo string
+	if strings.HasPrefix(urlLower, ociScheme) {
+		repo = urlLower[len(ociScheme):]
+	} else {
+		repo = t.opts.Repository.URL
+	}
 
 	// TODO authenticate against multiple repos since dependencies might be else where?
 	err = t.login(repo, helmHomeDir)
@@ -117,7 +124,8 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm registry login: %s (stderr: %s)", err, stderrBs.String())
+		redacted := ctlfetch.RedactSensitiveData(stderrBs.String())
+		return fmt.Errorf("Helm registry login: %s (stderr: %s)", err, redacted)
 	}
 
 	return nil
@@ -135,7 +143,8 @@ func (t *OCISource) pull(ref, helmHomeDir, dstPath string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm chart pull: %s (stderr: %s)", err, stderrBs.String())
+		redacted := ctlfetch.RedactSensitiveData(stderrBs.String())
+		return fmt.Errorf("Helm chart pull: %s (stderr: %s)", err, redacted)
 	}
 
 	return nil
