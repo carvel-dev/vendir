@@ -42,7 +42,8 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 		}
 
 		switch {
-		case res.APIVersion == "v1" && res.Kind == "Secret":
+		case strings.EqualFold(res.APIVersion, "v1") &&
+			strings.EqualFold(res.Kind, "Secret"):
 			var secret Secret
 
 			err := yaml.Unmarshal(docBytes, &secret)
@@ -58,7 +59,8 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 			}
 			secretsNames[secret.Metadata.Name] = secret
 
-		case res.APIVersion == "v1" && res.Kind == "ConfigMap":
+		case strings.EqualFold(res.APIVersion, "v1") &&
+			strings.EqualFold(res.Kind, "ConfigMap"):
 			var cm ConfigMap
 
 			err := yaml.Unmarshal(docBytes, &cm)
@@ -67,7 +69,8 @@ func NewConfigFromFiles(paths []string) (Config, []Secret, []ConfigMap, error) {
 			}
 			configMaps = append(configMaps, cm)
 
-		case res.APIVersion == knownAPIVersion && res.Kind == knownKind:
+		case strings.EqualFold(res.APIVersion, knownAPIVersion) &&
+			strings.EqualFold(res.Kind, knownKind):
 			config, err := NewConfigFromBytes(docBytes)
 			config.cleanPaths()
 			if err != nil {
@@ -117,10 +120,10 @@ func NewConfigFromBytes(bs []byte) (Config, error) {
 }
 
 func (c Config) Validate() error {
-	if c.APIVersion != knownAPIVersion {
+	if !strings.EqualFold(c.APIVersion, knownAPIVersion) {
 		return fmt.Errorf("Validating apiVersion: Unknown version (known: %s)", knownAPIVersion)
 	}
-	if c.Kind != knownKind {
+	if !strings.EqualFold(c.Kind, knownKind) {
 		return fmt.Errorf("Validating kind: Unknown kind (known: %s)", knownKind)
 	}
 
