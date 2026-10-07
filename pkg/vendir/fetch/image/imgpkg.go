@@ -22,6 +22,7 @@ const (
 	ImgpkgBundleArtifactType = "imgpkgBundle"
 	ImageArtifactType        = "image"
 	errorFormatString        = "%s"
+	emptyString              = ""
 )
 
 
@@ -62,7 +63,7 @@ func (t *Imgpkg) FetchBundle(imageRef, destination string) (string, error) {
 func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
-		return "", err
+		return emptyString, err
 	}
 
 	if _, hit := t.cache.Has(ImgpkgBundleArtifactType, ref.Name()); hit {
@@ -76,7 +77,7 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 	opts, err := t.RegistryOpts()
 	if err != nil {
 		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
-		return "", fmt.Errorf(errorFormatString, redactedErr)
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	status, err := v1.PullRecursive(imageRef, destination, v1.PullOpts{
@@ -87,13 +88,13 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 
 	if err != nil {
 		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
-		return "", fmt.Errorf(errorFormatString, redactedErr)
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	if status.Cacheable {
 		err := t.cache.Save(ImgpkgBundleArtifactType, ref.Name(), destination)
 		if err != nil {
-			return "", err
+			return emptyString, err
 		}
 	}
 
@@ -108,7 +109,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
-		return "", err
+		return emptyString, err
 	}
 
 	if _, hit := t.cache.Has(artifactType, ref.Name()); hit {
@@ -118,7 +119,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 	opts, err := t.RegistryOpts()
 	if err != nil {
 		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
-		return "", fmt.Errorf(errorFormatString, redactedErr)
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	status, err := v1.Pull(imageRef, destination, v1.PullOpts{
@@ -129,13 +130,13 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 
 	if err != nil {
 		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
-		return "", fmt.Errorf(errorFormatString, redactedErr)
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	if status.Cacheable {
 		err := t.cache.Save(artifactType, ref.Name(), destination)
 		if err != nil {
-			return "", err
+			return emptyString, err
 		}
 	}
 
