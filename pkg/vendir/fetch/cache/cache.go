@@ -4,7 +4,8 @@
 package cache
 
 import (
-	"encoding/base64"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/fs"
@@ -158,9 +159,11 @@ func (c FolderCache) copyFolder(src string, dst string) error {
 }
 
 func (c FolderCache) idToFolder(artifactType string, id string) string {
-	normalizedID := base64.StdEncoding.EncodeToString([]byte(id))
+	// The id can be a fully-qualified image reference, which may be too long to
+	// use (even encoded) as a file name, so hash it to get a fixed length name
+	hash := sha256.Sum256([]byte(id))
+	normalizedID := hex.EncodeToString(hash[:])
 	return filepath.Join(".vendir-cache", "fetcher", artifactType, normalizedID)
-
 }
 
 // NoCache is a noop cache
