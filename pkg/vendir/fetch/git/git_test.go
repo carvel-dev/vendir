@@ -5,6 +5,7 @@ package git_test
 
 import (
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -64,6 +65,32 @@ func TestGit_Retrieve(t *testing.T) {
 		}, os.Stdout, secretFetcher, runner)
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
 		require.ErrorContains(t, err, "Username/password authentication is only supported for https remotes")
+	})
+
+	t.Run("Records the configured tag when other tags point at the same commit", func(t *testing.T) {
+		upstream := t.TempDir()
+		runGit := func(args ...string) {
+			cmd := exec.Command("git", args...)
+			cmd.Dir = upstream
+			cmd.Env = append(os.Environ(),
+				"GIT_AUTHOR_NAME=vendir", "GIT_AUTHOR_EMAIL=vendir@example.com",
+				"GIT_COMMITTER_NAME=vendir", "GIT_COMMITTER_EMAIL=vendir@example.com")
+			out, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(out))
+		}
+		runGit("init", "-q")
+		runGit("commit", "-q", "--allow-empty", "-m", "release")
+		// "stable" sorts before "v3.5.3", so git describe returns "stable"
+		runGit("tag", "v3.5.3")
+		runGit("tag", "stable")
+
+		gitRetriever := git.NewGit(config.DirectoryContentsGit{
+			URL: upstream,
+			Ref: "v3.5.3",
+		}, os.Stdout, &fetch.SingleSecretRefFetcher{})
+		info, err := gitRetriever.Retrieve(t.TempDir(), &tmpFolder{t}, "")
+		require.NoError(t, err)
+		require.Equal(t, []string{"v3.5.3"}, info.Tags)
 	})
 }
 
