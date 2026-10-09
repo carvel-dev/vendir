@@ -49,7 +49,8 @@ type SyncOpts struct {
 func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
 	yaml, err := yaml.Marshal(contents)
 	if err != nil {
-		return "", fmt.Errorf("error during creating for config digest for path '%s': %s", contents.Path, err)
+		return "", fmt.Errorf("Error creating config digest for path '%s': %s",
+			contents.Path, err)
 	}
 	digest := sha256.Sum256(yaml)
 	digestStr := hex.EncodeToString(digest[:])

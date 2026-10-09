@@ -21,7 +21,10 @@ import (
 const (
 	ImgpkgBundleArtifactType = "imgpkgBundle"
 	ImageArtifactType        = "image"
+	errorFormatString        = "%s"
+	emptyString              = ""
 )
+
 
 type ImgpkgOpts struct {
 	SecretRef                *ctlconf.DirectoryContentsLocalRef
@@ -60,7 +63,7 @@ func (t *Imgpkg) FetchBundle(imageRef, destination string) (string, error) {
 func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
-		return "", err
+		return emptyString, err
 	}
 
 	if _, hit := t.cache.Has(ImgpkgBundleArtifactType, ref.Name()); hit {
@@ -73,7 +76,8 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 
 	opts, err := t.RegistryOpts()
 	if err != nil {
-		return "", err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	status, err := v1.PullRecursive(imageRef, destination, v1.PullOpts{
@@ -83,13 +87,14 @@ func (t *Imgpkg) FetchBundleRecursively(imageRef, destination string) (string, e
 	}, opts)
 
 	if err != nil {
-		return "", err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	if status.Cacheable {
 		err := t.cache.Save(ImgpkgBundleArtifactType, ref.Name(), destination)
 		if err != nil {
-			return "", err
+			return emptyString, err
 		}
 	}
 
@@ -104,7 +109,7 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
-		return "", err
+		return emptyString, err
 	}
 
 	if _, hit := t.cache.Has(artifactType, ref.Name()); hit {
@@ -113,7 +118,8 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 
 	opts, err := t.RegistryOpts()
 	if err != nil {
-		return "", err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	status, err := v1.Pull(imageRef, destination, v1.PullOpts{
@@ -123,13 +129,14 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 	}, opts)
 
 	if err != nil {
-		return "", err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return emptyString, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	if status.Cacheable {
 		err := t.cache.Save(artifactType, ref.Name(), destination)
 		if err != nil {
-			return "", err
+			return emptyString, err
 		}
 	}
 
@@ -139,12 +146,14 @@ func (t *Imgpkg) fetch(imageRef, destination string, isBundle bool) (string, err
 func (t *Imgpkg) Tags(repo string) ([]string, error) {
 	opts, err := t.RegistryOpts()
 	if err != nil {
-		return nil, err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return nil, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	tagsInfo, err := v1.TagList(repo, false, opts)
 	if err != nil {
-		return nil, err
+		redactedErr := ctlfetch.RedactSensitiveData(err.Error())
+		return nil, fmt.Errorf(errorFormatString, redactedErr)
 	}
 
 	var tags []string
@@ -211,11 +220,14 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 					case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_USERNAME_%d=%s", i, val))
 					case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
-						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_PASSWORD_%d=%s", i, val))
+						authEnv = append(authEnv, fmt.Sprintf(
+							"IMGPKG_REGISTRY_PASSWORD_%d=%s", i, val))
 					case ctlconf.SecretRegistryIdentityToken:
-						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_IDENTITY_TOKEN_%d=%s", i, val))
+						authEnv = append(authEnv, fmt.Sprintf(
+							"IMGPKG_REGISTRY_IDENTITY_TOKEN_%d=%s", i, val))
 					case ctlconf.SecretRegistryBearerToken:
-						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_REGISTRY_TOKEN_%d=%s", i, val))
+						authEnv = append(authEnv, fmt.Sprintf(
+							"IMGPKG_REGISTRY_REGISTRY_TOKEN_%d=%s", i, val))
 					default:
 						return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
 					}

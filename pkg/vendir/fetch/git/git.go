@@ -143,7 +143,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	}
 
 	if authOpts.Username != nil && authOpts.Password != nil {
-		if !strings.HasPrefix(gitURL, "https://") {
+		if !strings.HasPrefix(strings.ToLower(gitURL), "https://") {
 			return fmt.Errorf("Username/password authentication is only supported for https remotes")
 		}
 
@@ -280,7 +280,9 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		redacted := ctlfetch.RedactSensitiveData(stderrBs.String())
+		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)",
+			args, err, redacted)
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil

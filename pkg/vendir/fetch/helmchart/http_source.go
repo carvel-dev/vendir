@@ -6,6 +6,7 @@ package helmchart
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -98,7 +99,7 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 		// Add repo explicitly for helm to be recognized in fetch command
 		{
 			repoAddArgs := []string{"repo", "add", "vendir-unused", repoURL}
-			repoAddArgs, err := t.addAuthArgs(repoAddArgs)
+			repoAddArgs, cmdStdin, err := t.addAuthArgs(repoAddArgs)
 			if err != nil {
 				return fmt.Errorf("Adding helm chart auth info: %s", err)
 			}
@@ -107,60 +108,72 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 			cmd := exec.Command(t.helmBinary, repoAddArgs...)
 			cmd.Env = helmEnv(helmHomeDir)
+			cmd.Stdin = cmdStdin
 			cmd.Stdout = &stdoutBs
 			cmd.Stderr = &stderrBs
 
 			err = cmd.Run()
 			if err != nil {
-				return fmt.Errorf("Add helm chart repository: %s (stderr: %s)", err, stderrBs.String())
+				redacted := ctlfetch.RedactSensitiveData(stderrBs.String())
+				return fmt.Errorf(
+					"Add helm chart repository: %s (stderr: %s)", err, redacted)
 			}
 		}
 
 		fetchArgs = append(fetchArgs, []string{"--repo", repoURL}...)
 
 		var err error
+		var cmdStdin io.Reader
 
-		fetchArgs, err = t.addAuthArgs(fetchArgs)
+		fetchArgs, cmdStdin, err = t.addAuthArgs(fetchArgs)
 		if err != nil {
 			return fmt.Errorf("Adding helm chart auth info: %s", err)
 		}
-	}
 
-	var stdoutBs, stderrBs bytes.Buffer
+		var stdoutBs, stderrBs bytes.Buffer
 
-	cmd := exec.Command(t.helmBinary, fetchArgs...)
-	cmd.Env = helmEnv(helmHomeDir)
-	cmd.Stdout = &stdoutBs
-	cmd.Stderr = &stderrBs
+		cmd := exec.Command(t.helmBinary, fetchArgs...)
+		cmd.Env = helmEnv(helmHomeDir)
+		cmd.Stdin = cmdStdin
+		cmd.Stdout = &stdoutBs
+		cmd.Stderr = &stderrBs
 
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Fetching helm chart: %s (stderr: %s)", err, stderrBs.String())
+		err = cmd.Run()
+		if err != nil {
+			redacted := ctlfetch.RedactSensitiveData(stderrBs.String())
+			return fmt.Errorf("Fetching helm chart: %s (stderr: %s)",
+				err, redacted)
+		}
 	}
 
 	return nil
 }
 
-func (t *HTTPSource) addAuthArgs(args []string) ([]string, error) {
-	var authArgs []string
+func (t *HTTPSource) addAuthArgs(args []string) ([]string, io.Reader, error) {
+	if t.opts.Repository == nil || t.opts.Repository.SecretRef == nil {
+		return args, nil, nil
+	}
 
-	if t.opts.Repository != nil && t.opts.Repository.SecretRef != nil {
-		secret, err := t.refFetcher.GetSecret(t.opts.Repository.SecretRef.Name)
-		if err != nil {
-			return nil, err
-		}
+	secret, err := t.refFetcher.GetSecret(t.opts.Repository.SecretRef.Name)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		for name, val := range secret.Data {
-			switch name {
-			case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
-				authArgs = append(authArgs, []string{"--username", string(val)}...)
-			case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
-				authArgs = append(authArgs, []string{"--password", string(val)}...)
-			default:
-				return nil, fmt.Errorf("Unknown secret field '%s' in secret '%s'", name, secret.Metadata.Name)
-			}
+	var passwordStdin io.Reader
+
+	for name, val := range secret.Data {
+		switch name {
+		case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
+			args = append(args, "--username", string(val))
+		case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:
+			args = append(args, "--password-stdin")
+			passwordStdin = strings.NewReader(string(val))
+		default:
+			return nil, nil, fmt.Errorf(
+				"Unknown secret field '%s' in secret '%s'",
+				name, secret.Metadata.Name)
 		}
 	}
 
-	return append(args, authArgs...), nil
+	return args, passwordStdin, nil
 }

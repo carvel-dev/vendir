@@ -195,10 +195,11 @@ func (t *Sync) addAuth(req *http.Request) error {
 
 	// Basic auth — password is optional, defaults to empty string
 	if hasUser {
-		password := string(secret.Data[
-			ctlconf.SecretK8sCorev1BasicAuthPasswordKey])
+		passwordKey := ctlconf.SecretK8sCorev1BasicAuthPasswordKey
+		usernameKey := ctlconf.SecretK8sCorev1BasicAuthUsernameKey
+		password := string(secret.Data[passwordKey])
 		req.SetBasicAuth(
-			string(secret.Data[ctlconf.SecretK8sCorev1BasicAuthUsernameKey]),
+			string(secret.Data[usernameKey]),
 			password,
 		)
 	}

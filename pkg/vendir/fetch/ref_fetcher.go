@@ -4,7 +4,7 @@
 package fetch
 
 import (
-	"fmt"
+	"errors"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 )
@@ -24,9 +24,9 @@ func (f SingleSecretRefFetcher) GetSecret(name string) (ctlconf.Secret, error) {
 	if f.Secret != nil && f.Secret.Metadata.Name == name {
 		return *f.Secret, nil
 	}
-	return ctlconf.Secret{}, fmt.Errorf("Not found")
+	return ctlconf.Secret{}, errors.New("Secret not found")
 }
 
 func (f SingleSecretRefFetcher) GetConfigMap(_ string) (ctlconf.ConfigMap, error) {
-	return ctlconf.ConfigMap{}, fmt.Errorf("Not found")
+	return ctlconf.ConfigMap{}, errors.New("ConfigMap not found")
 }

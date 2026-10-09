@@ -18,7 +18,8 @@ type GuessedRefParts struct {
 }
 
 var (
-	imageRefParts = regexp.MustCompile(`\A(.+?)(:[0-9a-zA-Z_\-\.]+)?(@[0-9a-z]+:[0-9a-z]+)?\z`)
+	imageRefParts = regexp.MustCompile(
+		`\A(.+?)(:[0-9a-zA-Z_\-\.]+)?(@[0-9a-zA-Z]+:[0-9a-zA-Z]+)?\z`)
 )
 
 func NewGuessedRefParts(ref string) GuessedRefParts {
