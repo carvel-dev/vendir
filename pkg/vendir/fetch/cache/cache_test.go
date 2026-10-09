@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"carvel.dev/vendir/pkg/vendir/fetch/cache"
@@ -31,13 +32,13 @@ func TestHas(t *testing.T) {
 		},
 		{
 			isPresent:    true,
-			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "cHJlc2VudA=="),
+			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "4d4c7eee2e28d03cb2dbf3df639c3290ade66e18755e83caade2d8f37bd8c044"),
 			name:         "when cache exists, it returns true and the path to the folder",
 			cacheID:      "present",
 		},
 		{
 			isPresent:    true,
-			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "c29tZTpwcmVzZW50"),
+			expectedPath: filepath.Join(".vendir-cache", "fetcher", "some-type", "ddc40dfea46ac15bd0598a609e855c133e2f08297c3209f312b8df1cced569ec"),
 			name:         "when id contains : converts it to '-' on the folder",
 			cacheID:      "some:present",
 		},
@@ -151,6 +152,37 @@ func TestSave(t *testing.T) {
 		folder, hit := subject.Has("image", "to-save")
 		require.False(t, hit)
 		require.Equal(t, "", folder)
+	})
+
+	t.Run("when id is longer than the maximum file name length it still caches", func(t *testing.T) {
+		cacheFolder, err := os.MkdirTemp("", "vendir-cache-save-test")
+		require.NoError(t, err)
+		defer os.RemoveAll(cacheFolder)
+		subject, err := cache.NewCache(cacheFolder, "10Mi")
+		require.NoError(t, err)
+
+		src, err := os.MkdirTemp("", "source")
+		require.NoError(t, err)
+		defer os.RemoveAll(src)
+		createRandomFile(t, filepath.Join(src, "file1.txt"), 500, 0555)
+
+		// Fully-qualified image references can get long enough that an encoded
+		// form of them would not fit in a single file name (255 bytes)
+		longID := "registry.example.com/" + strings.Repeat("a", 300) + "@sha256:" + strings.Repeat("0", 64)
+
+		err = subject.Save("image", longID, src)
+		require.NoError(t, err)
+
+		folder, hit := subject.Has("image", longID)
+		require.True(t, hit)
+		require.LessOrEqual(t, len(filepath.Base(folder)), 255)
+
+		outputFolder, err := os.MkdirTemp("", "vendir-cache-save-output-test")
+		require.NoError(t, err)
+		defer os.RemoveAll(outputFolder)
+		err = subject.CopyFrom("image", longID, outputFolder)
+		require.NoError(t, err)
+		compareFiles(t, filepath.Join(src, "file1.txt"), filepath.Join(outputFolder, "file1.txt"))
 	})
 }
 
