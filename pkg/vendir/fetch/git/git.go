@@ -66,10 +66,7 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string
 
 	info.SHA = strings.TrimSpace(out)
 
-	out, _, err = t.cmdRunner.Run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
-	if err == nil {
-		info.Tags = strings.Split(strings.TrimSpace(out), "\n")
-	}
+	info.Tags = t.lockTags(dstPath, info.SHA)
 
 	out, _, err = t.cmdRunner.Run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath)
 	if err != nil {
@@ -79,6 +76,27 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string
 	info.CommitTitle = strings.TrimSpace(out)
 
 	return info, nil
+}
+
+// lockTags returns the tag recorded in the lock file for sha. When the configured
+// ref is a tag pointing at sha, that tag is used: git describe picks one of
+// the tags on a commit by name, so another tag that points at the same
+// commit (e.g. a moving "stable" tag) would otherwise make the lock file
+// change between syncs.
+func (t *Git) lockTags(dstPath, sha string) []string {
+	if t.opts.Ref != "" {
+		tagRef := "refs/tags/" + strings.TrimPrefix(t.opts.Ref, "refs/tags/")
+		out, _, err := t.cmdRunner.Run([]string{"rev-parse", "--verify", "--quiet", tagRef + "^{commit}"}, nil, dstPath)
+		if err == nil && strings.TrimSpace(out) == sha {
+			return []string{strings.TrimPrefix(tagRef, "refs/tags/")}
+		}
+	}
+
+	out, _, err := t.cmdRunner.Run([]string{"describe", "--tags", sha}, nil, dstPath)
+	if err != nil {
+		return nil
+	}
+	return strings.Split(strings.TrimSpace(out), "\n")
 }
 
 func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) error {
