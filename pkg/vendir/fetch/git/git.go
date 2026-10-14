@@ -21,23 +21,24 @@ import (
 )
 
 type Git struct {
-	opts       ctlconf.DirectoryContentsGit
-	infoLog    io.Writer
-	refFetcher ctlfetch.RefFetcher
-	cmdRunner  CommandRunner
+	opts         ctlconf.DirectoryContentsGit
+	contentPaths ctlconf.ContentPaths
+	infoLog      io.Writer
+	refFetcher   ctlfetch.RefFetcher
+	cmdRunner    CommandRunner
 }
 
-func NewGit(opts ctlconf.DirectoryContentsGit,
-	infoLog io.Writer, refFetcher ctlfetch.RefFetcher) *Git {
-
-	return &Git{opts, infoLog, refFetcher, &runner{infoLog}}
+func NewGit(opts ctlconf.DirectoryContentsGit, contentPaths ctlconf.ContentPaths,
+	infoLog io.Writer, refFetcher ctlfetch.RefFetcher,
+) *Git {
+	return &Git{opts, contentPaths, infoLog, refFetcher, &runner{infoLog}}
 }
 
 // NewGitWithRunner creates a Git retriever with a provided runner
-func NewGitWithRunner(opts ctlconf.DirectoryContentsGit,
-	infoLog io.Writer, refFetcher ctlfetch.RefFetcher, cmdRunner CommandRunner) *Git {
-
-	return &Git{opts, infoLog, refFetcher, cmdRunner}
+func NewGitWithRunner(opts ctlconf.DirectoryContentsGit, contentPaths ctlconf.ContentPaths,
+	infoLog io.Writer, refFetcher ctlfetch.RefFetcher, cmdRunner CommandRunner,
+) *Git {
+	return &Git{opts, contentPaths, infoLog, refFetcher, cmdRunner}
 }
 
 //nolint:revive
@@ -140,6 +141,19 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		{"init"},
 		{"config", "credential.helper", "store --file " + gitCredsPath},
 		{"remote", "add", "origin", gitURL},
+	}
+
+	if t.opts.SparseCheckout {
+		if len(t.contentPaths.IncludePaths) > 0 || len(t.contentPaths.ExcludePaths) > 0 {
+			sparseCheckoutArgs := []string{"sparse-checkout", "set", "--no-cone"}
+			for _, include := range t.contentPaths.IncludePaths {
+				sparseCheckoutArgs = append(sparseCheckoutArgs, include)
+			}
+			for _, exclude := range t.contentPaths.ExcludePaths {
+				sparseCheckoutArgs = append(sparseCheckoutArgs, fmt.Sprintf("!%s", exclude))
+			}
+			argss = append(argss, sparseCheckoutArgs)
+		}
 	}
 
 	if authOpts.Username != nil && authOpts.Password != nil {
