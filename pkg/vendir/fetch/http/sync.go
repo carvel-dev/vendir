@@ -86,6 +86,11 @@ func (t *Sync) downloadFile(dst io.Writer) error {
 		return fmt.Errorf("Adding auth to request: %s", err)
 	}
 
+	err = t.addHTTPHeaders(req)
+	if err != nil {
+		return fmt.Errorf("Adding HTTP Headers to request: %s", err)
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("Initiating URL download: %s", err)
@@ -203,5 +208,19 @@ func (t *Sync) addAuth(req *http.Request) error {
 		)
 	}
 
+	return nil
+}
+
+func (t *Sync) addHTTPHeaders(req *http.Request) error {
+	if t.opts.HTTPHeadersSecretRef != nil {
+		secret, err := t.refFetcher.GetSecret(t.opts.HTTPHeadersSecretRef.Name)
+		if err != nil {
+			return err
+		}
+
+		for name, value := range secret.Data {
+			req.Header.Set(name, string(value))
+		}
+	}
 	return nil
 }
