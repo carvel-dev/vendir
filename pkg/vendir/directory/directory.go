@@ -38,12 +38,13 @@ func NewDirectory(opts ctlconf.Directory, lockDirectory ctlconf.LockDirectory, u
 }
 
 type SyncOpts struct {
-	RefFetcher     ctlfetch.RefFetcher
-	GithubAPIToken string
-	HelmBinary     string
-	Cache          ctlcache.Cache
-	Lazy           bool
-	Partial        bool
+	RefFetcher                  ctlfetch.RefFetcher
+	GithubAPIToken              string
+	HelmBinary                  string
+	Cache                       ctlcache.Cache
+	Lazy                        bool
+	Partial                     bool
+	AllowAllSymlinkDestinations bool
 }
 
 func createConfigDigest(contents ctlconf.DirectoryContents) (string, error) {
@@ -230,10 +231,21 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			return lockConfig, fmt.Errorf("Unknown contents type for directory '%s'", contents.Path)
 		}
 
+		if !syncOpts.AllowAllSymlinkDestinations {
+			err = ValidateSymlinks(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Validating symlinks in directory '%s': %s", contents.Path, err)
+			}
+		}
+
 		if !skipFileFilter {
 			err = FileFilter{contents}.Apply(stagingDstPath)
 			if err != nil {
 				return lockConfig, fmt.Errorf("Filtering paths in directory '%s': %s", contents.Path, err)
+			}
+			err = RemoveDanglingSymlinks(stagingDstPath)
+			if err != nil {
+				return lockConfig, fmt.Errorf("Removing dangling symlinks in directory '%s': %s", contents.Path, err)
 			}
 		}
 

@@ -11,6 +11,22 @@ import (
 	"strings"
 )
 
+// RemoveDanglingSymlinks removes symlinks within path whose targets do not exist.
+func RemoveDanglingSymlinks(path string) error {
+	return filepath.WalkDir(path, func(entryPath string, info fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Type()&os.ModeSymlink == os.ModeSymlink {
+			_, statErr := os.Stat(entryPath)
+			if statErr != nil && os.IsNotExist(statErr) {
+				return os.Remove(entryPath)
+			}
+		}
+		return nil
+	})
+}
+
 // ValidateSymlinks enforces that symlinks inside the given path resolve to inside the path
 func ValidateSymlinks(path string) error {
 	absRoot, err := filepath.Abs(path)
