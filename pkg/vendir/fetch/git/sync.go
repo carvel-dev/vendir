@@ -80,7 +80,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 		bundle := filepath.Join(bundleDir, "bundle")
 		// get all refs
 
-		out, _, err := git.cmdRunner.Run([]string{"for-each-ref", "--format=%(refname)"}, nil, incomingTmpPath)
+		out, _, err := git.cmdRunner.Run([]string{"for-each-ref", "--format=%(refname)"}, nil, incomingTmpPath, nil)
 		if err != nil {
 			return gitLockConf, err
 		}
@@ -91,7 +91,7 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 				refs = append(refs, ref)
 			}
 		}
-		if _, _, err := git.cmdRunner.Run(append([]string{"bundle", "create", bundle}, refs...), nil, incomingTmpPath); err != nil {
+		if _, _, err := git.cmdRunner.Run(append([]string{"bundle", "create", bundle}, refs...), nil, incomingTmpPath, nil); err != nil {
 			return gitLockConf, err
 		}
 		if err := d.cache.Save(gitCacheType, cacheID, bundleDir); err != nil {

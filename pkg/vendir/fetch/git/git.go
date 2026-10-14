@@ -59,19 +59,19 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string
 
 	info := GitInfo{}
 
-	out, _, err := t.cmdRunner.Run([]string{"rev-parse", "HEAD"}, nil, dstPath)
+	out, _, err := t.cmdRunner.Run([]string{"rev-parse", "HEAD"}, nil, dstPath, nil)
 	if err != nil {
 		return GitInfo{}, err
 	}
 
 	info.SHA = strings.TrimSpace(out)
 
-	out, _, err = t.cmdRunner.Run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
+	out, _, err = t.cmdRunner.Run([]string{"describe", "--tags", info.SHA}, nil, dstPath, nil)
 	if err == nil {
 		info.Tags = strings.Split(strings.TrimSpace(out), "\n")
 	}
 
-	out, _, err = t.cmdRunner.Run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath)
+	out, _, err = t.cmdRunner.Run([]string{"log", "-n", "1", "--pretty=%B", info.SHA}, nil, dstPath, nil)
 	if err != nil {
 		return GitInfo{}, err
 	}
@@ -136,6 +136,21 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	gitURL := t.opts.URL
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
 
+	// Build sensitive values for redaction
+	sensitiveVals := &ctlfetch.SensitiveValues{}
+	if authOpts.Password != nil {
+		sensitiveVals.Passwords = append(sensitiveVals.Passwords, *authOpts.Password)
+	}
+	if authOpts.Username != nil && authOpts.Password != nil && t.opts.ForceHTTPBasicAuth {
+		encodedAuth := base64.StdEncoding.EncodeToString(
+			[]byte(fmt.Sprintf("%s:%s", *authOpts.Username, *authOpts.Password)))
+		sensitiveVals.BasicAuth = encodedAuth
+	}
+	parsedURL, _ := url.Parse(gitURL)
+	if parsedURL != nil {
+		sensitiveVals.URLs = append(sensitiveVals.URLs, parsedURL)
+	}
+
 	argss := [][]string{
 		{"init"},
 		{"config", "credential.helper", "store --file " + gitCredsPath},
@@ -184,7 +199,7 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		argss = append(argss, fetchArgs)
 	}
 
-	err = t.cmdRunner.RunMultiple(argss, env, dstPath)
+	err = t.cmdRunner.RunMultiple(argss, env, dstPath, sensitiveVals)
 	if err != nil {
 		return err
 	}
@@ -204,13 +219,13 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		}
 	}
 
-	_, _, err = t.cmdRunner.Run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath)
+	_, _, err = t.cmdRunner.Run([]string{"-c", "advice.detachedHead=false", "checkout", ref}, env, dstPath, sensitiveVals)
 	if err != nil {
 		return err
 	}
 
 	if !t.opts.SkipInitSubmodules {
-		_, _, err = t.cmdRunner.Run([]string{"submodule", "update", "--init", "--recursive"}, env, dstPath)
+		_, _, err = t.cmdRunner.Run([]string{"submodule", "update", "--init", "--recursive"}, env, dstPath, sensitiveVals)
 		if err != nil {
 			return err
 		}
@@ -240,7 +255,7 @@ func (t *Git) resolveRef(dstPath string) (string, error) {
 }
 
 func (t *Git) tags(dstPath string) ([]string, error) {
-	out, _, err := t.cmdRunner.Run([]string{"tag", "-l"}, nil, dstPath)
+	out, _, err := t.cmdRunner.Run([]string{"tag", "-l"}, nil, dstPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -249,17 +264,17 @@ func (t *Git) tags(dstPath string) ([]string, error) {
 }
 
 type CommandRunner interface {
-	RunMultiple(argss [][]string, env []string, dstPath string) error
-	Run(args []string, env []string, dstPath string) (string, string, error)
+	RunMultiple(argss [][]string, env []string, dstPath string, secrets *ctlfetch.SensitiveValues) error
+	Run(args []string, env []string, dstPath string, secrets *ctlfetch.SensitiveValues) (string, string, error)
 }
 
 type runner struct {
 	infoLog io.Writer
 }
 
-func (r *runner) RunMultiple(argss [][]string, env []string, dstPath string) error {
+func (r *runner) RunMultiple(argss [][]string, env []string, dstPath string, secrets *ctlfetch.SensitiveValues) error {
 	for _, args := range argss {
-		_, _, err := r.Run(args, env, dstPath)
+		_, _, err := r.Run(args, env, dstPath, secrets)
 		if err != nil {
 			return err
 		}
@@ -267,7 +282,7 @@ func (r *runner) RunMultiple(argss [][]string, env []string, dstPath string) err
 	return nil
 }
 
-func (r *runner) Run(args []string, env []string, dstPath string) (string, string, error) {
+func (r *runner) Run(args []string, env []string, dstPath string, secrets *ctlfetch.SensitiveValues) (string, string, error) {
 	var stdoutBs, stderrBs bytes.Buffer
 
 	cmd := exec.Command("git", args...)
@@ -276,11 +291,16 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 	cmd.Stdout = io.MultiWriter(r.infoLog, &stdoutBs)
 	cmd.Stderr = io.MultiWriter(r.infoLog, &stderrBs)
 
-	r.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
+	// Log command with args redacted (contains potential Basic auth)
+	argsStr := strings.Join(args, " ")
+	redactedArgs := ctlfetch.RedactSensitiveData(argsStr, secrets)
+	r.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", redactedArgs)))
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		redactedStderr := ctlfetch.RedactSensitiveData(stderrBs.String(), secrets)
+		return "", "", fmt.Errorf("Git %s: %w (stderr: %s)",
+			redactedArgs, err, redactedStderr)
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
