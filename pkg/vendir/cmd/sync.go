@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
@@ -22,6 +23,12 @@ const (
 	defaultLockName   = "vendir.lock.yml"
 )
 
+var (
+	defaultSafeFlagValue = slices.Contains([]string{
+		"y", "yes", "Y", "YES", "1", "t", "True", "true", "TRUE",
+	}, os.Getenv("VENDIR_SYNC_SAFE"))
+)
+
 type SyncOptions struct {
 	ui ui.UI
 
@@ -34,6 +41,8 @@ type SyncOptions struct {
 
 	Chdir                       string
 	AllowAllSymlinkDestinations bool
+
+	Safe bool
 }
 
 func NewSyncOptions(ui ui.UI) *SyncOptions {
@@ -55,6 +64,9 @@ func NewSyncCmd(o *SyncOptions) *cobra.Command {
 
 	cmd.Flags().StringVar(&o.Chdir, "chdir", "", "Set current directory for process")
 	cmd.Flags().BoolVar(&o.AllowAllSymlinkDestinations, "dangerous-allow-all-symlink-destinations", false, "Symlinks to all destinations are allowed")
+
+	cmd.Flags().BoolVar(
+		&o.Safe, "safe", defaultSafeFlagValue, "sync only if local DVCS clones are clean")
 
 	return cmd
 }
@@ -136,6 +148,18 @@ func (o *SyncOptions) Run() error {
 		Partial:        len(dirs) > 0,
 	}
 	newLockConfig := ctlconf.NewLockConfig()
+
+	if o.Safe {
+		status, err := fullStatus(conf, syncOpts, existingLockConfig, o.ui)
+		if err != nil {
+			return err
+		}
+
+		if !status.IsSafe() {
+			o.ui.PrintTable(status.Table())
+			return fmt.Errorf("--safe mode forbids a sync")
+		}
+	}
 
 	for _, dirConf := range conf.Directories {
 		// error safe to ignore, since lock file might not exist

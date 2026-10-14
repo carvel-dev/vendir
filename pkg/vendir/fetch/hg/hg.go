@@ -33,8 +33,10 @@ func NewHg(opts ctlconf.DirectoryContentsHg,
 	tempArea ctlfetch.TempArea,
 ) (*Hg, error) {
 	t := Hg{opts, infoLog, refFetcher, "", nil, ""}
-	if err := t.setup(tempArea); err != nil {
-		return nil, err
+	if tempArea != nil {
+		if err := t.setup(tempArea); err != nil {
+			return nil, err
+		}
 	}
 	return &t, nil
 }
@@ -236,7 +238,7 @@ func (t *Hg) run(args []string, dstPath string) (string, string, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("Hg %s: %w (stderr: %s)", args, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
