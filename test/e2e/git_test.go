@@ -19,6 +19,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const gitRepoAssetDir = "git-repo"
+const signedTrustedTag = "signed-trusted-tag"
+
 func TestGitVerification(t *testing.T) {
 	env := BuildEnv(t)
 	logger := Logger{}
@@ -45,7 +48,7 @@ func TestGitVerification(t *testing.T) {
 
 	yamlConfigWithPubKeys := func(ref string, pubKeys string) io.Reader {
 		encodedPubKeys := base64.StdEncoding.EncodeToString([]byte(pubKeys))
-		repoPath := filepath.Join(gitSrcPath, "git-repo")
+		repoPath := filepath.Join(gitSrcPath, gitRepoAssetDir)
 		return strings.NewReader(fmt.Sprintf(`
 apiVersion: v1
 kind: Secret
@@ -87,7 +90,7 @@ directories:
 	})
 
 	logger.Section("signed trusted tag", func() {
-		ref := "signed-trusted-tag"
+		ref := signedTrustedTag
 		vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref)})
 	})
 
@@ -160,7 +163,7 @@ func TestGitCache(t *testing.T) {
 
 	yamlConfigWithPubKeys := func(ref string, pubKeys string) io.Reader {
 		encodedPubKeys := base64.StdEncoding.EncodeToString([]byte(pubKeys))
-		repoPath := filepath.Join(gitSrcPath, "git-repo")
+		repoPath := filepath.Join(gitSrcPath, gitRepoAssetDir)
 		return strings.NewReader(fmt.Sprintf(`
 apiVersion: v1
 kind: Secret
@@ -195,7 +198,7 @@ directories:
 		[]string{"sync", "-f", "-", "--json"},
 		RunOpts{
 			Dir:          dstPath,
-			StdinReader:  yamlConfig("signed-trusted-tag"),
+			StdinReader:  yamlConfig(signedTrustedTag),
 			StdoutWriter: &stdout,
 			Env: []string{
 				"VENDIR_CACHE_DIR=" + tmpDir,
@@ -216,7 +219,7 @@ directories:
 		[]string{"sync", "-f", "-", "--json"},
 		RunOpts{
 			Dir:          dstPath,
-			StdinReader:  yamlConfig("signed-trusted-tag"),
+			StdinReader:  yamlConfig(signedTrustedTag),
 			StdoutWriter: &stdout,
 			Env: []string{
 				"VENDIR_CACHE_DIR=" + tmpDir,
@@ -233,6 +236,152 @@ directories:
 		}
 	}
 	require.True(t, unbundled, "git did not use the cached bundle")
+}
+
+// masterHeadSHA is stable — baked into the git-repo-signed test asset tarball.
+const masterHeadSHA = "f0076929d229f0819eabd2d1937bdb6aa148f19f"
+
+const ownerReadWrite = 0600
+
+// gitFetchOptTestSetup unpacks the shared test git repo and returns a vendir
+// runner plus a yamlConfig builder pointing at it.
+func gitFetchOptTestSetup(t *testing.T) (Vendir, func(ref string) string) {
+	env := BuildEnv(t)
+	vendir := Vendir{t, env.BinaryPath, Logger{}}
+
+	gitSrcPath, err := os.MkdirTemp("", "vendir-e2e-git-fetch-opt")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, os.RemoveAll(gitSrcPath))
+	})
+
+	out, err := exec.Command("tar", "xzvf", "assets/git-repo-signed/asset.tgz", "-C", gitSrcPath).CombinedOutput()
+	require.NoErrorf(t, err, "Unpacking git-repo-signed asset (output: '%s')", out)
+
+	repoPath := filepath.Join(gitSrcPath, gitRepoAssetDir)
+
+	yamlConfig := func(ref string) string {
+		return fmt.Sprintf(`
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: test
+    git:
+      url: "%s"
+      ref: "%s"
+`, repoPath, ref)
+	}
+
+	return vendir, yamlConfig
+}
+
+func TestGitFetchOptimizationsNamedTag(t *testing.T) {
+	vendir, yamlConfig := gitFetchOptTestSetup(t)
+
+	dstPath, err := os.MkdirTemp("", "vendir-e2e-git-fetch-opt-dst")
+	require.NoError(t, err)
+	defer os.RemoveAll(dstPath)
+
+	var stdout bytes.Buffer
+	_, err = vendir.RunWithOpts(
+		[]string{"sync", "-f", "-", "--json"},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag)), StdoutWriter: &stdout},
+	)
+	require.NoError(t, err)
+
+	var vendirOutput VendirOutput
+	require.NoError(t, json.NewDecoder(&stdout).Decode(&vendirOutput))
+
+	var foundTargetedFetch, foundBareFetch bool
+	for _, l := range vendirOutput.Lines {
+		if strings.Contains(l, "fetch origin") &&
+			strings.Contains(l, signedTrustedTag) &&
+			strings.Contains(l, "--no-tags") {
+			foundTargetedFetch = true
+		}
+		// "--> git fetch origin" followed by a depth/no refspec is the old slow path
+		if strings.Contains(l, "--> git fetch origin") &&
+			!strings.Contains(l, signedTrustedTag) {
+			foundBareFetch = true
+		}
+	}
+	assert.True(t, foundTargetedFetch, "expected targeted fetch line 'fetch origin signed-trusted-tag --no-tags'")
+	assert.False(t, foundBareFetch, "expected no bare full fetch for named tag ref")
+
+	_, err = os.Stat(filepath.Join(dstPath, "vendor", "test"))
+	assert.NoError(t, err, "expected vendored directory to exist after sync")
+}
+
+func TestGitFetchOptimizationsLockedSync(t *testing.T) {
+	vendir, yamlConfig := gitFetchOptTestSetup(t)
+
+	dstPath, err := os.MkdirTemp("", "vendir-e2e-git-fetch-opt-locked-dst")
+	require.NoError(t, err)
+	defer os.RemoveAll(dstPath)
+
+	// First sync to produce a lock file
+	_, err = vendir.RunWithOpts(
+		[]string{"sync", "-f", "-"},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag))},
+	)
+	require.NoError(t, err)
+
+	// Locked sync: should use OriginalRef ("signed-trusted-tag") not the SHA
+	var stdout bytes.Buffer
+	_, err = vendir.RunWithOpts(
+		[]string{"sync", "--locked", "-f", "-", "--json"},
+		RunOpts{Dir: dstPath, StdinReader: strings.NewReader(yamlConfig(signedTrustedTag)), StdoutWriter: &stdout},
+	)
+	require.NoError(t, err)
+
+	var vendirOutput VendirOutput
+	require.NoError(t, json.NewDecoder(&stdout).Decode(&vendirOutput))
+
+	var foundTargetedFetch bool
+	for _, l := range vendirOutput.Lines {
+		if strings.Contains(l, "fetch origin") &&
+			strings.Contains(l, signedTrustedTag) &&
+			strings.Contains(l, "--no-tags") {
+			foundTargetedFetch = true
+		}
+	}
+	assert.True(t, foundTargetedFetch, "expected locked sync to use OriginalRef for targeted fetch")
+}
+
+func TestGitFetchOptimizationsTamperedLockSHA(t *testing.T) {
+	vendir, yamlConfig := gitFetchOptTestSetup(t)
+
+	dstPath, err := os.MkdirTemp("", "vendir-e2e-git-fetch-opt-tampered-dst")
+	require.NoError(t, err)
+	defer os.RemoveAll(dstPath)
+
+	// Write a vendir.yml pointing at the tag
+	err = os.WriteFile(filepath.Join(dstPath, "vendir.yml"), []byte(yamlConfig(signedTrustedTag)), ownerReadWrite)
+	require.NoError(t, err)
+
+	// Write a lock file with a different (valid) SHA — masterHeadSHA ≠ the tag's SHA
+	lockContent := fmt.Sprintf(`apiVersion: vendir.k14s.io/v1alpha1
+kind: LockConfig
+directories:
+- path: vendor
+  contents:
+  - path: test
+    git:
+      sha: "%s"
+      commitTitle: tampered
+`, masterHeadSHA)
+	err = os.WriteFile(filepath.Join(dstPath, "vendir.lock.yml"), []byte(lockContent), ownerReadWrite)
+	require.NoError(t, err)
+
+	_, err = vendir.RunWithOpts(
+		[]string{"sync", "--locked"},
+		RunOpts{Dir: dstPath, AllowError: true},
+	)
+	require.Error(t, err, "expected error when lock SHA does not match fetched commit")
+	assert.Contains(t, err.Error(), "Locked SHA", "expected error to mention locked SHA")
+	assert.Contains(t, err.Error(), "does not match fetched commit", "expected error to describe the mismatch")
 }
 
 func readFile(t *testing.T, path string) string {

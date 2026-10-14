@@ -166,22 +166,8 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		}
 	}
 
-	argss = append(argss, []string{"config", "remote.origin.tagOpt", "--tags"})
-
 	if bundle != "" {
 		argss = append(argss, []string{"bundle", "unbundle", bundle})
-	}
-
-	{
-		fetchArgs := []string{"fetch", "origin"}
-		if strings.HasPrefix(t.opts.Ref, "origin/") {
-			// only fetch the exact ref we're seeking
-			fetchArgs = append(fetchArgs, t.opts.Ref[7:])
-		}
-		if t.opts.Depth > 0 {
-			fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
-		}
-		argss = append(argss, fetchArgs)
 	}
 
 	err = t.cmdRunner.RunMultiple(argss, env, dstPath)
@@ -189,9 +175,98 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		return err
 	}
 
+	// Resolve an ambiguous ref (which may be either a branch or a tag) before
+	// constructing the refspec. This lets us preserve tags without fetching
+	// every tag in the repository.
+	refType := remoteRefUnknown
+	fetchRef := t.opts.Ref
+	if t.isLockedSHAWithNamedOriginal() {
+		fetchRef = t.opts.OriginalRef
+	}
+	if t.canTargetFetch() {
+		var err error
+		refType, err = t.remoteRefType(dstPath, fetchRef)
+		if err != nil {
+			return err
+		}
+	}
+
+	// RefSelection needs all tags for semver matching, and a bare SHA has no
+	// named ref to target. A targeted tag fetch explicitly creates just that
+	// tag; a targeted branch fetch uses Git's default auto-follow behavior,
+	// which fetches only tags reachable from the branch tip.
+	if !t.canTargetFetch() || refType == remoteRefUnknown ||
+		refType == remoteRefTag {
+		tagOpt := "--tags"
+		if t.canTargetFetch() {
+			tagOpt = noTagsFlag
+		}
+		_, _, err = t.cmdRunner.Run(
+			[]string{"config", "remote.origin.tagOpt", tagOpt}, nil, dstPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// When fetching a single named ref, track the result in FETCH_HEAD for
+	// checkout. Branches/tags also get local refs to support bundle caching.
+	fetchArgs, useFetchHead := t.targetedFetchArgs(fetchRef, refType)
+	if t.opts.Depth > 0 {
+		fetchArgs = append(fetchArgs, "--depth", strconv.Itoa(t.opts.Depth))
+	}
+
+	_, _, err = t.cmdRunner.Run(fetchArgs, env, dstPath)
+	lockedFetchByOriginal := t.isLockedSHAWithNamedOriginal() &&
+		fetchRef != t.opts.Ref
+	if err != nil && lockedFetchByOriginal {
+		// The original ref may have been deleted or renamed since the config
+		// was locked. Fetching the locked object directly retains locked-sync
+		// behavior without requiring the old name to remain available.
+		fallbackArgs := []string{"fetch", "origin", t.opts.Ref, noTagsFlag}
+		if t.opts.Depth > 0 {
+			fallbackArgs = append(
+				fallbackArgs, "--depth", strconv.Itoa(t.opts.Depth),
+			)
+		}
+		_, _, err = t.cmdRunner.Run(fallbackArgs, env, dstPath)
+	}
+	if err != nil {
+		return err
+	}
+
+	if useFetchHead {
+		_, _, err = t.cmdRunner.Run([]string{
+			"update-ref", "refs/vendir/fetched", "FETCH_HEAD",
+		}, nil, dstPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	ref, err := t.resolveRef(dstPath)
 	if err != nil {
 		return err
+	}
+
+	// In locked mode we fetch by the original named ref for speed, but must
+	// check out the exact locked SHA. Verify FETCH_HEAD resolves to that SHA
+	// before checkout so a force-pushed tag is caught early.
+	if useFetchHead && isHexSHA(t.opts.Ref) {
+		rp := []string{"rev-parse", fetchHeadCommit}
+		out, _, runErr := t.cmdRunner.Run(rp, nil, dstPath)
+		if runErr != nil {
+			return runErr
+		}
+		fetchedSHA := strings.TrimSpace(out)
+		if fetchedSHA != t.opts.Ref {
+			return fmt.Errorf("Locked SHA %s does not match fetched "+
+				"commit %s — tag may have been moved", t.opts.Ref, fetchedSHA)
+		}
+		// Use the locked SHA for checkout so mutable refs (e.g. origin/main)
+		// don't cause locked syncs to track the branch tip, not the pin.
+		ref = t.opts.Ref
+	} else if useFetchHead {
+		ref = "FETCH_HEAD"
 	}
 
 	if t.opts.Verification != nil {
@@ -219,13 +294,107 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	return nil
 }
 
+const (
+	noTagsFlag         = "--no-tags"
+	fetchHeadCommit    = "FETCH_HEAD^{commit}"
+	originName         = "origin"
+	originPrefix       = originName + "/"
+	remoteHeadsPrefix  = "refs/heads/"
+	remoteTagsPrefix   = "refs/tags/"
+	minRemoteRefFields = 2
+)
+
+// isLockedSHAWithNamedOriginal reports whether Ref is a locked SHA with a
+// known named OriginalRef, i.e. a locked sync that can still target a fetch
+// by name instead of resolving the bare SHA via a full fetch.
+func (t *Git) isLockedSHAWithNamedOriginal() bool {
+	return isHexSHA(t.opts.Ref) &&
+		len(t.opts.OriginalRef) > 0 &&
+		!isHexSHA(t.opts.OriginalRef)
+}
+
+// canTargetFetch reports whether fetch can target a single named ref
+// instead of fetching all branches/tags.
+func (t *Git) canTargetFetch() bool {
+	hasNamedRef := len(t.opts.Ref) > 0 && !isHexSHA(t.opts.Ref)
+	namedRef := hasNamedRef && t.opts.RefSelection == nil
+	return namedRef || t.isLockedSHAWithNamedOriginal()
+}
+
+// targetedFetchArgs builds the "fetch origin ..." args for t.opts.Ref,
+// targeting a single named ref where possible. It reports whether the
+// result lands only in FETCH_HEAD (true) or creates a local ref (false).
+func (t *Git) targetedFetchArgs(
+	fetchRef string, refType remoteRefType,
+) ([]string, bool) {
+	fetchArgs := []string{"fetch", originName}
+	if !t.canTargetFetch() {
+		// no targeted ref available (e.g. RefSelection, or a bare SHA with
+		// no OriginalRef) — fall back to a full fetch of all branches/tags.
+		return fetchArgs, false
+	}
+
+	ref := strings.TrimPrefix(fetchRef, originPrefix)
+	ref = strings.TrimPrefix(ref, remoteHeadsPrefix)
+	ref = strings.TrimPrefix(ref, remoteTagsPrefix)
+	switch refType {
+	case remoteRefBranch:
+		return append(fetchArgs, ref+":refs/remotes/origin/"+ref), true
+	case remoteRefTag:
+		return append(
+			fetchArgs, remoteTagsPrefix+ref+":"+remoteTagsPrefix+ref,
+			noTagsFlag,
+		), true
+	default:
+		return append(fetchArgs, ref, noTagsFlag), true
+	}
+}
+
+type remoteRefType int
+
+const (
+	remoteRefUnknown remoteRefType = iota
+	remoteRefBranch
+	remoteRefTag
+)
+
+func (t *Git) remoteRefType(dstPath, ref string) (remoteRefType, error) {
+	normalizedRef := strings.TrimPrefix(ref, originPrefix)
+	switch {
+	case strings.HasPrefix(normalizedRef, remoteHeadsPrefix):
+		return remoteRefBranch, nil
+	case strings.HasPrefix(normalizedRef, remoteTagsPrefix):
+		return remoteRefTag, nil
+	}
+
+	out, _, err := t.cmdRunner.Run(
+		[]string{"ls-remote", "origin", normalizedRef}, nil, dstPath)
+	if err != nil {
+		return remoteRefUnknown, err
+	}
+
+	branchRef := remoteHeadsPrefix + normalizedRef
+	tagRef := remoteTagsPrefix + normalizedRef
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < minRemoteRefFields {
+			continue
+		}
+		switch fields[1] {
+		case branchRef:
+			return remoteRefBranch, nil
+		case tagRef:
+			return remoteRefTag, nil
+		}
+	}
+
+	return remoteRefUnknown, nil
+}
+
 func (t *Git) resolveRef(dstPath string) (string, error) {
 	switch {
 	case len(t.opts.Ref) > 0:
-		if strings.HasPrefix(t.opts.Ref, "origin/") {
-			return t.opts.Ref[7:], nil
-		}
-		return t.opts.Ref, nil
+		return strings.TrimPrefix(t.opts.Ref, originPrefix), nil
 
 	case t.opts.RefSelection != nil:
 		tags, err := t.tags(dstPath)
@@ -246,6 +415,37 @@ func (t *Git) tags(dstPath string) ([]string, error) {
 	}
 
 	return strings.Split(out, "\n"), nil
+}
+
+const (
+	minAbbreviatedSHALen = 7
+	fullSHALen           = 40
+)
+
+// isHexSHA reports whether s looks like a full or abbreviated git commit SHA
+// (7–40 hex characters, case-insensitive). SHAs cannot be fetched by refspec
+// name and require a full fetch to be resolved.
+func isHexSHA(s string) bool {
+	if len(s) < minAbbreviatedSHALen || len(s) > fullSHALen {
+		return false
+	}
+	return isHex(s)
+}
+
+func isHex(s string) bool {
+	for _, c := range s {
+		if !isHexDigit(c) {
+			return false
+		}
+	}
+	return true
+}
+
+func isHexDigit(c rune) bool {
+	isDigit := c >= '0' && c <= '9'
+	isLower := c >= 'a' && c <= 'f'
+	isUpper := c >= 'A' && c <= 'F'
+	return isDigit || isLower || isUpper
 }
 
 type CommandRunner interface {
