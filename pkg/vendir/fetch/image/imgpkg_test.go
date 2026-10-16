@@ -157,6 +157,23 @@ func TestImgpkgAuth(t *testing.T) {
 		requireImgpkgEnv(t, nil, opts.EnvironFunc())
 	})
 
+	t.Run("malformed environment variable error does not include its value", func(t *testing.T) {
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{
+				EnvironFunc: func() []string { return []string{"s3cr3t-without-equals"} },
+			},
+			ctlfetch.SingleSecretRefFetcher{},
+			cache,
+		)
+
+		_, err = imgpkg.RegistryOpts()
+		require.Error(t, err)
+		require.NotContains(t, err.Error(), "s3cr3t-without-equals")
+	})
+
 	t.Run("enable keychain auth with list of keychains", func(t *testing.T) {
 		cache, err := ctlcache.NewCache("", "1Mi")
 		require.NoError(t, err)

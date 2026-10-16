@@ -278,14 +278,33 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 	cmd.Stdout = io.MultiWriter(r.infoLog, &stdoutBs)
 	cmd.Stderr = io.MultiWriter(r.infoLog, &stderrBs)
 
-	r.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
+	safeArgs := redactGitArgs(args)
+	logLine := fmt.Sprintf("--> git %s\n", strings.Join(safeArgs, " "))
+	r.infoLog.Write([]byte(logLine))
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)",
+			safeArgs, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
+}
+
+// redactGitArgs returns a copy of args with credentials removed so that
+// they are never written to logs or error messages
+func redactGitArgs(args []string) []string {
+	const authHeaderPrefix = "Authorization: "
+	redacted := make([]string, len(args))
+	for i, arg := range args {
+		if strings.HasPrefix(arg, authHeaderPrefix) {
+			value := strings.TrimPrefix(arg, authHeaderPrefix)
+			scheme, _, _ := strings.Cut(value, " ")
+			arg = authHeaderPrefix + scheme + " [REDACTED]"
+		}
+		redacted[i] = arg
+	}
+	return redacted
 }
 
 type gitAuthOpts struct {

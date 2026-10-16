@@ -248,8 +248,7 @@ func (d Sync) fetchTagSelection() (string, error) {
 				switch resp.StatusCode {
 				case 401, 403:
 					hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-					bs, _ := io.ReadAll(resp.Body)
-					errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+					errMsg += hintWithMessage(hintMsg, resp.Body)
 				}
 			}
 			return "", fmt.Errorf("Downloading tags info: %s", errMsg)
@@ -294,6 +293,28 @@ func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 	return releaseAPI, nil
 }
 
+// hintWithMessage formats a hint followed by the API error message
+func hintWithMessage(hint string, body io.Reader) string {
+	return fmt.Sprintf(" %s (message: '%s')", hint, apiErrorMessage(body))
+}
+
+// apiErrorMessage extracts only the "message" field from a GitHub API
+// error body so that arbitrary response contents are never written to
+// logs or error messages
+func apiErrorMessage(body io.Reader) string {
+	bs, err := io.ReadAll(io.LimitReader(body, 64*1024))
+	if err != nil {
+		return "unable to read response body"
+	}
+	var parsed struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(bs, &parsed); err != nil || parsed.Message == "" {
+		return "no error message in response body"
+	}
+	return parsed.Message
+}
+
 func (d Sync) downloadAPIResponse(url string, authToken string) ([]byte, error) {
 	bs := []byte{}
 
@@ -317,12 +338,10 @@ func (d Sync) downloadAPIResponse(url string, authToken string) ([]byte, error) 
 		switch resp.StatusCode {
 		case 401, 403:
 			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-			bs, _ := io.ReadAll(resp.Body)
-			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+			errMsg += hintWithMessage(hintMsg, resp.Body)
 		case 404:
 			hintMsg := "(hint: if you are using 'latest: true', there may not be any non-pre-release releases)"
-			bs, _ := io.ReadAll(resp.Body)
-			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+			errMsg += hintWithMessage(hintMsg, resp.Body)
 		}
 		return bs, fmt.Errorf("%s", errMsg)
 	}
@@ -359,8 +378,7 @@ func (d Sync) downloadFile(url, dstPath, authToken string) error {
 		switch resp.StatusCode {
 		case 401, 403:
 			hintMsg := "(hint: consider setting VENDIR_GITHUB_API_TOKEN env variable to increase API rate limits)"
-			bs, _ := io.ReadAll(resp.Body)
-			errMsg += fmt.Sprintf(" %s (body: '%s')", hintMsg, bs)
+			errMsg += hintWithMessage(hintMsg, resp.Body)
 		}
 		return fmt.Errorf("%s", errMsg)
 	}

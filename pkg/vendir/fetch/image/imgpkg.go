@@ -5,6 +5,7 @@ package image
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -175,7 +176,9 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 	for _, envVar := range append(envVariables, t.opts.EnvironFunc()...) {
 		envVarSplit := strings.SplitN(envVar, "=", 2)
 		if len(envVarSplit) != 2 {
-			return registry.Opts{}, fmt.Errorf("Value '%s' does not look like an environment variable", envVar)
+			return registry.Opts{}, errors.New(
+				"Expected environment variable entry to have 'KEY=value' " +
+					"format (value redacted)")
 		}
 		envVars[envVarSplit[0]] = envVarSplit[1]
 	}
