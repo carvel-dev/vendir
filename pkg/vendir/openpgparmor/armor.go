@@ -5,6 +5,7 @@ package openpgparmor
 
 import (
 	"crypto/fips140"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -16,7 +17,8 @@ func ReadArmoredKeys(keys string) (openpgp.EntityList, error) {
 
 	parts := strings.Split(keys, startMarker)
 	if len(parts) == 1 {
-		return nil, fmt.Errorf("Expected to find armored block, but did not")
+		return nil, errors.New(
+			"Expected to find armored block, but none was found")
 	}
 
 	var result openpgp.EntityList

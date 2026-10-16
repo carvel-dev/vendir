@@ -115,7 +115,7 @@ directories:
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
 		assert.Error(t, err, "Expected to err when commit is signed by stranger")
 		assert.ErrorContains(t, err, "Expected to find commit signature:", "Expected err to indicate stranger signing failure")
-		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but did not", "Expected err to indicate stranger signing failure")
+		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but none was found", "Expected err to indicate stranger signing failure")
 	})
 
 	logger.Section("unsigned tag", func() {
@@ -123,7 +123,7 @@ directories:
 		_, err := vendir.RunWithOpts([]string{"sync", "-f", "-"}, RunOpts{Dir: dstPath, StdinReader: yamlConfig(ref), AllowError: true})
 		assert.Error(t, err, "Expected to err when commit is signed by stranger")
 		assert.ErrorContains(t, err, "Expected to find tag signature:", "Expected err to indicate stranger signing failure")
-		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but did not", "Expected err to indicate stranger signing failure")
+		assert.ErrorContains(t, err, "Expected to find section 'PGP SIGNATURE', but none was found", "Expected err to indicate stranger signing failure")
 	})
 
 	logger.Section("clones submodule by default", func() {

@@ -6,6 +6,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -64,7 +65,9 @@ func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 
 			pieces := strings.SplitN(string(decodedAuth), ":", 2)
 			if len(pieces) != 2 {
-				return nil, fmt.Errorf("Expected auth field to have 'username:password' format, but did not")
+				return nil, errors.New("Expected auth field to have " +
+					"'username:password' format, but the decoded value " +
+					"had no ':' separator")
 			}
 			auth.Username = pieces[0]
 			auth.Password = pieces[1]

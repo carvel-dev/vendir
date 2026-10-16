@@ -46,7 +46,8 @@ func (r lineSectionReader) Read(contents string, required bool) (string, string,
 		return "", "", fmt.Errorf("Expected section to be closed before ending")
 	}
 	if required && !opened {
-		return "", "", fmt.Errorf("Expected to find section '%s', but did not", r.Description)
+		return "", "", fmt.Errorf(
+			"Expected to find section '%s', but none was found", r.Description)
 	}
 
 	return strings.Join(outsideLines, "\n"), strings.Join(sectionLines, "\n"), nil

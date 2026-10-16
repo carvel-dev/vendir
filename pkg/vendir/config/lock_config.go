@@ -107,11 +107,13 @@ func (c LockConfig) FindContents(dirPath, conPath string) (LockDirectoryContents
 				}
 			}
 			return LockDirectoryContents{}, fmt.Errorf("Expected to find contents '%s' "+
-				"within directory '%s' in lock config, but did not", conPath, dirPath)
+				"within directory '%s' in lock config, "+
+				"but none was found", conPath, dirPath)
 		}
 	}
 	return LockDirectoryContents{}, fmt.Errorf(
-		"Expected to find directory '%s' within lock config, but did not", dirPath)
+		"Expected to find directory '%s' within lock config, "+
+			"but none was found", dirPath)
 }
 
 func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
@@ -121,7 +123,8 @@ func (c LockConfig) FindDirectory(dirPath string) (LockDirectory, error) {
 		}
 	}
 	return LockDirectory{}, fmt.Errorf(
-		"Expected to find directory '%s' within lock config, but did not", dirPath)
+		"Expected to find directory '%s' within lock config, "+
+			"but none was found", dirPath)
 }
 
 func (c *LockConfig) Merge(other LockConfig) error {

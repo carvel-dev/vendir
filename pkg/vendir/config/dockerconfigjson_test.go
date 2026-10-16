@@ -127,7 +127,7 @@ func TestSecretToRegistryAuthSecretsWithAuthFieldFallback(t *testing.T) {
 		}
 
 		_, err := s1.ToRegistryAuthSecrets()
-		require.EqualError(t, err, "Expected auth field to have 'username:password' format, but did not")
+		require.EqualError(t, err, "Expected auth field to have 'username:password' format, but the decoded value had no ':' separator")
 	})
 
 	t.Run("password is empty, falls back on auth field username+password", func(t *testing.T) {

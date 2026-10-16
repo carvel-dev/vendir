@@ -46,7 +46,8 @@ func HighestConstrainedVersionWithAdditionalConstraints(versions []string, confi
 
 		highestVersion, found := matchedVers.Highest()
 		if !found {
-			errFmt := "Expected to find at least one version, but did not (details: %s)"
+			errFmt := "Expected to find at least one version, " +
+				"but none matched (details: %s)"
 			return "", fmt.Errorf(errFmt, strings.Join(details, " -> "))
 		}
 		return highestVersion, nil
