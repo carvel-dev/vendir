@@ -133,7 +133,19 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	if t.opts.DangerousSkipTLSVerify {
 		env = append(env, "GIT_SSL_NO_VERIFY=true")
 	}
+	// Normalize the hostname to lowercase (RFC 1035) so that Git's
+	// credential-store lookup will match both the remote URL and the
+	// credentials file. Preserve the path's case: /Repo stays /Repo.
 	gitURL := t.opts.URL
+	parsedURL, err := url.Parse(gitURL)
+	if err == nil && parsedURL.Host != "" {
+		normalizedHost := strings.ToLower(parsedURL.Host)
+		if normalizedHost != parsedURL.Host {
+			parsedURL.Host = normalizedHost
+			gitURL = parsedURL.String()
+		}
+	}
+
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
 
 	argss := [][]string{
@@ -156,8 +168,6 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 				return fmt.Errorf("Parsing git remote url: %s", err)
 			}
 
-			// Hostnames are case-insensitive (RFC 1035)
-			gitCredsURL.Host = strings.ToLower(gitCredsURL.Host)
 			gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
 			gitCredsURL.Path = ""
 

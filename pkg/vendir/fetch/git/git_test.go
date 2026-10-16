@@ -64,6 +64,44 @@ func TestGit_Retrieve(t *testing.T) {
 		require.Equal(t, "https://admin:password@some.git.example.com\n", runner.credsFileContents)
 	})
 
+	t.Run("Normalizes remote hostname to match credentials file", func(t *testing.T) {
+		secretFetcher := &fetch.SingleSecretRefFetcher{Secret: &config.Secret{
+			Metadata: config.GenericMetadata{Name: "some-secret"},
+			Data: map[string][]byte{
+				"username": []byte("admin"),
+				"password": []byte("password"),
+			},
+		}}
+		runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL:       "https://Some.GIT.example.com/Repo",
+			Ref:       "origin/main",
+			SecretRef: &config.DirectoryContentsLocalRef{Name: "some-secret"},
+		}, os.Stdout, secretFetcher, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+
+		var remoteURL string
+		for _, args := range runner.commandsToRun {
+			if len(args) == 4 &&
+				args[0] == "remote" &&
+				args[1] == "add" &&
+				args[2] == "origin" {
+				remoteURL = args[3]
+				break
+			}
+		}
+
+		require.NotEmpty(t, remoteURL, "expected a git remote add command")
+		require.Equal(
+			t,
+			"https://some.git.example.com/Repo",
+			remoteURL,
+			"normalize the remote hostname to match the credentials "+
+				"while preserving repository path case",
+		)
+	})
+
 	t.Run("Errors when authenticating with user/pass on http URL", func(t *testing.T) {
 		secretFetcher := &fetch.SingleSecretRefFetcher{Secret: &config.Secret{
 			Metadata: config.GenericMetadata{
