@@ -89,6 +89,22 @@ func TestImgpkgAuth(t *testing.T) {
 		}, opts.EnvironFunc())
 	})
 
+	t.Run("with plain secret associated with mixed case hostname", func(t *testing.T) {
+		opts := createRegistryOptions(t, ctlconf.Secret{
+			Data: map[string][]byte{
+				"hostname": []byte("Registry.Example.COM"),
+				"username": []byte("UserName"),
+				"password": []byte("PassWord"),
+			},
+		})
+
+		requireImgpkgEnv(t, []string{
+			"IMGPKG_REGISTRY_HOSTNAME_0=registry.example.com",
+			"IMGPKG_REGISTRY_USERNAME_0=UserName",
+			"IMGPKG_REGISTRY_PASSWORD_0=PassWord",
+		}, opts.EnvironFunc())
+	})
+
 	t.Run("with empty dockerconfigjson secret", func(t *testing.T) {
 		opts := createRegistryOptions(t, ctlconf.Secret{
 			Type: "kubernetes.io/dockerconfigjson",

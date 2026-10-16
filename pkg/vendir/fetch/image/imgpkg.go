@@ -207,7 +207,9 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 				for name, val := range secret.Data {
 					switch name {
 					case ctlconf.SecretRegistryHostnameKey:
-						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_HOSTNAME_%d=%s", i, val))
+						hostname := strings.ToLower(string(val))
+						authEnv = append(authEnv, fmt.Sprintf(
+							"IMGPKG_REGISTRY_HOSTNAME_%d=%s", i, hostname))
 					case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_USERNAME_%d=%s", i, val))
 					case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:

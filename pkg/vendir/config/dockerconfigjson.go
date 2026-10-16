@@ -70,12 +70,15 @@ func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 			auth.Password = pieces[1]
 		}
 
+		// Hostnames are case-insensitive (RFC 1035)
+		normalizedHostname := strings.ToLower(hostname)
+
 		secrets = append(secrets, Secret{
 			Metadata: s.Metadata,
 			// Careful adding new keys here, since consumers of these secrets
 			// might be returning errors for any unexpected keys found
 			Data: map[string][]byte{
-				SecretRegistryHostnameKey:           []byte(hostname),
+				SecretRegistryHostnameKey:           []byte(normalizedHostname),
 				SecretK8sCorev1BasicAuthUsernameKey: []byte(auth.Username),
 				SecretK8sCorev1BasicAuthPasswordKey: []byte(auth.Password),
 			},

@@ -156,6 +156,8 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 				return fmt.Errorf("Parsing git remote url: %s", err)
 			}
 
+			// Hostnames are case-insensitive (RFC 1035)
+			gitCredsURL.Host = strings.ToLower(gitCredsURL.Host)
 			gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
 			gitCredsURL.Path = ""
 

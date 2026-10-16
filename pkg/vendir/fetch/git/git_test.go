@@ -45,6 +45,25 @@ func TestGit_Retrieve(t *testing.T) {
 		require.True(t, isPresent, "could not find the configuration")
 	})
 
+	t.Run("Lowercases the host in the stored credentials URL", func(t *testing.T) {
+		secretFetcher := &fetch.SingleSecretRefFetcher{Secret: &config.Secret{
+			Metadata: config.GenericMetadata{Name: "some-secret"},
+			Data: map[string][]byte{
+				"username": []byte("admin"),
+				"password": []byte("password"),
+			},
+		}}
+		runner := &credsReadingRunner{}
+		gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+			URL:       "https://Some.GIT.example.com/Repo",
+			Ref:       "origin/main",
+			SecretRef: &config.DirectoryContentsLocalRef{Name: "some-secret"},
+		}, os.Stdout, secretFetcher, runner)
+		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+		require.NoError(t, err)
+		require.Equal(t, "https://admin:password@some.git.example.com\n", runner.credsFileContents)
+	})
+
 	t.Run("Errors when authenticating with user/pass on http URL", func(t *testing.T) {
 		secretFetcher := &fetch.SingleSecretRefFetcher{Secret: &config.Secret{
 			Metadata: config.GenericMetadata{
@@ -91,4 +110,33 @@ func (t tmpFolder) NewTempDir(_ string) (string, error) {
 
 func (t tmpFolder) NewTempFile(_ string) (*os.File, error) {
 	panic("Not implemented")
+}
+
+// noOutput is the empty stdout/stderr returned by the fake runner
+const noOutput = ""
+
+// credentialHelperArgCount is the number of args in "config credential.helper <value>"
+const credentialHelperArgCount = 3
+
+// credsReadingRunner captures the contents of the git credential store file
+// before it is cleaned up at the end of the fetch
+type credsReadingRunner struct {
+	credsFileContents string
+}
+
+func (c *credsReadingRunner) RunMultiple(argss [][]string, _ []string, _ string) error {
+	for _, args := range argss {
+		if len(args) == credentialHelperArgCount && args[0] == "config" && args[1] == "credential.helper" {
+			path := strings.TrimPrefix(args[2], "store --file ")
+			bs, err := os.ReadFile(path)
+			if err == nil {
+				c.credsFileContents = string(bs)
+			}
+		}
+	}
+	return nil
+}
+
+func (*credsReadingRunner) Run(_ []string, _ []string, _ string) (stdout, stderr string, err error) {
+	return noOutput, noOutput, nil
 }
