@@ -126,9 +126,8 @@ func (t *Sync) findChartDir(chartsPath string) (string, error) {
 
 	var dirNames []string
 	for _, file := range files {
-		if _, ignored := os.Stat(filepath.Join(chartsPath,
-			file.Name(),
-			"Chart.yaml")); ignored == nil {
+		chartYAMLPath := filepath.Join(chartsPath, file.Name(), "Chart.yaml")
+		if _, err := os.Stat(chartYAMLPath); err == nil {
 			dirNames = append(dirNames, file.Name())
 		}
 	}
