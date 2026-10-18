@@ -127,7 +127,7 @@ func TestSecretToRegistryAuthSecretsWithAuthFieldFallback(t *testing.T) {
 		}
 
 		_, err := s1.ToRegistryAuthSecrets()
-		require.EqualError(t, err, "Expected auth field to have 'username:password' format, but did not")
+		require.EqualError(t, err, "Expected auth field to have 'username:password' format, but the decoded value had no ':' separator")
 	})
 
 	t.Run("password is empty, falls back on auth field username+password", func(t *testing.T) {
@@ -165,4 +165,20 @@ func TestSecretToRegistryAuthSecretsWithAuthFieldFallback(t *testing.T) {
 			},
 		}}, result)
 	})
+}
+
+func TestSecretToRegistryAuthSecretsNormalizesHostnameCase(t *testing.T) {
+	s1 := Secret{
+		Type: "kubernetes.io/dockerconfigjson",
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(`{"auths":{"Registry.IO:5000":{"username":"user","password":"pass"}}}`),
+		},
+	}
+
+	result, err := s1.ToRegistryAuthSecrets()
+	require.NoError(t, err)
+
+	require.Len(t, result, 1)
+	require.Equal(t, "registry.io:5000", string(result[0].Data["hostname"]))
+	require.Equal(t, "pass", string(result[0].Data["password"]), "credentials must not be altered")
 }

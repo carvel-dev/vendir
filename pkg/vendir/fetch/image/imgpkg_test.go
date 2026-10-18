@@ -89,6 +89,22 @@ func TestImgpkgAuth(t *testing.T) {
 		}, opts.EnvironFunc())
 	})
 
+	t.Run("with plain secret associated with mixed case hostname", func(t *testing.T) {
+		opts := createRegistryOptions(t, ctlconf.Secret{
+			Data: map[string][]byte{
+				"hostname": []byte("Registry.Example.COM"),
+				"username": []byte("UserName"),
+				"password": []byte("PassWord"),
+			},
+		})
+
+		requireImgpkgEnv(t, []string{
+			"IMGPKG_REGISTRY_HOSTNAME_0=registry.example.com",
+			"IMGPKG_REGISTRY_USERNAME_0=UserName",
+			"IMGPKG_REGISTRY_PASSWORD_0=PassWord",
+		}, opts.EnvironFunc())
+	})
+
 	t.Run("with empty dockerconfigjson secret", func(t *testing.T) {
 		opts := createRegistryOptions(t, ctlconf.Secret{
 			Type: "kubernetes.io/dockerconfigjson",
@@ -139,6 +155,23 @@ func TestImgpkgAuth(t *testing.T) {
 		require.NoError(t, err)
 
 		requireImgpkgEnv(t, nil, opts.EnvironFunc())
+	})
+
+	t.Run("malformed environment variable error does not include its value", func(t *testing.T) {
+		cache, err := ctlcache.NewCache("", "1Mi")
+		require.NoError(t, err)
+
+		imgpkg := ctlimg.NewImgpkg(
+			ctlimg.ImgpkgOpts{
+				EnvironFunc: func() []string { return []string{"s3cr3t-without-equals"} },
+			},
+			ctlfetch.SingleSecretRefFetcher{},
+			cache,
+		)
+
+		_, err = imgpkg.RegistryOpts()
+		require.Error(t, err)
+		require.NotContains(t, err.Error(), "s3cr3t-without-equals")
 	})
 
 	t.Run("enable keychain auth with list of keychains", func(t *testing.T) {

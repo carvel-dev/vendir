@@ -5,6 +5,7 @@ package image
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -175,7 +176,9 @@ func (t *Imgpkg) RegistryOpts() (registry.Opts, error) {
 	for _, envVar := range append(envVariables, t.opts.EnvironFunc()...) {
 		envVarSplit := strings.SplitN(envVar, "=", 2)
 		if len(envVarSplit) != 2 {
-			return registry.Opts{}, fmt.Errorf("Value '%s' does not look like an environment variable", envVar)
+			return registry.Opts{}, errors.New(
+				"Expected environment variable entry to have 'KEY=value' " +
+					"format (value redacted)")
 		}
 		envVars[envVarSplit[0]] = envVarSplit[1]
 	}
@@ -207,7 +210,9 @@ func (t *Imgpkg) authEnv() ([]string, error) {
 				for name, val := range secret.Data {
 					switch name {
 					case ctlconf.SecretRegistryHostnameKey:
-						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_HOSTNAME_%d=%s", i, val))
+						hostname := strings.ToLower(string(val))
+						authEnv = append(authEnv, fmt.Sprintf(
+							"IMGPKG_REGISTRY_HOSTNAME_%d=%s", i, hostname))
 					case ctlconf.SecretK8sCorev1BasicAuthUsernameKey:
 						authEnv = append(authEnv, fmt.Sprintf("IMGPKG_REGISTRY_USERNAME_%d=%s", i, val))
 					case ctlconf.SecretK8sCorev1BasicAuthPasswordKey:

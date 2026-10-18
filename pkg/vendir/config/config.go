@@ -4,6 +4,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -192,7 +193,8 @@ func (c Config) UseDirectory(path, dirPath string) error {
 	}
 
 	if !matched {
-		return fmt.Errorf("Expected to match exactly one directory, but did not match any")
+		return errors.New(
+			"Expected to match exactly one directory, but none matched")
 	}
 	return nil
 }
@@ -234,7 +236,8 @@ func (c Config) Subset(paths []string) (Config, error) {
 
 	for path, seen := range pathsToSeen {
 		if !seen {
-			return Config{}, fmt.Errorf("Expected to match path '%s' once, but did not match any", path)
+			return Config{}, fmt.Errorf(
+				"Expected to match path '%s' once, but none matched", path)
 		}
 	}
 

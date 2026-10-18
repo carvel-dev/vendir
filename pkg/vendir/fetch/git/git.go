@@ -133,7 +133,19 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 	if t.opts.DangerousSkipTLSVerify {
 		env = append(env, "GIT_SSL_NO_VERIFY=true")
 	}
+	// Normalize the hostname to lowercase (RFC 1035) so that Git's
+	// credential-store lookup will match both the remote URL and the
+	// credentials file. Preserve the path's case: /Repo stays /Repo.
 	gitURL := t.opts.URL
+	parsedURL, err := url.Parse(gitURL)
+	if err == nil && parsedURL.Host != "" {
+		normalizedHost := strings.ToLower(parsedURL.Host)
+		if normalizedHost != parsedURL.Host {
+			parsedURL.Host = normalizedHost
+			gitURL = parsedURL.String()
+		}
+	}
+
 	gitCredsPath := filepath.Join(authDir, ".git-credentials")
 
 	argss := [][]string{
@@ -276,14 +288,33 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 	cmd.Stdout = io.MultiWriter(r.infoLog, &stdoutBs)
 	cmd.Stderr = io.MultiWriter(r.infoLog, &stderrBs)
 
-	r.infoLog.Write([]byte(fmt.Sprintf("--> git %s\n", strings.Join(args, " "))))
+	safeArgs := redactGitArgs(args)
+	logLine := fmt.Sprintf("--> git %s\n", strings.Join(safeArgs, " "))
+	r.infoLog.Write([]byte(logLine))
 
 	err := cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)",
+			safeArgs, err, stderrBs.String())
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
+}
+
+// redactGitArgs returns a copy of args with credentials removed so that
+// they are never written to logs or error messages
+func redactGitArgs(args []string) []string {
+	const authHeaderPrefix = "Authorization: "
+	redacted := make([]string, len(args))
+	for i, arg := range args {
+		if strings.HasPrefix(arg, authHeaderPrefix) {
+			value := strings.TrimPrefix(arg, authHeaderPrefix)
+			scheme, _, _ := strings.Cut(value, " ")
+			arg = authHeaderPrefix + scheme + " [REDACTED]"
+		}
+		redacted[i] = arg
+	}
+	return redacted
 }
 
 type gitAuthOpts struct {

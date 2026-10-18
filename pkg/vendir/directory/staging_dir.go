@@ -220,7 +220,7 @@ func (d StagingTempArea) NewTempFile(pattern string) (*os.File, error) {
 func copyFile(src, dst string) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("Unable to read file info: %s", src)
+		return fmt.Errorf("Reading file info for '%s': %s", src, err)
 	}
 
 	if !sourceFileStat.Mode().IsRegular() {
@@ -229,13 +229,13 @@ func copyFile(src, dst string) error {
 
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("Unable to open file: %s", src)
+		return fmt.Errorf("Opening file '%s': %s", src, err)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("Unable to create destination file: %s", dst)
+		return fmt.Errorf("Creating destination file '%s': %s", dst, err)
 	}
 
 	defer dstFile.Close()

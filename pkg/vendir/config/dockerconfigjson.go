@@ -6,6 +6,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -64,18 +65,23 @@ func (s Secret) ToRegistryAuthSecrets() ([]Secret, error) {
 
 			pieces := strings.SplitN(string(decodedAuth), ":", 2)
 			if len(pieces) != 2 {
-				return nil, fmt.Errorf("Expected auth field to have 'username:password' format, but did not")
+				return nil, errors.New("Expected auth field to have " +
+					"'username:password' format, but the decoded value " +
+					"had no ':' separator")
 			}
 			auth.Username = pieces[0]
 			auth.Password = pieces[1]
 		}
+
+		// Hostnames are case-insensitive (RFC 1035)
+		normalizedHostname := strings.ToLower(hostname)
 
 		secrets = append(secrets, Secret{
 			Metadata: s.Metadata,
 			// Careful adding new keys here, since consumers of these secrets
 			// might be returning errors for any unexpected keys found
 			Data: map[string][]byte{
-				SecretRegistryHostnameKey:           []byte(hostname),
+				SecretRegistryHostnameKey:           []byte(normalizedHostname),
 				SecretK8sCorev1BasicAuthUsernameKey: []byte(auth.Username),
 				SecretK8sCorev1BasicAuthPasswordKey: []byte(auth.Password),
 			},
