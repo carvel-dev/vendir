@@ -151,13 +151,14 @@ func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 			return fmt.Errorf("Parsing hg remote url: %s", err)
 		}
 
-		hgHost := strings.ToLower(hgCredsURL.Host)
+		// Keep the host as written: hg matches auth prefixes
+		// case-sensitively against the remote URL.
 		hgRc = fmt.Sprintf(`%s
 [auth]
 hgauth.prefix = https://%s
 hgauth.username = %s
 hgauth.password = %s
-`, hgRc, hgHost, *authOpts.Username, *authOpts.Password)
+`, hgRc, hgCredsURL.Host, *authOpts.Username, *authOpts.Password)
 
 	}
 
