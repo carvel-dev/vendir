@@ -237,8 +237,10 @@ func (d Sync) matchesAssetName(name string) (bool, error) {
 func (d Sync) fetchTagSelection() (string, error) {
 	listOpt := github.ListOptions{PerPage: 40}
 	tags := []string{}
-	ownerName := strings.Split(d.opts.Slug, "/")[0]
-	repoName := strings.Split(d.opts.Slug, "/")[1]
+	ownerName, repoName, found := strings.Cut(d.opts.Slug, "/")
+	if !found || ownerName == "" || repoName == "" {
+		return "", fmt.Errorf("Expected github release slug to be in 'organization/repository' format, but was '%s'", d.opts.Slug)
+	}
 
 	for {
 		tagList, resp, err := d.client.Repositories.ListTags(context.Background(), ownerName, repoName, &listOpt)
