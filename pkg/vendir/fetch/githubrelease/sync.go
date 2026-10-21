@@ -63,6 +63,7 @@ func (d Sync) Desc() (string, error) {
 		desc = d.opts.Slug + "@"
 		switch {
 		case d.opts.TagSelection.Semver != nil:
+			desc += d.opts.TagSelection.Semver.Prefix
 			desc += fmt.Sprintf("[%s]", d.opts.TagSelection.Semver.Constraints)
 		}
 	case d.opts.Latest:
