@@ -88,13 +88,7 @@ func (o *SyncOptions) Run() error {
 			return err
 		}
 
-		configBs, err := conf.AsBytes()
-		if err != nil {
-			return err
-		}
-
-		o.ui.PrintLinef("Config with overrides")
-		o.ui.PrintBlock(configBs)
+		o.ui.PrintLinef("Config with overrides applied (contents omitted)")
 	}
 
 	existingLockConfig, err := ctlconf.NewLockConfigFromFile(o.LockFile)
@@ -110,13 +104,7 @@ func (o *SyncOptions) Run() error {
 			return err
 		}
 
-		configBs, err := conf.AsBytes()
-		if err != nil {
-			return err
-		}
-
-		o.ui.PrintLinef("Config with locks")
-		o.ui.PrintBlock(configBs)
+		o.ui.PrintLinef("Config with locks applied (contents omitted)")
 	}
 	maxCacheableContentSize := os.Getenv("VENDIR_MAX_CACHE_SIZE")
 	if maxCacheableContentSize == "" {

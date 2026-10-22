@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	ctlhttp "carvel.dev/vendir/pkg/vendir/fetch/http"
@@ -56,7 +57,7 @@ func (d Sync) Desc() (string, error) {
 
 	switch {
 	case len(d.opts.URL) > 0:
-		desc = d.opts.URL
+		desc = diagnostics.URL(d.opts.URL)
 	case len(d.opts.Tag) > 0:
 		desc = d.opts.Slug + "@" + d.opts.Tag
 	case d.opts.TagSelection != nil:
@@ -282,12 +283,19 @@ func (d Sync) downloadRelease(authToken string) (ReleaseAPI, error) {
 	}
 	respBytes, err := d.downloadAPIResponse(url, authToken)
 	if err != nil {
-		return releaseAPI, fmt.Errorf("Downloading release details from %s : %s", url, err.Error())
+		return releaseAPI, fmt.Errorf(
+			"Downloading release details from %s : %s",
+			diagnostics.URL(url),
+			diagnostics.Error(err),
+		)
 	}
 
 	err = json.Unmarshal(respBytes, &releaseAPI)
 	if err != nil {
-		return releaseAPI, fmt.Errorf("Parsing response from: %s error: %s", url, err.Error())
+		return releaseAPI, fmt.Errorf("Parsing response from: %s error: %s",
+			diagnostics.URL(url),
+			diagnostics.Error(err),
+		)
 	}
 
 	return releaseAPI, nil
