@@ -98,9 +98,20 @@ func (t *Sync) writeFile(dstPath, subPath string, content string) error {
 		return fmt.Errorf("Making parent directory '%s': %s", parentDir, err)
 	}
 
-	err = os.WriteFile(newPath, []byte(content), 0600)
+	mode := os.FileMode(0600)
+	if t.opts.DefaultMode != nil {
+		mode = os.FileMode(*t.opts.DefaultMode).Perm()
+	}
+
+	err = os.WriteFile(newPath, []byte(content), mode)
 	if err != nil {
 		return fmt.Errorf("Writing file '%s': %s", newPath, err)
+	}
+
+	// WriteFile applies the umask and keeps the mode of an existing file
+	err = os.Chmod(newPath, mode)
+	if err != nil {
+		return fmt.Errorf("Setting mode of file '%s': %s", newPath, err)
 	}
 
 	return nil
