@@ -198,6 +198,9 @@ type DirectoryContentsDirectory struct {
 type DirectoryContentsInline struct {
 	Paths     map[string]string               `json:"paths,omitempty"`
 	PathsFrom []DirectoryContentsInlineSource `json:"pathsFrom,omitempty"`
+	// DefaultMode is the permission bits (e.g. 0755) of the files written
+	// from paths and pathsFrom. Defaults to 0600.
+	DefaultMode *int32 `json:"defaultMode,omitempty"`
 }
 
 type DirectoryContentsInlineSource struct {
@@ -285,6 +288,12 @@ func (c DirectoryContents) Validate() error {
 	}
 	if len(srcTypes) > 1 {
 		return fmt.Errorf("Expected exactly one directory contents type to be specified (multiple found: %s)", strings.Join(srcTypes, ", "))
+	}
+
+	if c.Inline != nil && c.Inline.DefaultMode != nil {
+		if *c.Inline.DefaultMode < 0 || *c.Inline.DefaultMode > 0777 {
+			return fmt.Errorf("Expected inline defaultMode to be between 0 and 0777 (decimal 511), but was %d", *c.Inline.DefaultMode)
+		}
 	}
 
 	// entire dir path is allowed for contents
