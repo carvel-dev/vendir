@@ -134,6 +134,10 @@ func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDire
 			}
 		}
 
+		if len(matchedAssets) == 0 {
+			return lockConf, d.noAssetsErr(releaseAPI)
+		}
+
 		if len(d.opts.Checksums) > 0 {
 			fileChecksums = d.opts.Checksums
 		} else {
@@ -216,6 +220,17 @@ func (d Sync) syncHTTP(incomingTmpPath string, tempArea ctlfetch.TempArea, relea
 
 	httpFetcher := ctlhttp.NewSync(*d.opts.HTTP, d.refFetcher)
 	return httpFetcher.Sync(incomingTmpPath, tempArea)
+}
+
+// noAssetsErr explains why no release asset was selected for download
+func (d Sync) noAssetsErr(releaseAPI ReleaseAPI) error {
+	if len(releaseAPI.Assets) == 0 {
+		return fmt.Errorf("Expected release '%s' to have at least one asset, "+
+			"but it has none (source code archives are not release assets; "+
+			"use 'http' with the archive URL to fetch them)", releaseAPI.Tag)
+	}
+	return fmt.Errorf("Expected at least one asset of release '%s' "+
+		"to match assetNames %v", releaseAPI.Tag, d.opts.AssetNames)
 }
 
 func (d Sync) matchesAssetName(name string) (bool, error) {
