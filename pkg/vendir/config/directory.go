@@ -25,6 +25,9 @@ var (
 	disallowedPaths = []string{"/", EntireDirPath, "..", ""}
 )
 
+// Directory represents a local directory managed by vendir. Path is relative
+// to the config file; each Contents entry describes something (e.g. a git
+// repository) to synchronize into that directory.
 type Directory struct {
 	Path     string              `json:"path"`
 	Contents []DirectoryContents `json:"contents,omitempty"`
