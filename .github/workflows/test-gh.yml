@@ -19,6 +19,8 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: src/github.com/${{ github.repository }}/go.mod
+    - name: Install Mercurial
+      run: sudo apt-get update && sudo apt-get install -y mercurial
     - name: Run Tests
       env:
         VENDIR_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
