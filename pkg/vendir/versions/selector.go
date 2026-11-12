@@ -24,7 +24,15 @@ func HighestConstrainedVersionWithAdditionalConstraints(versions []string, confi
 	case config.Semver != nil:
 		var details []string
 
-		matchedVers := NewRelaxedSemversNoErr(versions) // this is secretly just all the possible versions, we haven't matched anything yet.
+		prefix := config.Semver.Prefix
+		if len(prefix) > 0 {
+			count := countWithPrefix(versions, prefix)
+			details = append(details, fmt.Sprintf("with-prefix=%d", count))
+		}
+
+		// this is secretly just all the possible versions,
+		// we haven't matched anything yet.
+		matchedVers := NewPrefixedRelaxedSemversNoErr(versions, prefix)
 		details = append(details, fmt.Sprintf("all=%d", matchedVers.Len()))
 
 		matchedVers = matchedVers.FilterPrereleases(config.Semver.Prereleases)
@@ -55,4 +63,14 @@ func HighestConstrainedVersionWithAdditionalConstraints(versions []string, confi
 	default:
 		return "", fmt.Errorf("Unsupported version selection type (currently supported: semver)")
 	}
+}
+
+func countWithPrefix(versions []string, prefix string) int {
+	count := 0
+	for _, ver := range versions {
+		if strings.HasPrefix(ver, prefix) {
+			count++
+		}
+	}
+	return count
 }

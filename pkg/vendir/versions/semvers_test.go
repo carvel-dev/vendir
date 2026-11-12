@@ -190,3 +190,112 @@ func TestHighestVersionWithConstraints(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "myConstraint")
 }
+
+var componentTags = []string{"sf/v1.2.0", "sf/v1.10.0", "sf/v1.11.0-rc.1", "sf/v2.0.0", "other/v1.99.0", "v1.99.0"}
+
+func TestSemverPrefixParsing(t *testing.T) {
+	t.Run("empty prefix parses the same versions as no prefix", func(t *testing.T) {
+		assert.Equal(t,
+			versions.NewRelaxedSemversNoErr(componentTags).Sorted().All(),
+			versions.NewPrefixedRelaxedSemversNoErr(componentTags, "").Sorted().All())
+	})
+
+	t.Run("prefix match is literal and case sensitive", func(t *testing.T) {
+		assert.Empty(t, versions.NewPrefixedRelaxedSemversNoErr(componentTags, "SF/").All())
+		assert.Empty(t, versions.NewPrefixedRelaxedSemversNoErr([]string{"sf.v1.0.0", "sfv1.0.0", "xsf/v1.0.0"}, "sf/").All())
+	})
+
+	t.Run("prefix is removed once and then optional v is handled", func(t *testing.T) {
+		result := versions.NewPrefixedRelaxedSemversNoErr([]string{
+			"sf/1.2.3",
+			"sf/v1.2.4",
+			"sf/sf/v1.2.5", // remainder "sf/v1.2.5" is not a version
+		}, "sf/").Sorted().All()
+		assert.Equal(t, []string{"sf/1.2.3", "sf/v1.2.4"}, result)
+
+		result = versions.NewPrefixedRelaxedSemversNoErr([]string{"sf-v1.2.3", "sf-1.2.3", "sf/v1.2.3"}, "sf-v").All()
+		assert.Equal(t, []string{"sf-v1.2.3"}, result)
+	})
+
+	t.Run("orders remainder numerically and keeps original tags", func(t *testing.T) {
+		result := versions.NewPrefixedRelaxedSemversNoErr([]string{
+			"sf/v1.10.0",
+			"sf/v1.9.0",
+			"sf/v1.10.0-rc.1",
+			"sf/v1.2.0+build.7",
+		}, "sf/").Sorted().All()
+		assert.Equal(t, []string{"sf/v1.2.0+build.7", "sf/v1.9.0", "sf/v1.10.0-rc.1", "sf/v1.10.0"}, result)
+	})
+
+	t.Run("empty or malformed remainders are ignored like other invalid versions", func(t *testing.T) {
+		assert.Empty(t, versions.NewPrefixedRelaxedSemversNoErr([]string{"sf/", "sf/v", "sf/latest", "sf/v1", "sf/1.2"}, "sf/").All())
+	})
+}
+
+func TestSemverPrefixSelection(t *testing.T) {
+	selection := func(prefix string, constraints string, prereleases *v1alpha1.VersionSelectionSemverPrereleases) v1alpha1.VersionSelection {
+		return v1alpha1.VersionSelection{Semver: &v1alpha1.VersionSelectionSemver{
+			Prefix: prefix, Constraints: constraints, Prereleases: prereleases,
+		}}
+	}
+
+	t.Run("omitted prefix keeps existing behavior for plain and v-prefixed versions", func(t *testing.T) {
+		highest, err := versions.HighestConstrainedVersion([]string{"1.0.0", "v1.5.0", "1.2.0", "sf/v9.0.0"}, selection("", "", nil))
+		require.NoError(t, err)
+		assert.Equal(t, "v1.5.0", highest)
+
+		highest, err = versions.HighestConstrainedVersion(componentTags, selection("", "", nil))
+		require.NoError(t, err)
+		assert.Equal(t, "v1.99.0", highest)
+	})
+
+	t.Run("selects highest constrained version among prefixed tags only", func(t *testing.T) {
+		highest, err := versions.HighestConstrainedVersion(componentTags, selection("sf/", ">=1.0.0 <2.0.0", nil))
+		require.NoError(t, err)
+		assert.Equal(t, "sf/v1.10.0", highest)
+	})
+
+	t.Run("prereleases are excluded by default and can be opted in", func(t *testing.T) {
+		highest, err := versions.HighestConstrainedVersion(componentTags, selection("sf/", "<2.0.0", nil))
+		require.NoError(t, err)
+		assert.Equal(t, "sf/v1.10.0", highest)
+
+		highest, err = versions.HighestConstrainedVersion(componentTags, selection("sf/", "<2.0.0", &v1alpha1.VersionSelectionSemverPrereleases{}))
+		require.NoError(t, err)
+		assert.Equal(t, "sf/v1.11.0-rc.1", highest)
+
+		highest, err = versions.HighestConstrainedVersion(componentTags, selection("sf/", "<2.0.0", &v1alpha1.VersionSelectionSemverPrereleases{Identifiers: []string{"beta"}}))
+		require.NoError(t, err)
+		assert.Equal(t, "sf/v1.10.0", highest)
+	})
+
+	t.Run("original tag with build metadata is preserved", func(t *testing.T) {
+		highest, err := versions.HighestConstrainedVersion([]string{"sf/v1.0.0", "sf/v1.1.0+build.7", "sf/v1.0.5"}, selection("sf/", "", nil))
+		require.NoError(t, err)
+		assert.Equal(t, "sf/v1.1.0+build.7", highest)
+	})
+
+	t.Run("no qualifying candidates uses the existing error", func(t *testing.T) {
+		_, err := versions.HighestConstrainedVersion(componentTags, selection("SF/", "", nil))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Expected to find at least one version, but none matched")
+
+		_, err = versions.HighestConstrainedVersion([]string{"sf/", "sf/latest", "v1.0.0"}, selection("sf/", "", nil))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Expected to find at least one version, but none matched")
+	})
+
+	t.Run("error details distinguish a prefix that matches nothing", func(t *testing.T) {
+		_, err := versions.HighestConstrainedVersion(componentTags, selection("SF/", "", nil))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "(details: with-prefix=0 -> all=0 -> ")
+
+		_, err = versions.HighestConstrainedVersion([]string{"sf/", "sf/latest"}, selection("sf/", "", nil))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "(details: with-prefix=2 -> all=0 -> ")
+
+		_, err = versions.HighestConstrainedVersion(componentTags, selection("", ">9.0.0", nil))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "(details: all=1 -> ")
+	})
+}
