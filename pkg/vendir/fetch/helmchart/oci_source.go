@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 )
@@ -117,7 +118,10 @@ func (t *OCISource) login(repo, helmHomeDir string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm registry login: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("Helm registry login: %s (stderr: %s)",
+			err,
+			diagnostics.Text(stderrBs.String()),
+		)
 	}
 
 	return nil
@@ -135,7 +139,10 @@ func (t *OCISource) pull(ref, helmHomeDir, dstPath string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Helm chart pull: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("Helm chart pull: %s (stderr: %s)",
+			err,
+			diagnostics.Text(stderrBs.String()),
+		)
 	}
 
 	return nil

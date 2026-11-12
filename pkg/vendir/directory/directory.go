@@ -10,8 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"sigs.k8s.io/yaml"
-
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
@@ -25,6 +24,7 @@ import (
 	ctlinl "carvel.dev/vendir/pkg/vendir/fetch/inline"
 	"github.com/cppforlife/go-cli-ui/ui"
 	dircopy "github.com/otiai10/copy"
+	"sigs.k8s.io/yaml"
 )
 
 type Directory struct {
@@ -132,7 +132,11 @@ func (d *Directory) Sync(syncOpts SyncOpts) (ctlconf.LockDirectory, error) {
 			lockDirContents.Hg = &lock
 
 		case contents.HTTP != nil:
-			d.ui.PrintLinef("Fetching: %s + %s (http from %s)", d.opts.Path, contents.Path, contents.HTTP.URL)
+			d.ui.PrintLinef("Fetching: %s + %s (http from %s)",
+				d.opts.Path,
+				contents.Path,
+				diagnostics.URL(contents.HTTP.URL),
+			)
 
 			lock, err := ctlhttp.NewSync(*contents.HTTP, syncOpts.RefFetcher).Sync(stagingDstPath, stagingDir.TempArea())
 			if err != nil {

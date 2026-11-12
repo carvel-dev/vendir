@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 )
@@ -148,7 +149,9 @@ func (t *Hg) setup(tempArea ctlfetch.TempArea) error {
 		}
 		hgCredsURL, err := url.Parse(hgURL)
 		if err != nil {
-			return fmt.Errorf("Parsing hg remote url: %s", err)
+			return fmt.Errorf("Parsing hg remote url: %s",
+				diagnostics.Error(err),
+			)
 		}
 
 		hgHost := strings.ToLower(hgCredsURL.Host)
@@ -230,14 +233,25 @@ func (t *Hg) run(args []string, dstPath string) (string, string, error) {
 	cmd := exec.Command("hg", args...)
 	cmd.Env = t.env
 	cmd.Dir = dstPath
-	cmd.Stdout = io.MultiWriter(t.infoLog, &stdoutBs)
-	cmd.Stderr = io.MultiWriter(t.infoLog, &stderrBs)
+	cmd.Stdout = &stdoutBs
+	cmd.Stderr = &stderrBs
 
-	t.infoLog.Write([]byte(fmt.Sprintf("--> hg %s\n", strings.Join(args, " "))))
+	safeArgs := diagnostics.Text(strings.Join(args, " "))
+	_, _ = fmt.Fprintf(t.infoLog, "--> hg %s\n", safeArgs)
 
 	err := cmd.Run()
+	if stdoutBs.Len() > 0 {
+		t.infoLog.Write([]byte(diagnostics.Text(stdoutBs.String())))
+	}
+	if stderrBs.Len() > 0 {
+		t.infoLog.Write([]byte(diagnostics.Text(stderrBs.String())))
+	}
 	if err != nil {
-		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)", args, err, stderrBs.String())
+		return "", "", fmt.Errorf("Hg %s: %s (stderr: %s)",
+			safeArgs,
+			err,
+			diagnostics.Text(stderrBs.String()),
+		)
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil

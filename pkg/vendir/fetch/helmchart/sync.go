@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	"sigs.k8s.io/yaml"
@@ -35,7 +36,7 @@ func NewSync(opts ctlconf.DirectoryContentsHelmChart,
 func (t *Sync) Desc() string {
 	desc := ""
 	if t.opts.Repository != nil && len(t.opts.Repository.URL) > 0 {
-		desc += t.opts.Repository.URL + "@"
+		desc += diagnostics.URL(t.opts.Repository.URL) + "@"
 	}
 	desc += t.opts.Name + ":"
 	if len(t.opts.Version) > 0 {

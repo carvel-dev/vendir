@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	ctlcache "carvel.dev/vendir/pkg/vendir/fetch/cache"
@@ -39,7 +40,7 @@ func (d Sync) Desc() string {
 	case d.opts.RefSelection != nil:
 		ref = "ref=" + d.opts.RefSelection.Description()
 	}
-	return fmt.Sprintf("%s@%s", d.opts.URL, ref)
+	return fmt.Sprintf("%s@%s", diagnostics.URL(d.opts.URL), ref)
 }
 
 func (d Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDirectoryContentsGit, error) {
