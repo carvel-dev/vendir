@@ -327,3 +327,47 @@ metadata:
 		assert.Contains(t, err.Error(), "Expected to find one secret 'ssh-key-secret', but found multiple")
 	})
 }
+
+func TestInlineDefaultMode(t *testing.T) {
+	newConfig := func(mode string) string {
+		return `
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: scripts
+    inline:
+      defaultMode: ` + mode + `
+      paths:
+        script.sh: echo hi
+`
+	}
+
+	load := func(t *testing.T, input string) (config.Config, error) {
+		tmpFile := filepath.Join(t.TempDir(), "config.yml")
+		require.NoError(t, os.WriteFile(tmpFile, []byte(input), 0600))
+		cfg, _, _, err := config.NewConfigFromFiles([]string{tmpFile})
+		return cfg, err
+	}
+
+	t.Run("octal mode", func(t *testing.T) {
+		cfg, err := load(t, newConfig("0755"))
+		require.NoError(t, err)
+		require.Equal(t, int32(0755), *cfg.Directories[0].Contents[0].Inline.DefaultMode)
+	})
+
+	t.Run("decimal mode", func(t *testing.T) {
+		cfg, err := load(t, newConfig("493"))
+		require.NoError(t, err)
+		require.Equal(t, int32(0755), *cfg.Directories[0].Contents[0].Inline.DefaultMode)
+	})
+
+	t.Run("mode out of range", func(t *testing.T) {
+		_, err := load(t, newConfig("01000"))
+		require.ErrorContains(t, err, "defaultMode")
+
+		_, err = load(t, newConfig("-1"))
+		require.ErrorContains(t, err, "defaultMode")
+	})
+}
