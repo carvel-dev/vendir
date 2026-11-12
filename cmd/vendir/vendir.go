@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -27,11 +28,17 @@ func main() {
 	confUI := ui.NewConfUI(ui.NewNoopLogger())
 	defer confUI.Flush()
 
-	command := cmd.NewDefaultVendirCmd(confUI)
+	options := cmd.NewVendirOptions(confUI)
+	command := cmd.NewVendirCmd(options)
 
 	executedCmd, err := command.ExecuteC()
 	if err != nil {
-		confUI.ErrorLinef("vendir: Error: %v", uierrs.NewMultiLineError(err))
+		multiLineErr := uierrs.NewMultiLineError(err)
+		if options.UIFlags.JSON {
+			_, _ = fmt.Fprintf(os.Stderr, "vendir: Error: %v\n", multiLineErr)
+		} else {
+			confUI.ErrorLinef("vendir: Error: %v", multiLineErr)
+		}
 		os.Exit(1)
 	}
 
