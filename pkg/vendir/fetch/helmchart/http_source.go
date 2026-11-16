@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 )
@@ -60,7 +61,10 @@ func (t *HTTPSource) init(helmHomeDir string) error {
 			return nil
 		}
 
-		return fmt.Errorf("Init helm: %s (stderr: %s)", err, stderrStr)
+		return fmt.Errorf("Init helm: %s (stderr: %s)",
+			err,
+			diagnostics.Text(stderrStr),
+		)
 	}
 
 	return nil
@@ -112,7 +116,10 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 			err = cmd.Run()
 			if err != nil {
-				return fmt.Errorf("Add helm chart repository: %s (stderr: %s)", err, stderrBs.String())
+				return fmt.Errorf("Add helm chart repository: %s (stderr: %s)",
+					err,
+					diagnostics.Text(stderrBs.String()),
+				)
 			}
 		}
 
@@ -135,7 +142,10 @@ func (t *HTTPSource) fetch(helmHomeDir, chartsPath string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Fetching helm chart: %s (stderr: %s)", err, stderrBs.String())
+		return fmt.Errorf("Fetching helm chart: %s (stderr: %s)",
+			err,
+			diagnostics.Text(stderrBs.String()),
+		)
 	}
 
 	return nil

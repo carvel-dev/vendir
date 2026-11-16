@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 )
@@ -78,7 +79,7 @@ func (t *Sync) Sync(dstPath string, tempArea ctlfetch.TempArea) (ctlconf.LockDir
 func (t *Sync) downloadFile(dst io.Writer) error {
 	req, err := http.NewRequest("GET", t.opts.URL, nil)
 	if err != nil {
-		return fmt.Errorf("Building request: %s", err)
+		return fmt.Errorf("Building request: %s", diagnostics.Error(err))
 	}
 
 	err = t.addAuth(req)
@@ -88,7 +89,7 @@ func (t *Sync) downloadFile(dst io.Writer) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("Initiating URL download: %s", err)
+		return fmt.Errorf("Initiating URL download: %s", diagnostics.Error(err))
 	}
 
 	defer resp.Body.Close()
@@ -195,8 +196,8 @@ func (t *Sync) addAuth(req *http.Request) error {
 
 	// Basic auth — password is optional, defaults to empty string
 	if hasUser {
-		password := string(secret.Data[
-			ctlconf.SecretK8sCorev1BasicAuthPasswordKey])
+		passwordKey := ctlconf.SecretK8sCorev1BasicAuthPasswordKey
+		password := string(secret.Data[passwordKey])
 		req.SetBasicAuth(
 			string(secret.Data[ctlconf.SecretK8sCorev1BasicAuthUsernameKey]),
 			password,

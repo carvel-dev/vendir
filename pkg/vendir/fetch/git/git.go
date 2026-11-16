@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"carvel.dev/vendir/internal/diagnostics"
 	ctlconf "carvel.dev/vendir/pkg/vendir/config"
 	ctlfetch "carvel.dev/vendir/pkg/vendir/fetch"
 	ctlver "carvel.dev/vendir/pkg/vendir/versions"
@@ -165,7 +166,9 @@ func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) e
 		} else {
 			gitCredsURL, err := url.Parse(gitURL)
 			if err != nil {
-				return fmt.Errorf("Parsing git remote url: %s", err)
+				return fmt.Errorf("Parsing git remote url: %s",
+					diagnostics.Error(err),
+				)
 			}
 
 			gitCredsURL.User = url.UserPassword(*authOpts.Username, *authOpts.Password)
@@ -285,17 +288,23 @@ func (r *runner) Run(args []string, env []string, dstPath string) (string, strin
 	cmd := exec.Command("git", args...)
 	cmd.Env = env
 	cmd.Dir = dstPath
-	cmd.Stdout = io.MultiWriter(r.infoLog, &stdoutBs)
-	cmd.Stderr = io.MultiWriter(r.infoLog, &stderrBs)
+	cmd.Stdout = &stdoutBs
+	cmd.Stderr = &stderrBs
 
 	safeArgs := redactGitArgs(args)
 	logLine := fmt.Sprintf("--> git %s\n", strings.Join(safeArgs, " "))
 	r.infoLog.Write([]byte(logLine))
 
 	err := cmd.Run()
+	if stdoutBs.Len() > 0 {
+		r.infoLog.Write([]byte(diagnostics.Text(stdoutBs.String())))
+	}
+	if stderrBs.Len() > 0 {
+		r.infoLog.Write([]byte(diagnostics.Text(stderrBs.String())))
+	}
 	if err != nil {
 		return "", "", fmt.Errorf("Git %s: %s (stderr: %s)",
-			safeArgs, err, stderrBs.String())
+			safeArgs, err, diagnostics.Text(stderrBs.String()))
 	}
 
 	return stdoutBs.String(), stderrBs.String(), nil
@@ -312,7 +321,7 @@ func redactGitArgs(args []string) []string {
 			scheme, _, _ := strings.Cut(value, " ")
 			arg = authHeaderPrefix + scheme + " [REDACTED]"
 		}
-		redacted[i] = arg
+		redacted[i] = diagnostics.Text(arg)
 	}
 	return redacted
 }
