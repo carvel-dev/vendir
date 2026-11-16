@@ -61,24 +61,29 @@ func (r *MultiRoundTripperStorage) RoundTripper(repo regname.Repository, scope s
 	// Maybe we should check to make sure only 1 repository is present in the scopes
 	method := s[2]
 
-	if _, ok := r.transports[repo.RegistryStr()]; !ok {
+	// Registry hostnames are DNS names (RFC 1035/1123) and must be used as case-insensitive cache keys.
+	// Repository paths are case-sensitive (e.g., GHCR), consistently with CreateRoundTripper below.
+	registryKey := strings.ToLower(repo.RegistryStr())
+	repositoryKey := repo.RepositoryStr()
+
+	if _, ok := r.transports[registryKey]; !ok {
 		return nil
 	}
 
-	if _, ok := r.transports[repo.RegistryStr()][repo.RepositoryStr()]; !ok {
+	if _, ok := r.transports[registryKey][repositoryKey]; !ok {
 		return nil
 	}
 
-	if _, ok := r.transports[repo.RegistryStr()][repo.RepositoryStr()][method]; !ok {
+	if _, ok := r.transports[registryKey][repositoryKey][method]; !ok {
 		if method == transport.PullScope {
-			if _, ok := r.transports[repo.RegistryStr()][repo.RepositoryStr()][transport.PushScope]; ok {
-				return r.transports[repo.RegistryStr()][repo.RepositoryStr()][transport.PushScope]
+			if _, ok := r.transports[registryKey][repositoryKey][transport.PushScope]; ok {
+				return r.transports[registryKey][repositoryKey][transport.PushScope]
 			}
 		}
 		return nil
 	}
 
-	return r.transports[repo.RegistryStr()][repo.RepositoryStr()][method]
+	return r.transports[registryKey][repositoryKey][method]
 }
 
 // CreateRoundTripper Creates a new RoundTripper
@@ -94,22 +99,26 @@ func (r *MultiRoundTripperStorage) CreateRoundTripper(reg regname.Registry, auth
 		return nil, fmt.Errorf("Unable to create round tripper: %s", err)
 	}
 
-	if _, ok := r.transports[reg.RegistryStr()]; !ok {
-		r.transports[reg.RegistryStr()] = map[string]map[string]http.RoundTripper{}
+	// Registry hostnames are DNS names (RFC 1035/1123) and must be used as case-insensitive cache keys.
+	// Repository paths are case-sensitive (e.g., GHCR), consistently with RoundTripper above.
+	registryKey := strings.ToLower(reg.RegistryStr())
+
+	if _, ok := r.transports[registryKey]; !ok {
+		r.transports[registryKey] = map[string]map[string]http.RoundTripper{}
 	}
 	s := strings.Split(scope, ":")
 	if len(s) != 3 {
 		panic(fmt.Sprintf("Internal inconsistency: expected scope '%s' to have 3 fields", scope))
 	}
 	// Maybe we should check to make sure only 1 repository is present in the scopes
-	repository := s[1]
+	repositoryKey := s[1]
 	method := s[2]
 
-	if _, ok := r.transports[reg.RegistryStr()][repository]; !ok {
-		r.transports[reg.RegistryStr()][repository] = map[string]http.RoundTripper{}
+	if _, ok := r.transports[registryKey][repositoryKey]; !ok {
+		r.transports[registryKey][repositoryKey] = map[string]http.RoundTripper{}
 	}
 
-	r.transports[reg.RegistryStr()][repository][method] = rt
+	r.transports[registryKey][repositoryKey][method] = rt
 
 	return rt, nil
 }

@@ -5,6 +5,7 @@ package imageset
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"carvel.dev/imgpkg/pkg/imgpkg/imagedesc"
@@ -306,7 +307,8 @@ func getResolvedImageURL(tagRef string, registry registry.ImagesReader) (string,
 // When mounting an object from repo A to repo B, the object in repo A needs to live in the same registry as repo B.
 // To read more about mounting across a repo: https://github.com/opencontainers/distribution-spec/blob/master/spec.md#mounting-a-blob-from-another-repository
 func imageBlobsCanBeMounted(ref regname.Reference, uploadTagRef regname.Tag, reg registry.ImagesReaderWriter) bool {
-	if ref.Context().RegistryStr() != uploadTagRef.Context().RegistryStr() {
+	// Registry hostnames are DNS names (RFC 1035/1123) and must be compared case-insensitively.
+	if !strings.EqualFold(ref.Context().RegistryStr(), uploadTagRef.Context().RegistryStr()) {
 		return false
 	}
 

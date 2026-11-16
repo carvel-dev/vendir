@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -285,7 +286,8 @@ func (r *SimpleRegistry) writeOpts(ref regname.Reference) ([]regremote.Option, e
 // transport Retrieve the RoundTripper that can be used to access the repository
 func (r *SimpleRegistry) transport(ref regname.Reference, scope string) (http.RoundTripper, regauthn.Authenticator, error) {
 	registry := ref.Context()
-	registryKey := registry.Name()
+	// Registry hostnames are DNS names (RFC 1035/1123) and must be used as case-insensitive cache keys.
+	registryKey := strings.ToLower(registry.Name())
 	// The idea is that we can only retrieve 1 RoundTripper at a time to ensure that we do not create
 	// the same RoundTripper multiple times
 	r.transportAccess.Lock()
@@ -303,7 +305,7 @@ func (r *SimpleRegistry) transport(ref regname.Reference, scope string) (http.Ro
 
 		resolvedAuth, err := r.keychain.Resolve(registry)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Unable retrieve credentials for registry: %s", err)
+			return nil, nil, fmt.Errorf("unable to retrieve credentials for registry: %s", err)
 		}
 		r.authn[registryKey] = resolvedAuth
 		rt, err = r.roundTrippers.CreateRoundTripper(registry.Registry, resolvedAuth, scope)

@@ -198,9 +198,9 @@ func (o *SingleLayerReader) Read(img regv1.Image) (lockconfig.ImagesLock, error)
 		header, err := tarReader.Next()
 		if err != nil {
 			if err == io.EOF {
-				return conf, fmt.Errorf("Expected to find .imgpkg/images.yml in bundle image")
+				return conf, fmt.Errorf("expected to find .imgpkg/images.yml in bundle image")
 			}
-			return conf, fmt.Errorf("reading tar: %v", err)
+			return conf, fmt.Errorf("reading tar: %s", err)
 		}
 
 		basename := filepath.Base(header.Name)

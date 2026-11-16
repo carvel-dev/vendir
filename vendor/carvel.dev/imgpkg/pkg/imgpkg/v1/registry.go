@@ -37,10 +37,10 @@ func OptsFromEnv(base registry.Opts, readEnv func(string) (string, bool)) regist
 		if len(keychains) > 0 {
 			if strings.Contains(keychains, ",") {
 				for _, keychainName := range strings.Split(keychains, ",") {
-					opts.ActiveKeychains = append(opts.ActiveKeychains, auth.IAASKeychain(strings.TrimSpace(keychainName)))
+					opts.ActiveKeychains = append(opts.ActiveKeychains, auth.IAASKeychain(strings.ToLower(strings.TrimSpace(keychainName))))
 				}
 			} else {
-				opts.ActiveKeychains = append(opts.ActiveKeychains, auth.IAASKeychain(strings.TrimSpace(keychains)))
+				opts.ActiveKeychains = append(opts.ActiveKeychains, auth.IAASKeychain(strings.ToLower(strings.TrimSpace(keychains))))
 			}
 		}
 	}

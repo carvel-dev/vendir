@@ -211,7 +211,7 @@ func (o *locationsSingleLayerReader) Read(img regv1.Image) (ImageLocationsConfig
 			if err == io.EOF {
 				return conf, fmt.Errorf("Expected to find image-locations.yml in location image")
 			}
-			return conf, fmt.Errorf("Reading tar: %v", err)
+			return conf, fmt.Errorf("reading tar: %v", err)
 		}
 
 		basename := filepath.Base(header.Name)

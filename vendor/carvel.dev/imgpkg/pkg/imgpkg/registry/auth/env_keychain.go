@@ -110,7 +110,9 @@ func (k *EnvKeychain) collect() ([]envKeychainInfo, error) {
 			}
 			parsedURL, err := url.Parse(val)
 			if err != nil {
-				return fmt.Errorf("Parsing registry hostname: %s (e.g. gcr.io, index.docker.io)", err)
+				// Do not include err details as they may contain credentials from the URL.
+				// The error message itself cannot be trusted to be sanitized.
+				return fmt.Errorf("parsing registry hostname: invalid value (e.g. gcr.io, index.docker.io)")
 			}
 
 			// Allows exact matches:
