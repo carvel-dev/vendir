@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,6 +64,7 @@ func (d Sync) Desc() (string, error) {
 		desc = d.opts.Slug + "@"
 		switch {
 		case d.opts.TagSelection.Semver != nil:
+			desc += d.opts.TagSelection.Semver.Prefix
 			desc += fmt.Sprintf("[%s]", d.opts.TagSelection.Semver.Constraints)
 		}
 	case d.opts.Latest:
@@ -80,13 +82,13 @@ func (d Sync) url() (string, error) {
 	case len(d.opts.URL) > 0:
 		url = d.opts.URL
 	case len(d.opts.Tag) > 0:
-		url += "/tags/" + d.opts.Tag
+		url += "/tags/" + neturl.PathEscape(d.opts.Tag)
 	case d.opts.TagSelection != nil:
 		tag, err := d.fetchTagSelection()
 		if err != nil {
 			return "", err
 		}
-		url += "/tags/" + tag
+		url += "/tags/" + neturl.PathEscape(tag)
 	case d.opts.Latest:
 		url += "/latest"
 	default:

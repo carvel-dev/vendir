@@ -20,6 +20,10 @@ type VersionSelection struct {
 type VersionSelectionSemver struct {
 	Constraints string                             `json:"constraints,omitempty" protobuf:"bytes,1,opt,name=constraints"`
 	Prereleases *VersionSelectionSemverPrereleases `json:"prereleases,omitempty" protobuf:"bytes,2,opt,name=prereleases"`
+	// Prefix is a literal, case-sensitive string that candidate versions must
+	// start with. It is removed once before semver parsing; the original
+	// version string is preserved (optional)
+	Prefix string `json:"prefix,omitempty" protobuf:"bytes,3,opt,name=prefix"`
 }
 
 // +k8s:deepcopy-gen=true

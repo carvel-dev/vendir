@@ -45,14 +45,25 @@ func NewRelaxedSemver(version string) (SemverWrap, error) {
 }
 
 func NewRelaxedSemversNoErr(versions []string) Semvers {
+	return NewPrefixedRelaxedSemversNoErr(versions, "")
+}
+
+// NewPrefixedRelaxedSemversNoErr parses versions that start with the given
+// literal prefix. Versions without the prefix, or whose remainder is not a
+// valid (relaxed) semver, are ignored. The prefix is removed once before
+// parsing only; Original retains the full version string.
+func NewPrefixedRelaxedSemversNoErr(versions []string, prefix string) Semvers {
 	var parsedVersions []SemverWrap
 
 	for _, vStr := range versions {
-		ver, err := NewRelaxedSemver(vStr)
+		if !strings.HasPrefix(vStr, prefix) {
+			continue
+		}
+		ver, err := NewRelaxedSemver(strings.TrimPrefix(vStr, prefix))
 		if err != nil {
 			continue
 		}
-		parsedVersions = append(parsedVersions, ver)
+		parsedVersions = append(parsedVersions, SemverWrap{ver.Version, vStr})
 	}
 
 	return Semvers{parsedVersions}

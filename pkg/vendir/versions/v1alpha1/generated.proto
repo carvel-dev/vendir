@@ -20,6 +20,11 @@ message VersionSelectionSemver {
   optional string constraints = 1;
 
   optional VersionSelectionSemverPrereleases prereleases = 2;
+
+  // Prefix is a literal, case-sensitive string that candidate versions must
+  // start with. It is removed once before semver parsing; the original
+  // version string is preserved (optional)
+  optional string prefix = 3;
 }
 
 // +k8s:deepcopy-gen=true
