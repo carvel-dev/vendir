@@ -44,7 +44,7 @@ func Keychain(keychainOpts auth.KeychainOpts, environFunc func() []string) (rega
 			case auth.GithubKeychain:
 				k = github.Keychain
 			default:
-				return nil, fmt.Errorf("Unable to load keychain for %s, available keychains [aks, ecr, gke, github]]", string(activeKeychain))
+				return nil, fmt.Errorf("Unable to load keychain for %s, available keychains [aks, ecr, gke, github]", string(activeKeychain)) //nolint:staticcheck // capitalized intentionally: user-facing CLI message, asserted verbatim by test/e2e/auth_error_test.go
 			}
 			keychain = append(keychain, k)
 		}

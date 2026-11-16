@@ -52,7 +52,8 @@ func URLsMatch(globURL *url.URL, targetURL *url.URL) (bool, error) {
 	}
 	for k, globURLPart := range globURLParts {
 		targetURLPart := targetURLParts[k]
-		matched, err := filepath.Match(globURLPart, targetURLPart)
+		// Registry hostnames are DNS names (RFC 1035/1123) and must be matched case-insensitively.
+		matched, err := filepath.Match(strings.ToLower(globURLPart), strings.ToLower(targetURLPart))
 		if err != nil {
 			return false, err
 		}

@@ -234,28 +234,28 @@ func getImageLayersInfo(image string) ([]Layers, int64, error) {
 	layers := []Layers{}
 	parsedImgRef, err := regname.ParseReference(image, regname.WeakValidation)
 	if err != nil {
-		return nil, 0, fmt.Errorf("Error: %s in parsing image %s", err.Error(), image)
+		return nil, 0, fmt.Errorf("%s in parsing image %s", err.Error(), image)
 	}
 
 	v1Img, err := remote.Image(parsedImgRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
-		return nil, 0, fmt.Errorf("Error: %s in getting remote access of image %s", err.Error(), image)
+		return nil, 0, fmt.Errorf("%s in getting remote access of image %s", err.Error(), image)
 	}
 
 	imgLayers, err := v1Img.Layers()
 	if err != nil {
-		return nil, 0, fmt.Errorf("Error: %s in getting layers of image %s", err.Error(), image)
+		return nil, 0, fmt.Errorf("%s in getting layers of image %s", err.Error(), image)
 	}
 
 	size0 := int64(0)
 	for _, imgLayer := range imgLayers {
 		digHash, err := imgLayer.Digest()
 		if err != nil {
-			return nil, 0, fmt.Errorf("Error: %s in getting digest of layer's of image %s", err.Error(), image)
+			return nil, 0, fmt.Errorf("%s in getting digest of layers of image %s", err.Error(), image)
 		}
 		size, err := imgLayer.Size()
 		if err != nil {
-			return nil, 0, fmt.Errorf("Error: %s in getting size of layer's of image %s", err.Error(), image)
+			return nil, 0, fmt.Errorf("%s in getting size of layers of image %s", err.Error(), image)
 		}
 		size0 += size
 		layers = append(layers, Layers{Digest: digHash.String(), Size: size})

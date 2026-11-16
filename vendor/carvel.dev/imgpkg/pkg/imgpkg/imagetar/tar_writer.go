@@ -190,7 +190,7 @@ func (w *TarWriter) writeLayers() error {
 			if sourceLayer, ok := w.layersFromOtherSource[digest.String()]; ok {
 				stream, err = sourceLayer.Compressed()
 				if err != nil {
-					return fmt.Errorf("failed to get compressed stuff: %s", err)
+					return fmt.Errorf("failed to get compressed layer: %s", err)
 				}
 			}
 
@@ -297,7 +297,7 @@ func (w *TarWriter) fillInLayer(wl writtenLayer) error {
 	if sourceLayer, ok := w.layersFromOtherSource[wl.Layer.Digest]; ok {
 		stream, err = sourceLayer.Compressed()
 		if err != nil {
-			return fmt.Errorf("failed to get compressed stuff: %s", err)
+			return fmt.Errorf("failed to get compressed layer: %s", err)
 		}
 	}
 
