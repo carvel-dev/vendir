@@ -9,6 +9,52 @@ import (
 	"testing"
 )
 
+func TestRemoveDanglingSymlinks(t *testing.T) {
+	root, err := os.MkdirTemp("", "vendir-test")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(root)
+
+	root, err = filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatalf("failed to read link tmpdir: %v", err)
+	}
+
+	// existing file that a valid symlink points to
+	existingFile := filepath.Join(root, "existing.txt")
+	f, err := os.Create(existingFile)
+	if err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+	f.Close()
+
+	// valid symlink: points to existing file
+	validLink := filepath.Join(root, "valid_link")
+	if err = os.Symlink(existingFile, validLink); err != nil {
+		t.Fatalf("failed to create symlink: %v", err)
+	}
+
+	// dangling symlink: points to non-existent file
+	danglingLink := filepath.Join(root, "dangling_link")
+	if err = os.Symlink(filepath.Join(root, "nonexistent.txt"), danglingLink); err != nil {
+		t.Fatalf("failed to create symlink: %v", err)
+	}
+
+	if err = RemoveDanglingSymlinks(root); err != nil {
+		t.Fatalf("RemoveDanglingSymlinks() error = %v", err)
+	}
+
+	// valid symlink must still exist
+	if _, err = os.Lstat(validLink); err != nil {
+		t.Errorf("valid symlink was unexpectedly removed: %v", err)
+	}
+	// dangling symlink must be gone
+	if _, err = os.Lstat(danglingLink); err == nil {
+		t.Errorf("dangling symlink was not removed")
+	}
+}
+
 func TestValidateSymlinks(t *testing.T) {
 	root, err := os.MkdirTemp("", "vendir-test")
 	if err != nil {
