@@ -74,7 +74,11 @@ func (d Sync) Desc() (string, error) {
 }
 
 func (d Sync) url() (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", d.opts.Slug)
+	defaultApiEndpoint = "https://api.github.com"
+	if len(d.opts.endpoint) > 0:
+		defaultApiEndpoint = d.opts.endpoint
+
+	url := defaultApiEndpoint + fmt.Sprintf("/repos/%s/releases", d.opts.Slug)
 
 	switch {
 	case len(d.opts.URL) > 0:
