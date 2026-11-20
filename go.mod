@@ -21,6 +21,7 @@ require (
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/tools v0.51.0
 	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.24.3
 	k8s.io/code-generator v0.17.2
 	sigs.k8s.io/yaml v1.6.0
