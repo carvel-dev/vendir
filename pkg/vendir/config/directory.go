@@ -46,17 +46,18 @@ type DirectoryContents struct {
 	Manual        *DirectoryContentsManual        `json:"manual,omitempty"`
 	Directory     *DirectoryContentsDirectory     `json:"directory,omitempty"`
 	Inline        *DirectoryContentsInline        `json:"inline,omitempty"`
-
-	IncludePaths []string `json:"includePaths,omitempty"`
-	ExcludePaths []string `json:"excludePaths,omitempty"`
-	IgnorePaths  []string `json:"ignorePaths,omitempty"`
+	Permissions   *os.FileMode                    `json:"permissions,omitempty"`
+	NewRootPath   string                          `json:"newRootPath,omitempty"`
+	ContentPaths  `json:",inline"`
 
 	// By default LICENSE/LICENCE/NOTICE/COPYRIGHT files are kept
 	LegalPaths *[]string `json:"legalPaths,omitempty"`
+}
 
-	NewRootPath string `json:"newRootPath,omitempty"`
-
-	Permissions *os.FileMode `json:"permissions,omitempty"`
+type ContentPaths struct {
+	IncludePaths []string `json:"includePaths,omitempty"`
+	ExcludePaths []string `json:"excludePaths,omitempty"`
+	IgnorePaths  []string `json:"ignorePaths,omitempty"`
 }
 
 type DirectoryContentsGit struct {
@@ -73,6 +74,7 @@ type DirectoryContentsGit struct {
 	SkipInitSubmodules     bool `json:"skipInitSubmodules,omitempty"`
 	Depth                  int  `json:"depth,omitempty"`
 	ForceHTTPBasicAuth     bool `json:"forceHTTPBasicAuth,omitempty"`
+	SparseCheckout         bool `json:"sparseCheckout,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {
