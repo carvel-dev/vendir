@@ -78,6 +78,7 @@ func TestExamplesDir(t *testing.T) {
 		{Name: "locked", OnlyLocked: true, Env: []string{"VENDIR_HELM_BINARY=" + env.Helm3Binary}},
 		{Name: "new-root-path"},
 		{Name: "versionselection"},
+		{Name: "floating-tags"},
 		{Name: "ignore", SkipRemove: true},
 	}
 

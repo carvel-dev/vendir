@@ -73,6 +73,23 @@ type DirectoryContentsGit struct {
 	SkipInitSubmodules     bool `json:"skipInitSubmodules,omitempty"`
 	Depth                  int  `json:"depth,omitempty"`
 	ForceHTTPBasicAuth     bool `json:"forceHTTPBasicAuth,omitempty"`
+	// DescribeTags limits the tags considered when recording the tag of
+	// the fetched commit in the lock file.
+	// +optional
+	DescribeTags *DirectoryContentsDescribeTags `json:"describeTags,omitempty"`
+}
+
+// DirectoryContentsDescribeTags holds the glob(7) patterns that are passed
+// to `git describe --tags` as `--match` and `--exclude` options. They control
+// which tag is recorded in the lock file, for example to prefer full version
+// tags (v1.2.3) over floating tags (v1.2) that point at the same commit.
+type DirectoryContentsDescribeTags struct {
+	// Match only considers tags matching at least one of the patterns.
+	// +optional
+	Match []string `json:"match,omitempty"`
+	// Exclude ignores tags matching any of the patterns.
+	// +optional
+	Exclude []string `json:"exclude,omitempty"`
 }
 
 type DirectoryContentsGitVerification struct {

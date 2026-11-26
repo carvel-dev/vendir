@@ -4,7 +4,9 @@
 package git_test
 
 import (
+	"io"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -12,6 +14,11 @@ import (
 	"carvel.dev/vendir/pkg/vendir/fetch"
 	"carvel.dev/vendir/pkg/vendir/fetch/git"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	truncatedVersion = "v1.2"
+	fullVersion      = "v1.2.0"
 )
 
 func TestGit_Retrieve(t *testing.T) {
@@ -122,6 +129,101 @@ func TestGit_Retrieve(t *testing.T) {
 		_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
 		require.ErrorContains(t, err, "Username/password authentication is only supported for https remotes")
 	})
+}
+
+func TestGit_RetrieveDescribeTags(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git binary not available")
+	}
+
+	// The commit carries an annotated floating tag (v1.2) and a lightweight
+	// version tag (v1.2.0). `git describe --tags` prefers annotated tags, so
+	// without patterns the floating tag ends up in the lock file.
+	srcPath := t.TempDir()
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = srcPath
+		cmd.Env = append(os.Environ(),
+			"GIT_CONFIG_GLOBAL=/dev/null",
+			"GIT_CONFIG_SYSTEM=/dev/null",
+			"GIT_AUTHOR_NAME=test", "GIT_AUTHOR_EMAIL=test@example.com",
+			"GIT_COMMITTER_NAME=test", "GIT_COMMITTER_EMAIL=test@example.com",
+		)
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, "git %s: %s", strings.Join(args, " "), out)
+	}
+	runGit("init", "-q")
+	runGit("commit", "-q", "--allow-empty", "-m", "release 1.2.0")
+	runGit("tag", fullVersion)
+	runGit("tag", "-a", "-m", "floating", truncatedVersion)
+
+	tests := []struct {
+		name         string
+		describeTags *config.DirectoryContentsDescribeTags
+		want         []string
+	}{
+		{
+			name: "default prefers annotated tag",
+			want: []string{truncatedVersion},
+		},
+		{
+			name:         "match selects full version tag",
+			describeTags: &config.DirectoryContentsDescribeTags{Match: []string{"v*.*.*"}},
+			want:         []string{fullVersion},
+		},
+		{
+			name:         "exclude ignores floating tag",
+			describeTags: &config.DirectoryContentsDescribeTags{Exclude: []string{truncatedVersion}},
+			want:         []string{fullVersion},
+		},
+		{
+			name:         "no matching tag leaves tags empty",
+			describeTags: &config.DirectoryContentsDescribeTags{Match: []string{"nomatch-*"}},
+			want:         nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gitRetriever := git.NewGit(config.DirectoryContentsGit{
+				URL:          srcPath,
+				Ref:          fullVersion,
+				DescribeTags: tc.describeTags,
+			}, io.Discard, nil)
+
+			info, err := gitRetriever.Retrieve(t.TempDir(), &tmpFolder{t}, "")
+			require.NoError(t, err)
+			require.Equal(t, tc.want, info.Tags)
+		})
+	}
+}
+
+func TestGit_RetrieveDescribeTagsArgs(t *testing.T) {
+	runner := &cmdRunnerLocal{commandsToRun: [][]string{}}
+	gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
+		URL: "https://some.git/repo",
+		Ref: "origin/main",
+		DescribeTags: &config.DirectoryContentsDescribeTags{
+			Match:   []string{"v*.*.*", "release-*"},
+			Exclude: []string{"*-rc*"},
+		},
+	}, os.Stdout, nil, runner)
+	_, err := gitRetriever.Retrieve("", &tmpFolder{t}, "")
+	require.NoError(t, err)
+
+	var describe []string
+	for _, args := range runner.commandsToRun {
+		if args[0] == "describe" {
+			describe = args
+		}
+	}
+	require.Equal(t, []string{
+		"describe", "--tags",
+		"--match", "v*.*.*", "--match", "release-*",
+		"--exclude", "*-rc*",
+		"",
+	}, describe)
 }
 
 type cmdRunnerLocal struct {

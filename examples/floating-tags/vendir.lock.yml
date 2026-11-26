@@ -1,0 +1,29 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: Reverted Changes to Git Config and Authentication (#64)...
+      sha: 50fbc622fc4ef5163becd7fab6573eac35f8462e
+      tags:
+      - v1
+    path: default
+  - git:
+      commitTitle: Reverted Changes to Git Config and Authentication (#64)...
+      sha: 50fbc622fc4ef5163becd7fab6573eac35f8462e
+      tags:
+      - v1.2.0
+    path: match
+  - git:
+      commitTitle: Reverted Changes to Git Config and Authentication (#64)...
+      sha: 50fbc622fc4ef5163becd7fab6573eac35f8462e
+      tags:
+      - v1.2.0
+    path: exclude
+  - git:
+      commitTitle: Reverted Changes to Git Config and Authentication (#64)...
+      sha: 50fbc622fc4ef5163becd7fab6573eac35f8462e
+      tags:
+      - v1.2.0
+    path: match-and-exclude
+  path: vendor
+kind: LockConfig

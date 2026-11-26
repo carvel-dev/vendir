@@ -66,7 +66,7 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string
 
 	info.SHA = strings.TrimSpace(out)
 
-	out, _, err = t.cmdRunner.Run([]string{"describe", "--tags", info.SHA}, nil, dstPath)
+	out, _, err = t.cmdRunner.Run(t.describeArgs(info.SHA), nil, dstPath)
 	if err == nil {
 		info.Tags = strings.Split(strings.TrimSpace(out), "\n")
 	}
@@ -79,6 +79,21 @@ func (t *Git) Retrieve(dstPath string, tempArea ctlfetch.TempArea, bundle string
 	info.CommitTitle = strings.TrimSpace(out)
 
 	return info, nil
+}
+
+func (t *Git) describeArgs(sha string) []string {
+	args := []string{"describe", "--tags"}
+
+	if t.opts.DescribeTags != nil {
+		for _, pattern := range t.opts.DescribeTags.Match {
+			args = append(args, "--match", pattern)
+		}
+		for _, pattern := range t.opts.DescribeTags.Exclude {
+			args = append(args, "--exclude", pattern)
+		}
+	}
+
+	return append(args, sha)
 }
 
 func (t *Git) fetch(dstPath string, tempArea ctlfetch.TempArea, bundle string) error {

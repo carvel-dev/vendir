@@ -1,0 +1,57 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  # actions/checkout tags the same commit with the release tag v1.2.0 and the
+  # floating major version tag v1. Both are annotated tags. By default, vendir
+  # records the tag chosen by `git describe --tags`, which is the floating v1
+  # here. Floating tags move to newer commits over time, which changes the
+  # lock file even though the vendored commit stays the same.
+  - path: default
+    git:
+      url: https://github.com/actions/checkout
+      ref: v1.2.0
+    includePaths:
+    - action.yml
+
+  # describeTags.match only considers tags matching at least one of the
+  # glob(7) patterns, which are passed to `git describe --match`. In glob
+  # patterns, `*` also matches `.`, so v*.*.* matches v1.2.0 but not v1.
+  - path: match
+    git:
+      url: https://github.com/actions/checkout
+      ref: v1.2.0
+      describeTags:
+        match:
+        - v*.*.*
+    includePaths:
+    - action.yml
+
+  # describeTags.exclude ignores tags matching any of the glob(7) patterns,
+  # which are passed to `git describe --exclude`. Here it excludes floating
+  # major version tags such as v1.
+  - path: exclude
+    git:
+      url: https://github.com/actions/checkout
+      ref: v1.2.0
+      describeTags:
+        exclude:
+        - v[0-9]
+        - v[0-9][0-9]
+    includePaths:
+    - action.yml
+
+  # Both lists can be combined, for example to record release tags while
+  # ignoring pre-releases such as v1.2.0-rc.1.
+  - path: match-and-exclude
+    git:
+      url: https://github.com/actions/checkout
+      ref: v1.2.0
+      describeTags:
+        match:
+        - v*.*.*
+        exclude:
+        - "*-*"
+    includePaths:
+    - action.yml
