@@ -16,6 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	truncatedVersion = "v1.2"
+	fullVersion      = "v1.2.0"
+)
+
 func TestGit_Retrieve(t *testing.T) {
 	t.Run("Force basic auth header when flag is enabled and the user/pass is provided", func(t *testing.T) {
 		secretFetcher := &fetch.SingleSecretRefFetcher{Secret: &config.Secret{
@@ -150,31 +155,31 @@ func TestGit_RetrieveDescribeTags(t *testing.T) {
 	}
 	runGit("init", "-q")
 	runGit("commit", "-q", "--allow-empty", "-m", "release 1.2.0")
-	runGit("tag", "v1.2.0")
-	runGit("tag", "-a", "-m", "floating", "v1.2")
+	runGit("tag", fullVersion)
+	runGit("tag", "-a", "-m", "floating", truncatedVersion)
 
 	tests := []struct {
 		name         string
-		describeTags *config.DirectoryContentsGitDescribeTags
+		describeTags *config.DirectoryContentsDescribeTags
 		want         []string
 	}{
 		{
 			name: "default prefers annotated tag",
-			want: []string{"v1.2"},
+			want: []string{truncatedVersion},
 		},
 		{
 			name:         "match selects full version tag",
-			describeTags: &config.DirectoryContentsGitDescribeTags{Match: []string{"v*.*.*"}},
-			want:         []string{"v1.2.0"},
+			describeTags: &config.DirectoryContentsDescribeTags{Match: []string{"v*.*.*"}},
+			want:         []string{fullVersion},
 		},
 		{
 			name:         "exclude ignores floating tag",
-			describeTags: &config.DirectoryContentsGitDescribeTags{Exclude: []string{"v1.2"}},
-			want:         []string{"v1.2.0"},
+			describeTags: &config.DirectoryContentsDescribeTags{Exclude: []string{truncatedVersion}},
+			want:         []string{fullVersion},
 		},
 		{
 			name:         "no matching tag leaves tags empty",
-			describeTags: &config.DirectoryContentsGitDescribeTags{Match: []string{"nomatch-*"}},
+			describeTags: &config.DirectoryContentsDescribeTags{Match: []string{"nomatch-*"}},
 			want:         nil,
 		},
 	}
@@ -183,7 +188,7 @@ func TestGit_RetrieveDescribeTags(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			gitRetriever := git.NewGit(config.DirectoryContentsGit{
 				URL:          srcPath,
-				Ref:          "v1.2.0",
+				Ref:          fullVersion,
 				DescribeTags: tc.describeTags,
 			}, io.Discard, nil)
 
@@ -199,7 +204,7 @@ func TestGit_RetrieveDescribeTagsArgs(t *testing.T) {
 	gitRetriever := git.NewGitWithRunner(config.DirectoryContentsGit{
 		URL: "https://some.git/repo",
 		Ref: "origin/main",
-		DescribeTags: &config.DirectoryContentsGitDescribeTags{
+		DescribeTags: &config.DirectoryContentsDescribeTags{
 			Match:   []string{"v*.*.*", "release-*"},
 			Exclude: []string{"*-rc*"},
 		},

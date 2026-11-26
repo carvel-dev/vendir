@@ -76,14 +76,14 @@ type DirectoryContentsGit struct {
 	// DescribeTags limits the tags considered when recording the tag of
 	// the fetched commit in the lock file.
 	// +optional
-	DescribeTags *DirectoryContentsGitDescribeTags `json:"describeTags,omitempty"`
+	DescribeTags *DirectoryContentsDescribeTags `json:"describeTags,omitempty"`
 }
 
-// DirectoryContentsGitDescribeTags holds the glob(7) patterns that are passed
+// DirectoryContentsDescribeTags holds the glob(7) patterns that are passed
 // to `git describe --tags` as `--match` and `--exclude` options. They control
 // which tag is recorded in the lock file, for example to prefer full version
 // tags (v1.2.3) over floating tags (v1.2) that point at the same commit.
-type DirectoryContentsGitDescribeTags struct {
+type DirectoryContentsDescribeTags struct {
 	// Match only considers tags matching at least one of the patterns.
 	// +optional
 	Match []string `json:"match,omitempty"`
